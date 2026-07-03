@@ -347,7 +347,9 @@
             var area = (w * h) / 10000;
             var per = 2 * (w + h) / 100;
             var maxD = Math.max(w, h);
-            var k = maxD > 240 ? 3.25 : 3.11;
+
+            // === БЕЗ подсветки: 151% (×2,51), С подсветкой: как раньше ===
+            var k = hasLight ? (maxD > 240 ? 3.25 : 3.11) : 2.51;
 
             var costMirror = area * 1500;
             var costEdge = per * 150;
