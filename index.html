@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор зеркал — Ставрополь</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            color: #1a1a1a;
+            line-height: 1.5;
+        }
+        .wrap {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px 16px 40px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 4px;
+        }
+        header p {
+            font-size: 13px;
+            color: #666;
+        }
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .card h2 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sizes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .field label {
+            display: block;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .field input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            text-align: center;
+            transition: border-color .2s;
+        }
+        .field input:focus { outline: none; border-color: #007bff; }
+        .opts { display: flex; flex-direction: column; gap: 8px; }
+        .opt {
+            display: flex;
+            align-items: center;
+            padding: 12px 14px;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all .15s;
+            background: #fff;
+        }
+        .opt:hover { border-color: #007bff; }
+        .opt.active { border-color: #007bff; background: #f0f7ff; }
+        .opt input { margin-right: 10px; accent-color: #007bff; }
+        .opt label { flex: 1; font-size: 15px; cursor: pointer; margin: 0; }
+        .opt .tag { font-size: 13px; color: #888; }
+        .check {
+            display: flex;
+            align-items: center;
+            padding: 12px 14px;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .check:hover { border-color: #007bff; }
+        .check.active { border-color: #007bff; background: #f0f7ff; }
+        .check input { margin-right: 10px; accent-color: #007bff; }
+        .check label { flex: 1; font-size: 15px; cursor: pointer; margin: 0; }
+        .check .price { font-size: 14px; color: #e74c3c; font-weight: 600; }
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background .2s;
+        }
+        .btn:hover { background: #0056b3; }
+        .result {
+            background: #111;
+            color: #fff;
+            border-radius: 20px;
+            padding: 28px 24px;
+            margin-top: 16px;
+            text-align: center;
+            display: none;
+        }
+        .result.show { display: block; animation: pop .3s ease; }
+        @keyframes pop { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .result .lbl { font-size: 14px; color: #aaa; margin-bottom: 6px; }
+        .result .size { font-size: 16px; color: #ccc; margin-bottom: 10px; }
+        .result .sum { font-size: 42px; font-weight: 800; color: #4ade80; margin: 8px 0; }
+        .result .includes {
+            text-align: left;
+            background: rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0 12px;
+            font-size: 13px;
+            color: #ccc;
+            line-height: 1.8;
+        }
+        .result .includes strong { color: #fff; display: block; margin-bottom: 6px; font-size: 14px; }
+        .result .note { font-size: 12px; color: #888; margin-top: 8px; }
+        .cta {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: #25d366;
+            color: #fff;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 700;
+            margin-top: 16px;
+            text-align: center;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            margin-top: 24px;
+        }
+        .hidden { display: none !important; }
+        .base-info {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <header>
+            <h1>✦ Зеркала под заказ</h1>
+            <p>Рассчитайте стоимость за 10 секунд</p>
+        </header>
+
+        <div class="card">
+            <h2>📐 Размеры, см</h2>
+            <div class="sizes">
+                <div class="field">
+                    <label>Ширина</label>
+                    <input type="number" id="w" value="150" min="40" max="3210">
+                </div>
+                <div class="field">
+                    <label>Высота</label>
+                    <input type="number" id="h" value="70" min="40" max="2250">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>💡 Подсветка</h2>
+            <div class="opts">
+                <div class="opt active" onclick="pickRadio(this,'light','yes')">
+                    <input type="radio" name="light" id="l-yes" value="yes" checked>
+                    <label for="l-yes">С LED-подсветкой</label>
+                </div>
+                <div class="opt" onclick="pickRadio(this,'light','no')">
+                    <input type="radio" name="light" id="l-no" value="no">
+                    <label for="l-no">Без подсветки</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="light-opts">
+            <h2>🎛 Управление светом</h2>
+            <div class="opts">
+                <div class="opt active" onclick="pickRadio(this,'ctrl','wave')">
+                    <input type="radio" name="ctrl" id="c-wave" value="wave" checked>
+                    <label for="c-wave">Взмах руки</label>
+                </div>
+                <div class="opt" onclick="pickRadio(this,'ctrl','touch')">
+                    <input type="radio" name="ctrl" id="c-touch" value="touch">
+                    <label for="c-touch">Сенсорное касание</label>
+                </div>
+                <div class="opt" onclick="pickRadio(this,'ctrl','remote')">
+                    <input type="radio" name="ctrl" id="c-remote" value="remote">
+                    <label for="c-remote">Пульт ДУ</label>
+                </div>
+                <div class="opt" onclick="pickRadio(this,'ctrl','smart')">
+                    <input type="radio" name="ctrl" id="c-smart" value="smart">
+                    <label for="c-smart">Умный дом</label>
+                </div>
+            </div>
+
+            <h2 style="margin-top:20px">🌈 Цвет подсветки</h2>
+            <div class="opts">
+                <div class="opt active" onclick="pickRadio(this,'clr','warm')">
+                    <input type="radio" name="clr" id="cl-warm" value="warm" checked>
+                    <label for="cl-warm">Тёплый</label>
+                </div>
+                <div class="opt" onclick="pickRadio(this,'clr','cold')">
+                    <input type="radio" name="clr" id="cl-cold" value="cold">
+                    <label for="cl-cold">Холодный</label>
+                </div>
+                <div class="opt" onclick="pickRadio(this,'clr','neutral')">
+                    <input type="radio" name="clr" id="cl-neutral" value="neutral">
+                    <label for="cl-neutral">Нейтральный</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🔧 Обработка кромки</h2>
+            <div class="base-info">
+                ✓ Обработка от пореза включена в стоимость
+            </div>
+            <h2 style="font-size:14px; margin-bottom:10px; color:#555;">Фацет (опционально)</h2>
+            <div class="opts">
+                <div class="opt active" onclick="pickRadio(this,'facet','none')">
+                    <input type="radio" name="facet" id="f-none" value="none" checked>
+                    <label for="f-none">Без фацета</label>
+                </div>
+                <div class="opt" onclick="pickRadio(this,'facet','10')">
+                    <input type="radio" name="facet" id="f-10" value="10">
+                    <label for="f-10">10 мм</label>
+                    <span class="tag">180 ₽/м</span>
+                </div>
+                <div class="opt" onclick="pickRadio(this,'facet','20')">
+                    <input type="radio" name="facet" id="f-20" value="20">
+                    <label for="f-20">20 мм</label>
+                    <span class="tag">210 ₽/м</span>
+                </div>
+                <div class="opt" onclick="pickRadio(this,'facet','25')">
+                    <input type="radio" name="facet" id="f-25" value="25">
+                    <label for="f-25">25 мм</label>
+                    <span class="tag">260 ₽/м</span>
+                </div>
+            </div>
+            <div style="margin-top:12px;">
+                <div class="check" onclick="toggleCheck(this,'film')">
+                    <input type="checkbox" id="ch-film" value="film">
+                    <label for="ch-film">Бронеплёнка</label>
+                    <span class="price">50 ₽/м²</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>➕ Дополнительно</h2>
+            <div class="opts">
+                <div class="check" onclick="toggleCheck(this,'heat')">
+                    <input type="checkbox" id="ch-heat" value="heat">
+                    <label for="ch-heat">Подогрев (антипот)</label>
+                    <span class="price">+2 000 ₽</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn" onclick="calc()">💰 Рассчитать стоимость</button>
+
+        <div class="result" id="res">
+            <div class="lbl">Стоимость зеркала</div>
+            <div class="size" id="r-size"></div>
+            <div class="sum" id="r-sum"></div>
+            <div class="includes" id="r-inc"></div>
+            <div class="note" id="r-note"></div>
+            <a class="cta" id="r-cta" href="#">📝 Написать в Макс и заказать</a>
+        </div>
+
+        <div class="footer">Срок изготовления — от 2 дней до недели. Работаю по Ставрополю.</div>
+    </div>
+
+    <script>
+        function pickRadio(el, group, val) {
+            document.querySelectorAll('input[name="' + group + '"]').forEach(function(i) {
+                i.checked = false;
+            });
+            var selected = document.querySelector('input[name="' + group + '"][value="' + val + '"]');
+            if (selected) selected.checked = true;
+            var parent = el.parentNode;
+            parent.querySelectorAll('.opt').forEach(function(o) {
+                o.classList.remove('active');
+            });
+            el.classList.add('active');
+            if (group === 'light') {
+                document.getElementById('light-opts').classList.toggle('hidden', val === 'no');
+            }
+        }
+
+        function toggleCheck(el, id) {
+            var cb = document.getElementById('ch-' + id);
+            if (cb) cb.checked = !cb.checked;
+            el.classList.toggle('active', cb && cb.checked);
+        }
+
+        function fmt(n) {
+            return Math.round(n).toLocaleString('ru-RU');
+        }
+
+        function calc() {
+            var w = parseFloat(document.getElementById('w').value) || 0;
+            var h = parseFloat(document.getElementById('h').value) || 0;
+            var hasLight = document.getElementById('l-yes').checked;
+            var hasHeat = document.getElementById('ch-heat').checked;
+            var hasFilm = document.getElementById('ch-film').checked;
+
+            var facetEl = document.querySelector('input[name="facet"]:checked');
+            var facetVal = facetEl ? facetEl.value : 'none';
+
+            if (w < 40 || h < 40) { alert('Минимальный размер — 40 см'); return; }
+            if (w > 3210 || h > 2250) { alert('Максимальный размер — 3210×2250 мм'); return; }
+
+            var area = (w * h) / 10000;
+            var per = 2 * (w + h) / 100;
+            var maxD = Math.max(w, h);
+            var k = maxD > 240 ? 3.25 : 3.11;
+
+            var costMirror = area * 1500;
+            var costEdge = per * 150;
+
+            var costLED = 0;
+            if (hasLight) {
+                var buhv = Math.ceil(per / 5);
+                costLED = buhv * 700;
+            }
+            var costBlock = hasLight ? 700 : 0;
+            var costSwitch = hasLight ? 700 : 0;
+
+            var costCorner = 0, costCornerDel = 0;
+            if (hasLight) {
+                costCorner = Math.max(per, 6) * 80;
+                costCornerDel = 700;
+            }
+
+            var costDelZ = maxD >= 200 ? 500 : 0;
+
+            var facetPrices = { 'none': 0, '10': 180, '20': 210, '25': 260 };
+            var costFacet = (facetPrices[facetVal] || 0) * per;
+
+            var costFilm = hasFilm ? (50 * area) : 0;
+
+            var costHeat = hasHeat ? 2000 : 0;
+
+            var price = (costMirror + costEdge) * k + costLED + costBlock + costSwitch + costCorner + costCornerDel + costDelZ + costFacet + costFilm + costHeat;
+
+            document.getElementById('r-size').textContent = w + ' × ' + h + ' см' + (hasLight ? ' | С подсветкой' : ' | Без подсветки');
+            document.getElementById('r-sum').textContent = fmt(price) + ' ₽';
+
+            var inc = '<strong>В цену включено:</strong>';
+            inc += '• Зеркало<br>';
+            inc += '• Обработка кромки от пореза<br>';
+            if (facetVal !== 'none') inc += '• Фацет ' + facetVal + ' мм<br>';
+            if (hasFilm) inc += '• Бронеплёнка<br>';
+            if (hasLight) {
+                inc += '• LED-подсветка + блок + выключатель<br>';
+                inc += '• Алюминиевый каркас<br>';
+            }
+            if (hasHeat) inc += '• Подогрев (антипот)<br>';
+            if (costDelZ === 0) inc += '• Доставка по Ставрополю';
+            else inc += '• Доставка по Ставрополю (+500 ₽)';
+            document.getElementById('r-inc').innerHTML = inc;
+
+            document.getElementById('r-note').textContent = 'Срок изготовления — от 2 дней до недели.';
+
+            var msg = 'Здравствуйте! Хочу заказать зеркало ' + w + '×' + h + ' см. Стоимость по калькулятору — ' + fmt(price) + ' ₽.';
+            document.getElementById('r-cta').href = 'https://max.ru/u/f9LHodD0cOKHt6d50do0yrlG-b5kwL_hvfgCgCYWlKiLg_GjQJMLTCg3MXI';
+
+            document.getElementById('res').classList.add('show');
+            document.getElementById('res').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    </script>
+</body>
+</html>
