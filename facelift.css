@@ -222,3 +222,17 @@ header.container{position:relative;z-index:30}
 
 /* Фильтры галереи: скрытые карточки не занимают место. */
 .projects-grid .project[hidden]{display:none !important}
+
+/* Видимые описания зеркал для Санкт-Петербурга и Мурино. */
+.mirror-guide{background:var(--surface)}
+.mirror-guide .section-head{align-items:flex-start}
+.mirror-guide .section-head>div{flex:1;min-width:0}
+.mirror-guide .section-copy{max-width:440px}
+.mirror-guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:34px 48px}
+.mirror-guide-item{min-width:0;padding-top:24px;border-top:1px solid var(--line)}
+.mirror-guide-item h3{margin:0 0 12px;color:var(--brand);font-family:var(--serif);font-size:25px;font-weight:400;line-height:1.2}
+.mirror-guide-item p{margin:0;color:var(--muted);font-size:15px;line-height:1.75}
+.mirror-guide-item:last-child{grid-column:1/-1}
+.mirror-guide-action{margin-top:36px}
+@media(max-width:900px){.mirror-guide .section-head{display:block}.mirror-guide .section-copy{max-width:none;margin-top:22px}.mirror-guide-grid{gap:28px 30px}}
+@media(max-width:620px){.mirror-guide-grid{grid-template-columns:1fr;gap:26px}.mirror-guide-item h3{font-size:24px}.mirror-guide-action .button{width:100%}}
