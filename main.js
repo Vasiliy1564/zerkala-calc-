@@ -775,7 +775,7 @@
     /* Дополнительные 2% ко всем итоговым расчётам, до округления. */
     price *= 1.02;
 
-    /* Доставка клиенту по Ставрополю: фиксированные 700 ₽. */
+    /* Доставка клиенту по Санкт-Петербургу: фиксированные 700 ₽. */
     if (state.delivery) price += 700;
 
     var sizeText = '';
@@ -821,7 +821,7 @@
       inc += row('Подогрев 40×60 см', 'да');
     }
 
-    inc += row('Доставка', state.delivery ? 'по городу Ставрополю — 700 ₽' : 'не выбрана');
+    inc += row('Доставка', state.delivery ? 'по Санкт-Петербургу — 700 ₽' : 'не выбрана');
     document.getElementById('r-inc').innerHTML = inc;
 
     var details = [];
@@ -832,7 +832,7 @@
     }
     if (state.facet !== 'none') details.push(FACET_LABELS[state.facet]);
     if (state.install) details.push('с установкой');
-    if (state.delivery) details.push('с доставкой по городу Ставрополю за 700 ₽');
+    if (state.delivery) details.push('с доставкой по Санкт-Петербургу за 700 ₽');
 
     var ctaText = '';
     if (state.shape === 'double') {

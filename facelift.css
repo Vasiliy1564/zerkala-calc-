@@ -222,11 +222,3 @@ header.container{position:relative;z-index:30}
 
 /* Фильтры галереи: скрытые карточки не занимают место. */
 .projects-grid .project[hidden]{display:none !important}
-
-.mirror-guide{background:var(--surface-soft)}
-.mirror-guide-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:36px;margin-bottom:36px}
-.mirror-guide-grid article{border-top:1px solid var(--line);padding-top:22px}
-.mirror-guide-grid h3{font-size:22px;line-height:1.3;margin:0 0 14px}
-.mirror-guide-grid p{font-size:16px;line-height:1.75;color:var(--graphite);margin:0}
-@media(max-width:900px){.mirror-guide-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}}
-@media(max-width:600px){.mirror-guide-grid{grid-template-columns:1fr;gap:26px}.mirror-guide-grid h3{font-size:21px}}
