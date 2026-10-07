@@ -180,10 +180,10 @@
     return (shape === 'circle' || shape === 'oval' || shape === 'semicircle' || shape === 'semidouble') ? 95 : 0;
   }
 
-  /* Доплата за высоту свыше 200 см — 1350 ₽ для всех зеркал.
-     Для составных форм учитывается суммарная высота двух частей. */
-  function heightSurcharge(totalH) {
-    return totalH > 200 ? 1350 : 0;
+  /* Доплата за большую сторону свыше 200 см — 1350 ₽ для всех зеркал.
+     Перестановка высоты и ширины не меняет доплату. */
+  function sizeSurcharge(maxDimension) {
+    return maxDimension > 200 ? 1350 : 0;
   }
   function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
 
@@ -742,12 +742,12 @@
       price = baseCostLight + markupLight + extrasLight;
     }
 
-    /* Для составных форм доплата определяется по общей высоте двух частей. */
+    /* Сравниваем ширину с высотой; у составных форм — с общей высотой. */
     var totalH = h;
     if (state.shape === 'double' || state.shape === 'semidouble') {
       totalH += parseFloat(document.getElementById('height2').value) || 0;
     }
-    price += heightSurcharge(totalH);
+    price += sizeSurcharge(Math.max(w, totalH));
 
     /* Бронеплёнка: 120 ₽/м² по площади прямоугольника */
     if (state.film) {
