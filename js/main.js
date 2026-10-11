@@ -143,6 +143,8 @@
     film: false,
     heat: false,
     delivery: false,
+    aluFrame: false,
+    ledProfile: false,
     install: false
   };
 
@@ -207,6 +209,8 @@
     state.heat = opt('heat');
     state.install = opt('install');
     state.delivery = opt('delivery');
+    state.aluFrame = opt('alu-frame');
+    state.ledProfile = state.light && opt('led-profile');
   }
 
   function adj(id, delta) {
@@ -590,6 +594,20 @@
     if (blockLight) blockLight.classList.toggle('hidden', !on);
     if (blockColor) blockColor.classList.toggle('hidden', !on);
     updateFilmAvailability();
+    updateProfileAvailability();
+    var res = document.getElementById('calc-result');
+    if (res && res.classList.contains('show')) calc(false);
+  }
+
+  function updateProfileAvailability() {
+    var profileOpt = document.getElementById('ledProfileOpt');
+    var profileCb = $('input[name="option"][value="led-profile"]');
+    if (profileOpt) profileOpt.classList.toggle('hidden', !state.light);
+    if (profileCb) {
+      profileCb.disabled = !state.light;
+      if (!state.light) profileCb.checked = false;
+    }
+    if (!state.light) state.ledProfile = false;
   }
 
   function updateFilmAvailability() {
@@ -783,6 +801,11 @@
       price += 2500;
     }
 
+    /* Дополнительные алюминиевые опции — по расчётному периметру,
+       без минимальной покупки 6 м. Ставки скрыты в клиентском интерфейсе. */
+    if (state.aluFrame) price += geo.per * 200;
+    if (state.ledProfile && state.light) price += geo.per * 1000;
+
     /* Налог +6% — применяется последним, ко всем расчётам */
     price *= 1.06;
     // Процент к цене цельного зеркала тех же размеров и комплектации.
@@ -847,6 +870,8 @@
     }
 
     inc += row('Доставка', state.delivery ? 'по Санкт-Петербургу — 700 ₽' : 'не выбрана');
+    if (state.aluFrame) inc += row('Каркас из алюминиевого уголка 1,5 мм', 'да');
+    if (state.ledProfile) inc += row('Светодиодная лента в алюминиевом профиле', 'да');
     document.getElementById('r-inc').innerHTML = inc;
 
     var details = [];
@@ -858,6 +883,8 @@
     if (state.facet !== 'none') details.push(FACET_LABELS[state.facet]);
     if (state.install) details.push('с установкой');
     if (state.film) details.push('с бронеплёнкой');
+    if (state.aluFrame) details.push('с каркасом из алюминиевого уголка 1,5 мм');
+    if (state.ledProfile) details.push('со светодиодной лентой в алюминиевом профиле');
     if (state.delivery) details.push('с доставкой по Санкт-Петербургу за 700 ₽');
 
     var ctaText = '';
@@ -906,7 +933,7 @@
       if (res && res.classList.contains('show')) calc();
     });
   });
-  $all('input[name="option"][value="film"], input[name="option"][value="heat"], input[name="option"][value="delivery"]').forEach(function (r) {
+  $all('input[name="option"][value="film"], input[name="option"][value="heat"], input[name="option"][value="delivery"], input[name="option"][value="alu-frame"], input[name="option"][value="led-profile"]').forEach(function (r) {
     r.addEventListener('change', function () {
       readState();
       var res = document.getElementById('calc-result');
@@ -937,6 +964,7 @@
     setTimeout(renderMirrorSvg, 100);
     updPreview();
     onSizeInput();
+    updateProfileAvailability();
   }
 })();
 
