@@ -210,7 +210,7 @@
   }
 
   function adj(id, delta) {
-    if (state.shape === 'semicircle' && id === 'width') return;
+    if ((state.shape === 'semicircle' || state.shape === 'semidouble') && id === 'width') return;
     var el = document.getElementById(id);
     if (!el) return;
     var v = parseInt(el.value, 10) || 0;
@@ -226,10 +226,15 @@
   }
 
   function syncSemicircleSize() {
-    if (state.shape !== 'semicircle') return;
+    if (state.shape !== 'semicircle' && state.shape !== 'semidouble') return;
     var hEl = document.getElementById('height');
     var wEl = document.getElementById('width');
-    if (hEl && wEl) wEl.value = (parseFloat(hEl.value) || 0) / 2;
+    var h2El = document.getElementById('height2');
+    if (hEl && wEl) {
+      var totalHeight = parseFloat(hEl.value) || 0;
+      if (state.shape === 'semidouble') totalHeight += h2El ? (parseFloat(h2El.value) || 0) : 0;
+      wEl.value = totalHeight / 2;
+    }
   }
 
   function onSizeInput() {
@@ -532,9 +537,9 @@
     inputH.disabled = false;
     inputH.style.opacity = '1';
     inputH.min = shape === 'semicircle' ? '80' : '40';
-    inputW.disabled = shape === 'semicircle';
+    inputW.disabled = shape === 'semicircle' || shape === 'semidouble';
     $all('.stepper-btn[data-adj="width"]').forEach(function (button) {
-      button.disabled = shape === 'semicircle';
+      button.disabled = shape === 'semicircle' || shape === 'semidouble';
     });
 
     if (shape === 'circle') {
@@ -557,7 +562,7 @@
       document.getElementById('height2').value = 60;
     } else if (shape === 'semidouble') {
       fieldH.classList.remove('hidden');
-      labelW.textContent = 'Ширина, см';
+      labelW.textContent = 'Ширина = ½ общей высоты, см';
       labelH.textContent = 'Высота верхней части, см';
       inputW.value = 80;
       inputH.value = 100;
