@@ -804,7 +804,7 @@
     /* Дополнительные алюминиевые опции — по расчётному периметру,
        без минимальной покупки 6 м. Ставки скрыты в клиентском интерфейсе. */
     if (state.aluFrame) price += geo.per * 200;
-    if (state.ledProfile && state.light) price += geo.per * 1000;
+    if (state.ledProfile && state.light) price += geo.per * 600;
 
     /* Налог +6% — применяется последним, ко всем расчётам */
     price *= 1.06;
