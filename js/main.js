@@ -183,10 +183,10 @@
     return (shape === 'circle' || shape === 'oval' || shape === 'semicircle' || shape === 'semidouble') ? 95 : 0;
   }
 
-  /* Доплата за высоту свыше 200 см — 1350 ₽ для всех зеркал.
+  /* Доплата за высоту свыше 2000 мм — 1350 ₽ для всех зеркал.
      Для составных форм учитывается суммарная высота двух частей. */
   function heightSurcharge(totalH) {
-    return totalH > 200 ? 1350 : 0;
+    return totalH > 2000 ? 1350 : 0;
   }
   function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
 
@@ -218,9 +218,9 @@
     var el = document.getElementById(id);
     if (!el) return;
     var v = parseInt(el.value, 10) || 0;
-    v = Math.max(state.shape === 'semicircle' && id === 'height' ? 80 : 40, v + delta);
-    if (id === 'width') v = Math.min(v, 3210);
-    if (id === 'height' || id === 'height2') v = Math.min(v, 2250);
+    v = Math.max(state.shape === 'semicircle' && id === 'height' ? 800 : 400, v + delta);
+    if (id === 'width') v = Math.min(v, 32100);
+    if (id === 'height' || id === 'height2') v = Math.min(v, 22500);
     el.value = v;
     if (state.shape === 'circle') {
       var hEl = document.getElementById('height');
@@ -271,27 +271,27 @@
     var wEl = document.getElementById('width');
     var hEl = document.getElementById('height');
     if (!wEl || !hEl) return;
-    var w = parseFloat(wEl.value) || 150;
-    var h = parseFloat(hEl.value) || 70;
+    var w = parseFloat(wEl.value) || 1500;
+    var h = parseFloat(hEl.value) || 700;
 
     var lblW = document.getElementById('lblW');
     var lblH = document.getElementById('lblH');
 
     if (state.shape === 'circle') {
-      if (lblW) lblW.textContent = 'Ø ' + w + ' см';
+      if (lblW) lblW.textContent = 'Ø ' + w + ' мм';
       if (lblH) lblH.textContent = '';
     } else if (state.shape === 'double') {
-      var h2 = parseFloat(document.getElementById('height2').value) || 60;
-      if (lblW) lblW.textContent = w + ' см';
-      if (lblH) lblH.textContent = h + ' + ' + h2 + ' см';
+      var h2 = parseFloat(document.getElementById('height2').value) || 600;
+      if (lblW) lblW.textContent = w + ' мм';
+      if (lblH) lblH.textContent = h + ' + ' + h2 + ' мм';
     } else if (state.shape === 'semidouble') {
-      var h2Semi = parseFloat(document.getElementById('height2').value) || 80;
+      var h2Semi = parseFloat(document.getElementById('height2').value) || 800;
       var totalSemiH = h + h2Semi;
-      if (lblW) lblW.textContent = w + ' см';
-      if (lblH) lblH.textContent = h + ' + ' + h2Semi + ' = ' + totalSemiH + ' см';
+      if (lblW) lblW.textContent = w + ' мм';
+      if (lblH) lblH.textContent = h + ' + ' + h2Semi + ' = ' + totalSemiH + ' мм';
     } else {
-      if (lblW) lblW.textContent = w + ' см';
-      if (lblH) lblH.textContent = h + ' см';
+      if (lblW) lblW.textContent = w + ' мм';
+      if (lblH) lblH.textContent = h + ' мм';
     }
 
     var wrap = document.getElementById('mirrorWrap');
@@ -302,7 +302,7 @@
     if (state.shape === 'circle') {
       aspect = 1;
     } else if (state.shape === 'semidouble') {
-      var h2Aspect = parseFloat(document.getElementById('height2').value) || 80;
+      var h2Aspect = parseFloat(document.getElementById('height2').value) || 800;
       aspect = w / (h + h2Aspect);
     } else {
       aspect = w / h;
@@ -329,8 +329,8 @@
     var wEl = document.getElementById('width');
     var hEl = document.getElementById('height');
     if (!wEl || !hEl) return;
-    var w = parseFloat(wEl.value) || 150;
-    var h = parseFloat(hEl.value) || 70;
+    var w = parseFloat(wEl.value) || 1500;
+    var h = parseFloat(hEl.value) || 700;
     var shape = state.shape;
     var hasLight = state.light;
     var clr = state.clr;
@@ -420,7 +420,7 @@
     } else if (shape === 'semidouble') {
       /* Один цельный полукруг, разделённый горизонтальным монтажным стыком.
          Подсветка проходит только по внешнему контуру всей композиции. */
-      var h2SD = parseFloat(document.getElementById('height2').value) || 80;
+      var h2SD = parseFloat(document.getElementById('height2').value) || 800;
       var totalHSD = h + h2SD;
       var fitSD = fitBox(w / totalHSD);
       var bwSD = fitSD.w;
@@ -441,7 +441,7 @@
       splitOverlay = '<line class="mirror-split-gap" x1="' + splitLeftXSD + '" y1="' + splitYSD + '" x2="' + rightSD + '" y2="' + splitYSD + '" stroke="#eeeae2" stroke-width="3.2" />' +
         '<line class="mirror-split-edge" x1="' + splitLeftXSD + '" y1="' + splitYSD + '" x2="' + rightSD + '" y2="' + splitYSD + '" stroke="#68736d" stroke-width="0.75" opacity="0.9" />';
     } else if (shape === 'double') {
-      var h2v = parseFloat(document.getElementById('height2').value) || 60;
+      var h2v = parseFloat(document.getElementById('height2').value) || 600;
       var totalH = parseFloat(h) + parseFloat(h2v);
       var aspectD = parseFloat(w) / totalH;
       var bw, bh;
@@ -540,7 +540,7 @@
 
     inputH.disabled = false;
     inputH.style.opacity = '1';
-    inputH.min = shape === 'semicircle' ? '80' : '40';
+    inputH.min = shape === 'semicircle' ? '800' : '400';
     inputW.disabled = shape === 'semicircle' || shape === 'semidouble';
     $all('.stepper-btn[data-adj="width"]').forEach(function (button) {
       button.disabled = shape === 'semicircle' || shape === 'semidouble';
@@ -548,35 +548,35 @@
 
     if (shape === 'circle') {
       fieldH.classList.add('hidden');
-      labelW.textContent = 'Диаметр, см';
-      inputW.value = 90;
-      inputH.value = 90;
+      labelW.textContent = 'Диаметр, мм';
+      inputW.value = 900;
+      inputH.value = 900;
     } else if (shape === 'semicircle') {
       fieldH.classList.remove('hidden');
-      labelH.textContent = 'Высота (диаметр круга), см';
-      labelW.textContent = 'Ширина = ½ высоты, см';
-      inputH.value = 180;
-      inputW.value = 90;
+      labelH.textContent = 'Высота (диаметр круга), мм';
+      labelW.textContent = 'Ширина = ½ высоты, мм';
+      inputH.value = 1800;
+      inputW.value = 900;
     } else if (shape === 'double') {
       fieldH.classList.remove('hidden');
-      labelW.textContent = 'Ширина, см';
-      labelH.textContent = 'Высота верхней, см';
-      inputW.value = 80;
-      inputH.value = 160;
-      document.getElementById('height2').value = 60;
+      labelW.textContent = 'Ширина, мм';
+      labelH.textContent = 'Высота верхней, мм';
+      inputW.value = 800;
+      inputH.value = 1600;
+      document.getElementById('height2').value = 600;
     } else if (shape === 'semidouble') {
       fieldH.classList.remove('hidden');
-      labelW.textContent = 'Ширина = ½ общей высоты, см';
-      labelH.textContent = 'Высота верхней части, см';
-      inputW.value = 80;
-      inputH.value = 100;
-      document.getElementById('height2').value = 80;
+      labelW.textContent = 'Ширина = ½ общей высоты, мм';
+      labelH.textContent = 'Высота верхней части, мм';
+      inputW.value = 800;
+      inputH.value = 1000;
+      document.getElementById('height2').value = 800;
     } else {
       fieldH.classList.remove('hidden');
-      labelW.textContent = 'Ширина, см';
-      labelH.textContent = 'Высота, см';
-      inputW.value = 80;
-      inputH.value = 180;
+      labelW.textContent = 'Ширина, мм';
+      labelH.textContent = 'Высота, мм';
+      inputW.value = 800;
+      inputH.value = 1800;
     }
 
     onSizeInput();
@@ -651,38 +651,38 @@
     var ledPer;
 
     if (shape === 'rect') {
-      area = (w * h) / 10000;
-      per = 2 * (w + h) / 100;
+      area = (w * h) / 1000000;
+      per = 2 * (w + h) / 1000;
       maxD = Math.max(w, h);
     } else if (shape === 'circle') {
       /* Круг вырезается из квадрата: S = d×d, P = 4d */
       var d = w;
-      area = (d * d) / 10000;
-      per = (4 * d) / 100;
+      area = (d * d) / 1000000;
+      per = (4 * d) / 1000;
       maxD = d;
     } else if (shape === 'oval') {
       /* Овал вырезается из прямоугольника: S = w×h, P = 2(w+h) */
-      area = (w * h) / 10000;
-      per = (2 * (w + h)) / 100;
+      area = (w * h) / 1000000;
+      per = (2 * (w + h)) / 1000;
       maxD = Math.max(w, h);
     } else if (shape === 'semicircle') {
       /* Полукруг вырезается из прямоугольника: S = w×h, P = 2(w+h) */
-      area = (w * h) / 10000;
-      per = (2 * (w + h)) / 100;
+      area = (w * h) / 1000000;
+      per = (2 * (w + h)) / 1000;
       maxD = Math.max(w, h);
     } else if (shape === 'double') {
       var h2v = parseFloat(document.getElementById('height2').value) || 0;
-      area = (w * h + w * h2v) / 10000;
-      per = (2 * (w + h) + 2 * (w + h2v)) / 100;
+      area = (w * h + w * h2v) / 1000000;
+      per = (2 * (w + h) + 2 * (w + h2v)) / 1000;
       maxD = Math.max(w, h, h2v);
     } else if (shape === 'semidouble') {
       /* Базовая стоимость совпадает с обычным полукругом тех же общих
          габаритов. Надбавка 20% за изготовление из двух частей применяется
          к окончательной цене ниже. */
-      var h2SemiCalc = parseFloat(document.getElementById('height2').value) || 80;
+      var h2SemiCalc = parseFloat(document.getElementById('height2').value) || 800;
       var totalSemiCalc = h + h2SemiCalc;
-      area = (w * totalSemiCalc) / 10000;
-      per = (2 * (w + totalSemiCalc)) / 100;
+      area = (w * totalSemiCalc) / 1000000;
+      per = (2 * (w + totalSemiCalc)) / 1000;
       maxD = Math.max(w, totalSemiCalc);
     }
 
@@ -703,9 +703,9 @@
     var w = parseFloat(wEl.value) || 0;
     var h = parseFloat(hEl.value) || 0;
 
-    if (w < 40 || (state.shape !== 'circle' && h < 40)) { alert('Минимальный размер — 40 см'); return; }
-    if ((state.shape === 'double' || state.shape === 'semidouble') && (parseFloat(document.getElementById('height2').value) || 0) < 40) {
-      alert('Минимальная высота каждой части — 40 см');
+    if (w < 400 || (state.shape !== 'circle' && h < 400)) { alert('Минимальный размер — 400 мм'); return; }
+    if ((state.shape === 'double' || state.shape === 'semidouble') && (parseFloat(document.getElementById('height2').value) || 0) < 400) {
+      alert('Минимальная высота каждой части — 400 мм');
       return;
     }
 
@@ -717,8 +717,8 @@
     // База для двух частей — цельный прямоугольник тех же общих размеров.
     if (state.shape === 'double') {
       var combinedHeight = h + (parseFloat(document.getElementById('height2').value) || 0);
-      area = w * combinedHeight / 10000;
-      per = 2 * (w + combinedHeight) / 100;
+      area = w * combinedHeight / 1000000;
+      per = 2 * (w + combinedHeight) / 1000;
       edgePer = per;
       ledPer = per;
     }
@@ -828,12 +828,12 @@
 
     var sizeText = '';
     if (state.shape === 'circle') {
-      sizeText = 'Ø ' + w + ' см · ' + SHAPE_NAMES[state.shape];
+      sizeText = 'Ø ' + w + ' мм · ' + SHAPE_NAMES[state.shape];
     } else if (state.shape === 'double' || state.shape === 'semidouble') {
       var h2r = parseFloat(document.getElementById('height2').value) || 0;
-      sizeText = h + '+' + h2r + ' × ' + w + ' см · ' + SHAPE_NAMES[state.shape];
+      sizeText = h + '+' + h2r + ' × ' + w + ' мм · ' + SHAPE_NAMES[state.shape];
     } else {
-      sizeText = h + ' × ' + w + ' см · ' + SHAPE_NAMES[state.shape];
+      sizeText = h + ' × ' + w + ' мм · ' + SHAPE_NAMES[state.shape];
     }
     /* ---------- Клиентский результат ----------
        Показываем только размер, форму, подсветку и опции.
@@ -866,7 +866,7 @@
       inc += row('Бронеплёнка', 'да');
     }
     if (state.heat) {
-      inc += row('Подогрев 40×60 см', 'да');
+      inc += row('Подогрев 400×600 мм', 'да');
     }
 
     inc += row('Доставка', state.delivery ? 'по Санкт-Петербургу — 700 ₽' : 'не выбрана');
@@ -890,12 +890,12 @@
     var ctaText = '';
     if (state.shape === 'double') {
       var h2c = parseFloat(document.getElementById('height2').value) || 0;
-      ctaText = 'Здравствуйте! Хочу заказать зеркало из двух частей ' + h + '+' + h2c + '×' + w + ' см' + (details.length ? ' — ' + details.join(', ') : '') + '. Стоимость по калькулятору: ' + fmt(Math.round(price)) + ' ₽.';
+      ctaText = 'Здравствуйте! Хочу заказать зеркало из двух частей ' + h + '+' + h2c + '×' + w + ' мм' + (details.length ? ' — ' + details.join(', ') : '') + '. Стоимость по калькулятору: ' + fmt(Math.round(price)) + ' ₽.';
     } else if (state.shape === 'semidouble') {
       var h2SemiCta = parseFloat(document.getElementById('height2').value) || 0;
-      ctaText = 'Здравствуйте! Хочу заказать полукруг из двух частей ' + h + '+' + h2SemiCta + '×' + w + ' см' + (details.length ? ' — ' + details.join(', ') : '') + '. Стоимость по калькулятору: ' + fmt(Math.round(price)) + ' ₽.';
+      ctaText = 'Здравствуйте! Хочу заказать полукруг из двух частей ' + h + '+' + h2SemiCta + '×' + w + ' мм' + (details.length ? ' — ' + details.join(', ') : '') + '. Стоимость по калькулятору: ' + fmt(Math.round(price)) + ' ₽.';
     } else {
-      ctaText = 'Здравствуйте! Хочу заказать ' + SHAPE_NAMES[state.shape].toLowerCase() + ' зеркало ' + (state.shape === 'circle' ? 'Ø' + w : h + '×' + w) + ' см' + (details.length ? ' — ' + details.join(', ') : '') + '. Стоимость по калькулятору: ' + fmt(Math.round(price)) + ' ₽.';
+      ctaText = 'Здравствуйте! Хочу заказать ' + SHAPE_NAMES[state.shape].toLowerCase() + ' зеркало ' + (state.shape === 'circle' ? 'Ø' + w : h + '×' + w) + ' мм' + (details.length ? ' — ' + details.join(', ') : '') + '. Стоимость по калькулятору: ' + fmt(Math.round(price)) + ' ₽.';
     }
     document.getElementById('r-cta').href = MAX_URL + '?text=' + encodeURIComponent(ctaText);
 
@@ -967,4 +967,5 @@
     updateProfileAvailability();
   }
 })();
+
 

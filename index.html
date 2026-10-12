@@ -448,8 +448,8 @@
               </svg>
             </div>
             <div class="dim-labels" id="dimLabels">
-              <span id="lblH">180 см</span>
-              <span id="lblW">80 см</span>
+              <span id="lblH">1800 мм</span>
+              <span id="lblW">800 мм</span>
             </div>
           </div>
 
@@ -468,29 +468,29 @@
 
             <div class="form-row">
               <div class="field" id="fieldH">
-                <label for="height" id="labelH">Высота, см</label>
+                <label for="height" id="labelH">Высота, мм</label>
                 <div class="stepper">
-                  <button type="button" class="stepper-btn" data-adj="height" data-delta="-10" aria-label="Уменьшить">−</button>
-                  <input id="height" type="number" name="height" min="40" value="180">
-                  <button type="button" class="stepper-btn" data-adj="height" data-delta="10" aria-label="Увеличить">+</button>
+                  <button type="button" class="stepper-btn" data-adj="height" data-delta="-100" aria-label="Уменьшить">−</button>
+                  <input id="height" type="number" name="height" min="400" step="1" value="1800">
+                  <button type="button" class="stepper-btn" data-adj="height" data-delta="100" aria-label="Увеличить">+</button>
                 </div>
               </div>
               <div class="field" id="fieldW">
-                <label for="width" id="labelW">Ширина, см</label>
+                <label for="width" id="labelW">Ширина, мм</label>
                 <div class="stepper">
-                  <button type="button" class="stepper-btn" data-adj="width" data-delta="-10" aria-label="Уменьшить">−</button>
-                  <input id="width" type="number" name="width" min="40" value="80">
-                  <button type="button" class="stepper-btn" data-adj="width" data-delta="10" aria-label="Увеличить">+</button>
+                  <button type="button" class="stepper-btn" data-adj="width" data-delta="-100" aria-label="Уменьшить">−</button>
+                  <input id="width" type="number" name="width" min="400" step="1" value="800">
+                  <button type="button" class="stepper-btn" data-adj="width" data-delta="100" aria-label="Увеличить">+</button>
                 </div>
               </div>
             </div>
 
             <div class="field hidden" id="rowH2">
-              <label for="height2">Высота нижней части, см</label>
+              <label for="height2">Высота нижней части, мм</label>
               <div class="stepper">
-                <button type="button" class="stepper-btn" data-adj="height2" data-delta="-10" aria-label="Уменьшить">−</button>
-                <input id="height2" type="number" name="height2" min="40" value="60">
-                <button type="button" class="stepper-btn" data-adj="height2" data-delta="10" aria-label="Увеличить">+</button>
+                <button type="button" class="stepper-btn" data-adj="height2" data-delta="-100" aria-label="Уменьшить">−</button>
+                <input id="height2" type="number" name="height2" min="400" step="1" value="600">
+                <button type="button" class="stepper-btn" data-adj="height2" data-delta="100" aria-label="Увеличить">+</button>
               </div>
               <p class="form-hint" id="w2hint">Ширина нижней части = ширине верхней</p>
             </div>
@@ -543,7 +543,7 @@
                 <label id="filmOpt"><input type="checkbox" name="option" value="film"><span>Бронеплёнка</span></label>
                 <label id="aluFrameOpt"><input type="checkbox" name="option" value="alu-frame"><span>Каркас из алюминиевого уголка 1,5 мм</span></label>
                 <label id="ledProfileOpt"><input type="checkbox" name="option" value="led-profile"><span>Светодиодная лента в алюминиевом профиле</span></label>
-                <label><input type="checkbox" name="option" value="heat"><span>Подогрев 40×60 см</span></label>
+                <label><input type="checkbox" name="option" value="heat"><span>Подогрев 400×600 мм</span></label>
               </div>
             </div>
 
@@ -722,7 +722,7 @@
             <div class="field"><label for="quick-name">Имя</label><input id="quick-name" type="text" placeholder="Как к вам обращаться" required></div>
             <div class="field"><label for="quick-phone">Телефон или мессенджер</label><input id="quick-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" required></div>
             <div class="field"><label for="quick-city">Город</label><input id="quick-city" type="text" placeholder="Мурино, Санкт-Петербург или другой город" required></div>
-            <div class="field"><label for="quick-message">Пожелания</label><input id="quick-message" type="text" placeholder="Например, зеркало 90 × 180 см с подсветкой"></div>
+            <div class="field"><label for="quick-message">Пожелания</label><input id="quick-message" type="text" placeholder="Например, зеркало 900 × 1800 мм с подсветкой"></div>
             <button class="button" type="submit">Отправить заявку</button>
           </form>
         </div>
@@ -755,8 +755,9 @@
     </a>
   </div>
 
-  <script src="js/main.js?v=aluminium-profile-600-20261012" defer></script><script src="js/studio.js?v=double-4" defer></script>
+  <script src="js/main.js?v=millimeters-20261012" defer></script><script src="js/studio.js?v=double-4" defer></script>
 </body>
 </html>
+
 
 
