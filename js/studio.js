@@ -5,9 +5,10 @@ function render(shape){const [d,label]=forms[shape];scene.dataset.shape=shape;sc
 document.querySelectorAll('[data-silhouette]').forEach(b=>b.addEventListener('click',()=>{render(b.dataset.silhouette);document.querySelectorAll('[data-silhouette]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))}));
 const toggle=document.querySelector('.light-toggle');toggle.addEventListener('click',()=>{const on=scene.classList.toggle('lit');toggle.setAttribute('aria-pressed',String(on));toggle.innerHTML=(on?'Подсветка включена':'Включить подсветку')+' <span>↗</span>';render(scene.dataset.shape)});
 render('rect');
-const link=document.querySelector('.atelier a[href="#calculator"]');link.addEventListener('click',()=>{const input=document.querySelector('#quote-form input[name="shape"][value="'+scene.dataset.shape+'"]');if(input){input.checked=true;input.dispatchEvent(new Event('change',{bubbles:true}));}const light=document.querySelector('#quote-form input[name="light"][value="'+(scene.classList.contains('lit')?'on':'off')+'"]');if(light){light.checked=true;light.dispatchEvent(new Event('change',{bubbles:true}));}});
+const link=document.querySelector('.atelier a[href="#quote-form"], .atelier a[href="#calculator"]');if(link)link.addEventListener('click',()=>{const input=document.querySelector('#quote-form input[name="shape"][value="'+scene.dataset.shape+'"]');if(input){input.checked=true;input.dispatchEvent(new Event('change',{bubbles:true}));}const light=document.querySelector('#quote-form input[name="light"][value="'+(scene.classList.contains('lit')?'on':'off')+'"]');if(light){light.checked=true;light.dispatchEvent(new Event('change',{bubbles:true}));}});
 if('IntersectionObserver'in window&&!matchMedia('(prefers-reduced-motion: reduce)').matches){const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('studio-reveal');observer.unobserve(e.target)}}),{threshold:.12});document.querySelectorAll('.section-head,.product,.story-copy,.atelier-grid').forEach(e=>observer.observe(e))}
 })();
+
 
 
 

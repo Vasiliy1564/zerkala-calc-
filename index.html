@@ -1,6 +1,31 @@
 <!doctype html>
 <html lang="ru">
 <head>
+<script id="page-entry-position">
+(function () {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  if (location.hash === '#calculator' || location.hash === '#quote-form') {
+    history.replaceState(history.state, '', location.pathname + location.search);
+  }
+  var userNavigated = false;
+  function startAtTop() {
+    if (!userNavigated && (!location.hash || location.hash === '#top')) {
+      window.scrollTo({top:0,left:0,behavior:'instant'});
+    }
+  }
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest('a[href="#quote-form"], a[href="#calculator"]');
+    if (!link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    var form = document.getElementById('quote-form');
+    if (!form) return;
+    event.preventDefault();
+    userNavigated = true;
+    form.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
+  });
+  window.addEventListener('pageshow', startAtTop);
+  window.addEventListener('pagehide', function () { userNavigated = false; });
+})();
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Зеркала на заказ в Мурино и Санкт-Петербурге: с подсветкой и без, для ванной и в полный рост. Замер, изготовление, доставка и монтаж. Выезд в Бугры и Новое Девяткино.">
@@ -795,20 +820,9 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
     </a>
   </div>
 
-  <script src="js/main.js?v=millimeters-20261012" defer></script><script src="js/studio.js?v=double-4" defer></script>
+  <script src="js/main.js?v=millimeters-20261012" defer></script><script src="js/studio.js?v=entry-navigation-20261015" defer></script>
 
-<script>
-(function () {
-  function openLegacyCalculatorLink() {
-    if (window.location.hash === '#calculator') {
-      var form = document.getElementById('quote-form');
-      if (form) form.scrollIntoView({behavior:'auto',block:'start'});
-    }
-  }
-  window.addEventListener('hashchange', openLegacyCalculatorLink);
-  window.addEventListener('load', openLegacyCalculatorLink);
-})();
-</script>
+
 </body>
 </html>
 
