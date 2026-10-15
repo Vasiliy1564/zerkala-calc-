@@ -1,3 +1,79 @@
+(function () {
+  'use strict';
+  var files = {black:'black-frame-full-height.jpg',white:'bathroom-white-frame.jpg',gold:'gold-frame-portrait.jpg'};
+  var names = {black:'чёрной',white:'белой',gold:'золотой'};
+  var box, returnTarget, returnButton;
+  function move(target) {
+    requestAnimationFrame(function () {
+      target.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+    });
+  }
+  function hideReturn() { if (returnButton) returnButton.hidden = true; }
+  function placeReturn() {
+    if (!returnButton) return;
+    var bar = document.querySelector('.action-bar');
+    var height = bar ? bar.getBoundingClientRect().height : 0;
+    returnButton.style.bottom = 'calc(' + (height + 12) + 'px + env(safe-area-inset-bottom, 0px))';
+  }
+  window.showPreviewReturn = function (origin) {
+    if (document.body.classList.contains('personal-mode')) return;
+    returnTarget = origin;
+    if (!returnButton) {
+      returnButton = document.createElement('button');
+      returnButton.id = 'example-return'; returnButton.type = 'button';
+      returnButton.textContent = '← Вернуться к калькулятору';
+      returnButton.style.cssText = 'position:fixed;z-index:110;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 24px);padding:15px 20px;border:1px solid #fff;border-radius:10px;background:#173d34;color:#fff;box-shadow:0 4px 18px #0003;font:600 16px/1.3 sans-serif;cursor:pointer';
+      returnButton.onclick = function () {
+        hideReturn(); if (box) box.hidden = true;
+        var viewer = document.getElementById('lightbox');
+        if (viewer) viewer.classList.remove('open');
+        document.body.classList.remove('no-scroll');
+        var target = document.getElementById('quote-form') || (returnTarget && returnTarget.closest('.field'));
+        if (returnTarget) returnTarget.focus({preventScroll:true});
+        if (target) move(target);
+      };
+      document.body.appendChild(returnButton);
+    }
+    returnButton.hidden = false; placeReturn();
+  };
+  window.addEventListener('resize', placeReturn);
+  document.addEventListener('click', function (event) {
+    if (event.target.closest('a[href="#quote-form"],a[href="#calculator"]')) {
+      hideReturn(); if (box) box.hidden = true;
+    }
+  });
+  window.hideFrameExample = function () { if (box) box.hidden = true; hideReturn(); };
+  window.showFrameExample = function (color, origin) {
+    if (!files[color] || document.body.classList.contains('personal-mode')) return;
+    if (!box) {
+      box = document.createElement('section');
+      box.id = 'frame-example'; box.hidden = true; box.tabIndex = -1;
+      box.style.cssText = 'max-width:760px;margin:24px auto;padding:20px 20px 110px;scroll-margin-top:90px;text-align:center';
+      box.innerHTML = '<h2 style="margin:0 0 20px;font-size:clamp(24px,5vw,36px);line-height:1.2"></h2><div class="frame-photo-pair"></div><p>Примеры исполнения. Варианты с подсветкой — визуализации на основе фотографий. Форма и размеры зависят от вашей комплектации.</p>';
+      var gallery = document.querySelector('.project-grid') || document.querySelector('.projects-grid');
+      var anchor = gallery ? gallery.closest('section') : document.getElementById('calculator');
+      anchor.parentNode.insertBefore(box, anchor);
+    }
+    var light = document.querySelector('input[name="light"]:checked');
+    var isLit = !light || light.value === 'on';
+    var base = document.getElementById('faceFrame') ? '../assets/projects/' : 'assets/projects/';
+    var pair = box.querySelector('.frame-photo-pair');
+    pair.replaceChildren();
+    [isLit, !isLit].forEach(function (lit) {
+      var figure = document.createElement('figure'); figure.style.cssText = 'margin:0 0 24px';
+      var photo = document.createElement('img');
+      photo.src = base + (lit ? color + '-frame-led-20261015.webp' : files[color]);
+      photo.alt = 'Зеркало в ' + names[color] + ' раме ' + (lit ? 'с подсветкой' : 'без подсветки');
+      photo.style.cssText = 'display:block;max-width:100%;width:auto;height:auto;max-height:52svh;margin:0 auto;object-fit:contain';
+      var caption = document.createElement('figcaption'); caption.textContent = lit ? 'С подсветкой · визуализация' : 'Без подсветки';
+      caption.style.cssText = 'padding:10px;font-size:17px;font-weight:600';
+      figure.append(photo,caption); pair.appendChild(figure);
+    });
+    box.querySelector('h2').textContent = 'Зеркало в ' + names[color] + ' раме';
+    box.hidden = false; window.showPreviewReturn(origin); move(box);
+  };
+})();
+
 /* ============================================================
    ЗЕРКАЛА ПРО — дизайн ARCO
    Интерактив + калькулятор СПб: закупка 3685 ₽/м² с обработкой
@@ -70,6 +146,7 @@
         lightboxCaption = $('.lightbox-caption', lightbox);
     projects.forEach(function (card) {
       card.addEventListener('click', function () {
+        window.showPreviewReturn(card);
         var image = $('img', card);
         lightboxImage.src = image.src;
         lightboxImage.alt = image.alt;
@@ -79,6 +156,7 @@
       });
     });
     function closeLightbox() {
+      window.hideFrameExample();
       lightbox.classList.remove('open');
       document.body.classList.remove('no-scroll');
     }
@@ -915,6 +993,7 @@
     r.addEventListener('change', function () { readState(); renderMirrorSvg(); });
     r.addEventListener('click', function () {
       var preview = document.querySelector('.calculator .calc-preview');
+      if (preview) window.showPreviewReturn(r);
       if (preview) preview.scrollIntoView({
         behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
         block: 'center'
