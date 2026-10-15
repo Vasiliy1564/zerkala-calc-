@@ -221,10 +221,60 @@
     film: false,
     heat: false,
     delivery: false,
+    faceFrame: 'none',
     aluFrame: false,
     ledProfile: false,
     install: false
   };
+
+  var FACE_FRAME_LABELS = { white: 'белая', black: 'чёрная', gold: 'золотая' };
+  function faceFramePerimeter(shape, w, h, h2) {
+  var totalH = h + (shape.indexOf('double') !== -1 ? h2 : 0);
+  if (shape === 'circle') return Math.PI * w / 1000;
+  if (shape === 'capsule') {
+    var shortSide = Math.min(w, h), longSide = Math.max(w, h);
+    return (Math.PI * shortSide + 2 * (longSide - shortSide)) / 1000;
+  }
+  if (shape === 'oval') {
+    var a = w / 2, b = h / 2, q = Math.pow(a - b, 2) / Math.pow(a + b, 2);
+    return Math.PI * (a + b) * (1 + 3 * q / (10 + Math.sqrt(4 - 3 * q))) / 1000;
+  }
+  if (shape === 'semicircle' || shape === 'semidouble') {
+    var r = totalH / 2;
+    var perimeter = Math.PI * r + totalH;
+    if (shape === 'semidouble') perimeter += 2 * (r + Math.sqrt(Math.max(0, r * r - Math.pow(h - r, 2))));
+    return perimeter / 1000;
+  }
+  return 2 * (w + totalH + (shape === 'double' ? w : 0)) / 1000;
+}
+
+  function faceFrameStock(shape, w, h, h2) {
+  var barLength = 2700, billedLength = 3, bars;
+  if (shape === 'rect' || shape === 'double') {
+    var sides = shape === 'double' ? [w,w,h,h,w,w,h2,h2] : [w,w,h,h];
+    var pieces = [];
+    sides.forEach(function (side) {
+      while (side > barLength) { pieces.push(barLength); side -= barLength; }
+      if (side > 0) pieces.push(side);
+    });
+    pieces.sort(function (a,b) { return b-a; });
+    var best = pieces.length, bins = [];
+    function pack(i) {
+      if (i === pieces.length) { best = Math.min(best,bins.length); return; }
+      if (bins.length >= best) return;
+      var seen = {};
+      for (var j=0;j<bins.length;j++) {
+        if (seen[bins[j]] || bins[j]+pieces[i]>barLength) continue;
+        seen[bins[j]]=true; bins[j]+=pieces[i]; pack(i+1); bins[j]-=pieces[i];
+      }
+      bins.push(pieces[i]); pack(i+1); bins.pop();
+    }
+    pack(0); bars=best;
+  } else {
+    bars = Math.ceil((faceFramePerimeter(shape,w,h,h2)*1000-0.000001)/barLength);
+  }
+  return { bars:bars, metres:bars*billedLength };
+}
 
   var SHAPE_NAMES = {
     rect: 'Прямоугольник',
@@ -268,6 +318,46 @@
   }
   function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
 
+  function updateFaceFrameAvailability() {
+    var allowed = state.shape === 'rect' || state.shape === 'double';
+    var block = document.getElementById('faceFrameOpt');
+    if (block) block.classList.toggle('hidden', !allowed);
+    $all('input[name="face-frame"]').forEach(function (radio) {
+      radio.disabled = !allowed;
+      if (!allowed) radio.checked = radio.value === 'none';
+    });
+    if (!allowed) state.faceFrame = 'none';
+  }
+
+  function updateFacetFrameCompatibility() {
+    var hasFacet = state.facet !== 'none' && state.facet !== 'grind';
+    // A restored incompatible selection keeps the bevel and removes the frame.
+    if (hasFacet && state.faceFrame !== 'none') {
+      $all('input[name="face-frame"]').forEach(function (radio) {
+        radio.checked = radio.value === 'none';
+      });
+      state.faceFrame = 'none';
+    }
+    var rectangular = state.shape === 'rect' || state.shape === 'double';
+    var hasFrame = state.faceFrame !== 'none';
+    $all('input[name="face-frame"]').forEach(function (radio) {
+      radio.disabled = !rectangular || (hasFacet && radio.value !== 'none');
+      if (radio.parentElement) {
+        radio.parentElement.style.opacity = radio.disabled ? '0.45' : '';
+        radio.parentElement.style.cursor = radio.disabled ? 'not-allowed' : '';
+      }
+    });
+    $all('input[name="facet"]').forEach(function (radio) {
+      var isFacet = radio.value !== 'none' && radio.value !== 'grind';
+      if (!isFacet) return;
+      radio.disabled = hasFrame;
+      if (radio.parentElement) {
+        radio.parentElement.style.opacity = radio.disabled ? '0.45' : '';
+        radio.parentElement.style.cursor = radio.disabled ? 'not-allowed' : '';
+      }
+    });
+  }
+
   function readState() {
     var s = $('input[name="shape"]:checked');
     if (s) state.shape = s.value;
@@ -287,6 +377,10 @@
     state.heat = opt('heat');
     state.install = opt('install');
     state.delivery = opt('delivery');
+    updateFaceFrameAvailability();
+    var frame = $('input[name="face-frame"]:checked');
+    state.faceFrame = frame ? frame.value : 'none';
+    updateFacetFrameCompatibility();
     state.aluFrame = opt('alu-frame');
     state.ledProfile = state.light && opt('led-profile');
   }
@@ -598,6 +692,17 @@
         edges += outline.outerHTML;
       }
     });
+    if (state.faceFrame !== 'none') {
+      bodies.forEach(function (body) {
+        var frame = body.cloneNode(true);
+        frame.setAttribute('fill', 'none');
+        frame.setAttribute('stroke', {white:'#f7f7f4',black:'#171717',gold:'#c5a34d'}[state.faceFrame]);
+        frame.setAttribute('stroke-width', '5');
+        frame.setAttribute('clip-path', 'url(#realMirrorClip)');
+        frame.setAttribute('class', 'mirror-face-frame');
+        edges += frame.outerHTML;
+      });
+    }
     svg.insertAdjacentHTML('beforeend',
       '<defs><clipPath id="realMirrorClip">' + clipShapes + '</clipPath>' +
       '<filter id="realMirrorHalo" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>' +
@@ -773,7 +878,7 @@
     };
   }
 
-  function calc() {
+  function calc(scrollResult) {
     readState();
     syncSemicircleSize();
     var wEl = document.getElementById('width');
@@ -904,6 +1009,12 @@
     /* Доставка клиенту по Санкт-Петербургу: фиксированные 700 ₽. */
     if (state.delivery) price += 700;
 
+    if (state.faceFrame !== 'none') {
+      var frameBars = faceFrameStock(state.shape, w, h, parseFloat((document.getElementById('height2') || {}).value) || 0).bars;
+      var framePurchase = frameBars * 500;
+      price += framePurchase + Math.max(1500, framePurchase) + 400;
+    }
+
     var sizeText = '';
     if (state.shape === 'circle') {
       sizeText = 'Ø ' + w + ' мм · ' + SHAPE_NAMES[state.shape];
@@ -950,6 +1061,7 @@
     inc += row('Доставка', state.delivery ? 'по Санкт-Петербургу — 700 ₽' : 'не выбрана');
     if (state.aluFrame) inc += row('Каркас из алюминиевого уголка 1,5 мм', 'да');
     if (state.ledProfile) inc += row('Светодиодная лента в алюминиевом профиле', 'да');
+    if (state.faceFrame !== 'none') inc += row('Алюминиевая рама', FACE_FRAME_LABELS[state.faceFrame]);
     document.getElementById('r-inc').innerHTML = inc;
 
     var details = [];
@@ -965,6 +1077,7 @@
     if (state.ledProfile) details.push('со светодиодной лентой в алюминиевом профиле');
     if (state.delivery) details.push('с доставкой по Санкт-Петербургу за 700 ₽');
 
+    if (state.faceFrame !== 'none') details.push('алюминиевая рама — ' + FACE_FRAME_LABELS[state.faceFrame]);
     var ctaText = '';
     if (state.shape === 'double') {
       var h2c = parseFloat(document.getElementById('height2').value) || 0;
@@ -979,10 +1092,23 @@
 
     var res = document.getElementById('calc-result');
     res.classList.add('show');
-    res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (scrollResult !== false) res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   /* ---------- События калькулятора ---------- */
+  $all('input[name="face-frame"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      readState(); renderMirrorSvg();
+      var res = document.getElementById('calc-result');
+      if (res && res.classList.contains('show')) calc(false);
+    });
+    r.addEventListener('click', function () {
+      if (r.disabled) return;
+      if (r.value === 'none') window.hideFrameExample();
+      else window.showFrameExample(r.value, r);
+    });
+  });
+
   $all('input[name="shape"]').forEach(function (r) {
     r.addEventListener('change', function () { pickShape(r.value); });
   });
