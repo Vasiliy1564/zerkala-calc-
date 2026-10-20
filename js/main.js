@@ -76,8 +76,8 @@
 
 /* ============================================================
    ЗЕРКАЛА ПРО — дизайн ARCO
-   Интерактив + калькулятор СПб: закупка 3685 ₽/м² с обработкой
-   от порезов; существующие наценки и дополнительные опции.
+   Интерактив + калькулятор СПб: прайс от 20.10.2026.
+   Наценка только на полотно и обработку: 100% / 150% с LED.
    ============================================================ */
 (function () {
   'use strict';
@@ -214,6 +214,7 @@
      ============================================================ */
   var state = {
     shape: 'rect',
+    material: 'silver',
     light: true,
     ctrl: 'wave',
     clr: 'warm',
@@ -290,9 +291,10 @@
   var AVAIL_H = VB_H - PAD * 2;
 
   var PRICE = {
-    // Закупочная цена для СПб: обработка от порезов включена.
-    mirror: 3685,
-    edge: 0,
+    mirror: 2355,
+    specialMirror: 4950,
+    packaging: 80,
+    plainMarkup: 1,
     markup: 1.5,
     ledRoll: 700,
     ledRollLen: 5,
@@ -305,6 +307,23 @@
   };
 
   var FACET_RATES = { grind: 200, '10': 200, '20': 250, '25': 300 };
+
+  function euroEdgeRate(sideMm) {
+    if (sideMm < 120 || sideMm >= 2400) return 270;
+    if (sideMm >= 1900) return 216;
+    if (sideMm >= 1400) return 176;
+    return 135;
+  }
+
+  function euroEdgeCost(shape, w, h, h2) {
+    // Сохраняем расчёт криволинейных форм по габаритному прямоугольнику.
+    // У составного прямоугольника обрабатываются все стороны обеих деталей.
+    var sides = shape === 'double' ? [w, w, h, h, w, w, h2, h2]
+      : [w, w, h + (shape === 'semidouble' ? h2 : 0), h + (shape === 'semidouble' ? h2 : 0)];
+    return sides.reduce(function (cost, side) {
+      return cost + side / 1000 * euroEdgeRate(side);
+    }, 0);
+  }
 
   /* Надбавка за фигурную форму к погонному метру обработки кромки */
   function shapeMeterSurcharge(shape) {
@@ -361,6 +380,8 @@
   function readState() {
     var s = $('input[name="shape"]:checked');
     if (s) state.shape = s.value;
+    var material = $('input[name="material"]:checked');
+    state.material = material ? material.value : 'silver';
     var l = $('input[name="light"]:checked');
     if (l) state.light = l.value === 'on';
     var c = $('input[name="ctrl"]:checked');
@@ -808,7 +829,7 @@
     var info = document.getElementById('edgeInfo');
     if (info) {
       if (state.facet === 'none') {
-        info.textContent = 'Обработка кромки от пореза включена';
+        info.textContent = 'Еврокромка включена в расчёт';
         info.classList.remove('gold');
       } else if (state.facet === 'grind') {
         info.textContent = 'Шлифовка';
@@ -906,66 +927,33 @@
       ledPer = per;
     }
 
-    var price;
+    var h2 = parseFloat(document.getElementById('height2').value) || 0;
+    var mirrorRate = state.material === 'silver' ? PRICE.mirror : PRICE.specialMirror;
+    var mirrorCost = area * mirrorRate;
+    var edgeCost = state.facet === 'none'
+      ? euroEdgeCost(state.shape, w, state.shape === 'circle' ? w : h, h2)
+      : edgePer * (FACET_RATES[state.facet] || 0);
+    edgeCost += edgePer * shapeMeterSurcharge(state.shape);
 
-    if (!state.light) {
-      /* Зеркало БЕЗ подсветки:
-         базовая обработка включена в 3685 ₽/м².
-         без фацета — (S×3685 + P×доплата за форму) × 1,8
-         с фацетом — (S×3685 + P×фацет) × 1,8 + 1000 (доставка) */
-      var meterExtra = shapeMeterSurcharge(state.shape);
-      var basePlain = area * PRICE.mirror + edgePer * (PRICE.edge + meterExtra);
-      if (state.facet === 'none' || state.facet === 'grind') {
-        if (state.facet === 'grind') basePlain = area * PRICE.mirror + edgePer * (FACET_RATES.grind + meterExtra);
-        price = basePlain * 1.8;
-      } else {
-        var facetRate = FACET_RATES[state.facet] || 0;
-        price = (area * PRICE.mirror + edgePer * (facetRate + meterExtra)) * 1.8 + PRICE.facetDelivery;
-      }
-      if (state.install) {
-        price += (area <= 2) ? Math.max(2000, area * 1300) : area * 1500;
-      }
-    } else {
-      /* Зеркало С ПОДСВЕТКОЙ — единый расчёт для фацета и без него.
-         При выборе фацета ставка обработки кромки заменяется ставкой
-         фацета (200/250/300 ₽/пог.м), а доставка растёт до 1000 ₽.
-         LED-комплектация (лента, блок, сенсор, крепёж) считается всегда. */
+    // Единственная база торговой наценки — полотно и обработка.
+    var markedBase = (mirrorCost + edgeCost) * (1 + (state.light ? PRICE.markup : PRICE.plainMarkup));
+    // Составные формы: прежняя доплата применяется только к этой базе.
+    if (state.shape === 'double') markedBase *= 1 + 2000 / 16469.75;
+    if (state.shape === 'semidouble') markedBase *= 1.2;
+    var price = markedBase + area * PRICE.packaging;
 
-      var meterExtraLight = shapeMeterSurcharge(state.shape);
-      var facetRateLight = (state.facet === 'none')
-        ? PRICE.edge
-        : (FACET_RATES[state.facet] || 0);
-
-      /* Себестоимость зеркала */
-      var costMirrorLight = area * PRICE.mirror;
-
-      /* Обработка кромки: шлифовка или фацет */
-      var costEdgeLight = edgePer * (facetRateLight + meterExtraLight);
-
-      var baseCostLight = costMirrorLight + costEdgeLight;
-
-      /* Наценка 150% на зеркало + обработку */
-      var markupLight = baseCostLight * PRICE.markup;
-
-      /* Дополнительные расходы — без наценки */
-      var ledRollsLight = Math.ceil(ledPer / PRICE.ledRollLen);
-      var costLEDLight = ledRollsLight * PRICE.ledRoll;
-      var mountsLight = Math.ceil(ledPer / PRICE.mountStep);
-      var costMountsLight = mountsLight * PRICE.mount;
-      var costBlockLight = PRICE.block;
-      var costSwitchLight = PRICE.switch;
-      var costDeliveryLight = (state.facet === 'none' || state.facet === 'grind') ? PRICE.delivery : PRICE.facetDelivery;
-
-      var costInstallLight = 0;
-      if (state.install) {
-        var instBaseLight = (area <= 2) ? Math.max(2000, area * 1300) : area * 1500;
-        costInstallLight = Math.max(2500, instBaseLight + 500);
-      }
-
-      var extrasLight = costLEDLight + costBlockLight + costSwitchLight
-        + costMountsLight + costDeliveryLight + costInstallLight;
-
-      price = baseCostLight + markupLight + extrasLight;
+    // Упаковка, комплектующие, доставка и монтаж — без торговой наценки.
+    if (state.light) {
+      price += Math.ceil(ledPer / PRICE.ledRollLen) * PRICE.ledRoll
+        + PRICE.block + PRICE.switch
+        + Math.ceil(ledPer / PRICE.mountStep) * PRICE.mount;
+      price += (state.facet === 'none' || state.facet === 'grind') ? PRICE.delivery : PRICE.facetDelivery;
+    } else if (state.facet !== 'none' && state.facet !== 'grind') {
+      price += PRICE.facetDelivery;
+    }
+    if (state.install) {
+      var installBase = area <= 2 ? Math.max(2000, area * 1300) : area * 1500;
+      price += state.light ? Math.max(2500, installBase + 500) : installBase;
     }
 
     /* Для составных форм доплата определяется по общей высоте двух частей. */
@@ -991,18 +979,6 @@
 
     /* Налог +6% — применяется последним, ко всем расчётам */
     price *= 1.06;
-    // Процент к цене цельного зеркала тех же размеров и комплектации.
-    // Контроль: 270×70 с LED без опций = 16469.75 ₽ до округления;
-    // 200×70 + 70×70 дороже на 2000 ₽. Для других размеров процент тот же.
-    if (state.shape === 'double') {
-      price *= 1 + 2000 / 16469.75;
-    }
-    /* Полукруг из двух частей всегда на 20% дороже цельного полукруга
-       тех же общих размеров и в той же комплектации. */
-    if (state.shape === 'semidouble') {
-      price *= 1.2;
-    }
-
     /* Дополнительные 2% ко всем итоговым расчётам, до округления. */
     price *= 1.02;
 
@@ -1040,14 +1016,15 @@
       return '<div class="row"><span>' + label + '</span><i class="dash"></i><span>' + value + '</span></div>';
     }
 
-    var inc = '';
+    var materialLabels = {silver:'Серебро, 4 мм', clear:'Осветлённое, 4 мм', tinted:'Тонированное, 4 мм'};
+    var inc = row('Полотно', materialLabels[state.material]);
     if (state.light) {
       inc += row('Подсветка', 'LED COB, ' + CLR_LABELS[state.clr] + ' свет');
       inc += row('Управление', CTRL_LABELS[state.ctrl]);
     } else {
       inc += row('Подсветка', 'нет');
     }
-    inc += row('Кромка', state.facet === 'none' ? 'обработка от порезов' : FACET_LABELS[state.facet]);
+    inc += row('Кромка', state.facet === 'none' ? 'еврокромка' : FACET_LABELS[state.facet]);
     if (state.install) {
       inc += row('Установка', state.film ? 'на крепёж, с бронеплёнкой' : 'на крепёж');
     }
@@ -1064,7 +1041,7 @@
     if (state.faceFrame !== 'none') inc += row('Алюминиевая рама', FACE_FRAME_LABELS[state.faceFrame]);
     document.getElementById('r-inc').innerHTML = inc;
 
-    var details = [];
+    var details = [materialLabels[state.material]];
     if (state.light) {
       details.push('с LED-подсветкой (' + CLR_LABELS[state.clr] + ', управление: ' + CTRL_LABELS[state.ctrl] + ')');
     } else {
@@ -1109,6 +1086,13 @@
     });
   });
 
+  $all('input[name="material"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      readState();
+      var res = document.getElementById('calc-result');
+      if (res && res.classList.contains('show')) calc(false);
+    });
+  });
   $all('input[name="shape"]').forEach(function (r) {
     r.addEventListener('change', function () { pickShape(r.value); });
   });
@@ -1172,5 +1156,6 @@
     updateProfileAvailability();
   }
 })();
+
 
 

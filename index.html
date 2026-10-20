@@ -525,6 +525,14 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
 
           <form id="quote-form" aria-label="Калькулятор стоимости зеркала">
             <div class="field">
+              <label>Полотно, 4 мм</label>
+              <div class="options">
+                <label><input type="radio" name="material" value="silver" checked><span>Серебро</span></label>
+                <label><input type="radio" name="material" value="clear"><span>Осветлённое</span></label>
+                <label><input type="radio" name="material" value="tinted"><span>Тонированное</span></label>
+              </div>
+            </div>
+            <div class="field">
               <label>Форма зеркала</label>
               <div class="options options--grid">
                 <label><input type="radio" name="shape" value="rect" checked><span>Прямоугольник</span></label>
@@ -594,7 +602,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
 
             <div class="field">
               <label>Кромка</label>
-              <div class="edge-info" id="edgeInfo">Обработка кромки от пореза включена</div>
+              <div class="edge-info" id="edgeInfo">Еврокромка включена в расчёт</div>
               <div class="options">
                 <label><input type="radio" name="facet" value="none" checked><span>Без фацета</span></label>
                 <label><input type="radio" name="facet" value="grind"><span>Шлифовка</span></label>
@@ -836,11 +844,12 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
     </a>
   </div>
 
-  <script src="js/main.js?v=spb-frame-choice-20261015" defer></script><script src="js/studio.js?v=entry-navigation-20261015" defer></script>
+  <script src="js/main.js?v=spb-prices-20261020" defer></script><script src="js/studio.js?v=entry-navigation-20261015" defer></script>
 
 
 </body>
 </html>
+
 
 
 
