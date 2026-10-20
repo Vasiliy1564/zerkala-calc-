@@ -306,6 +306,28 @@
     facetDelivery: 1000
   };
 
+  function installationPrice(area, light) {
+    return Math.max(light ? 3500 : 3000, area * 2355);
+  }
+  function deliveryRegion() {
+    var select = document.getElementById('delivery-region');
+    return select ? select.value : 'murino';
+  }
+  function clientDeliveryPrice() {
+    return state.delivery && deliveryRegion() === 'murino' ? 1000 : 0;
+  }
+  function deliveryDescription() {
+    if (!state.delivery) return 'не выбрана';
+    return deliveryRegion() === 'murino' ? 'по Мурино — 1 000 ₽' :
+      (deliveryRegion() === 'spb' ? 'по Санкт-Петербургу — отдельно, не включена в итог' : 'по адресу — отдельно, не включена в итог');
+  }
+  function updateDeliveryAvailability() {
+    var cb = $('input[name="option"][value="delivery"]');
+    var field = document.getElementById('deliveryRegionField');
+    if (cb) cb.disabled = false;
+    if (field) field.hidden = !(cb && cb.checked);
+  }
+
   var FACET_RATES = { grind: 200, '10': 200, '20': 250, '25': 300 };
 
   function euroEdgeRate(sideMm) {
@@ -378,6 +400,7 @@
   }
 
   function readState() {
+    updateDeliveryAvailability();
     var s = $('input[name="shape"]:checked');
     if (s) state.shape = s.value;
     var material = $('input[name="material"]:checked');
@@ -951,10 +974,7 @@
     } else if (state.facet !== 'none' && state.facet !== 'grind') {
       price += PRICE.facetDelivery;
     }
-    if (state.install) {
-      var installBase = area <= 2 ? Math.max(2000, area * 1300) : area * 1500;
-      price += state.light ? Math.max(2500, installBase + 500) : installBase;
-    }
+
 
     /* Для составных форм доплата определяется по общей высоте двух частей. */
     var totalH = h;
@@ -982,8 +1002,9 @@
     /* Дополнительные 2% ко всем итоговым расчётам, до округления. */
     price *= 1.02;
 
-    /* Доставка клиенту по Санкт-Петербургу: фиксированные 700 ₽. */
-    if (state.delivery) price += 700;
+    // Установка и доставка — без дополнительных процентов.
+    if (state.install) price += installationPrice(area, state.light);
+    price += clientDeliveryPrice();
 
     if (state.faceFrame !== 'none') {
       var frameBars = faceFrameStock(state.shape, w, h, parseFloat((document.getElementById('height2') || {}).value) || 0).bars;
@@ -1035,7 +1056,7 @@
       inc += row('Подогрев 400×600 мм', 'да');
     }
 
-    inc += row('Доставка', state.delivery ? 'по Санкт-Петербургу — 700 ₽' : 'не выбрана');
+    inc += row('Доставка', deliveryDescription());
     if (state.aluFrame) inc += row('Каркас из алюминиевого уголка 1,5 мм', 'да');
     if (state.ledProfile) inc += row('Светодиодная лента в алюминиевом профиле', 'да');
     if (state.faceFrame !== 'none') inc += row('Алюминиевая рама', FACE_FRAME_LABELS[state.faceFrame]);
@@ -1052,7 +1073,7 @@
     if (state.film) details.push('с бронеплёнкой');
     if (state.aluFrame) details.push('с каркасом из алюминиевого уголка 1,5 мм');
     if (state.ledProfile) details.push('со светодиодной лентой в алюминиевом профиле');
-    if (state.delivery) details.push('с доставкой по Санкт-Петербургу за 700 ₽');
+    if (state.delivery) details.push('доставка: ' + deliveryDescription());
 
     if (state.faceFrame !== 'none') details.push('алюминиевая рама — ' + FACE_FRAME_LABELS[state.faceFrame]);
     var ctaText = '';
@@ -1071,6 +1092,13 @@
     res.classList.add('show');
     if (scrollResult !== false) res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
+
+  var deliveryRegionSelect = document.getElementById('delivery-region');
+  if (deliveryRegionSelect) deliveryRegionSelect.addEventListener('change', function () {
+    readState();
+    var result = document.getElementById('calc-result');
+    if (result && result.classList.contains('show')) calc(false);
+  });
 
   /* ---------- События калькулятора ---------- */
   $all('input[name="face-frame"]').forEach(function (r) {
@@ -1156,6 +1184,7 @@
     updateProfileAvailability();
   }
 })();
+
 
 
 
