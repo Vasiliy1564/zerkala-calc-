@@ -4,9 +4,9 @@
 (function (root) {
   'use strict';
   var quotes = {
-    'rect:600:1200': { silver: 2282, clear: 4150 },
-    'rect:600:800': { silver: 1608, clear: 2854 },
-    'rect:500:1400': { silver: 2417, clear: 4234 },
+    'rect:600:1200': { silver: 2239, clear: 4108 },
+    'rect:600:800': { silver: 1547, clear: 2792 },
+    'rect:500:1400': { silver: 2373, clear: 3728 },
     'circle:900:900': { silver: 3628, clear: 5730 },
     'curved:800:900': { silver: 7900, clear: 12500 }
   };
@@ -15,9 +15,19 @@
     var key = shape + ':' + Math.min(width, height) + ':' + Math.max(width, height);
     var quote = standardEdge && quotes[key];
     var cost = quote && quote[material];
+    var estimate = false;
+    if (shape === 'curved' && standardEdge && (material === 'silver' || material === 'clear') &&
+        height >= 400 && height <= 1800 && Math.abs(width - Math.round(height * 8 / 9)) < 0.01) {
+      // User-approved estimate by bounding-box area, calibrated to 800 x 900.
+      // Includes edge work and packaging; this is not a supplier tariff.
+      cost = (material === 'silver' ? 7900 : 12500) * (width * height / 1000000) / 0.72;
+      estimate = true;
+    }
     return {
       cost: typeof cost === 'number' ? cost : null,
-      needsQuote: shape === 'curved' && typeof cost !== 'number'
+      includesPackaging: typeof cost === 'number',
+      estimate: estimate,
+      needsQuote: shape === 'curved' && !estimate
     };
   }
   var api = { lookup: lookup };
