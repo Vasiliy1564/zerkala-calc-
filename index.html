@@ -38,8 +38,9 @@
   <meta property="og:locale" content="ru_RU">
   <meta property="og:title" content="Зеркала на заказ в Мурино и Санкт-Петербурге | ЗЕРКАЛА ПРО">
   <meta property="og:description" content="Зеркала по вашим размерам, с подсветкой и без. Замер, изготовление, доставка и монтаж в Мурино, Буграх, Новом Девяткино и Санкт-Петербурге.">
-  <meta property="og:url" content="https://zerkalo-pro-spb.ingring4.chatgpt.site/">
-  <meta property="og:image" content="https://zerkalo-pro-spb.ingring4.chatgpt.site/assets/hero.jpg">
+  <link rel="canonical" href="https://zerkalo-pro-spb.ru/">
+  <meta property="og:url" content="https://zerkalo-pro-spb.ru/">
+  <meta property="og:image" content="https://zerkalo-pro-spb.ru/assets/hero.jpg">
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23111111'/%3E%3Ctext x='32' y='43' font-family='Georgia,serif' font-size='21' font-weight='bold' letter-spacing='0' fill='%23a99d8b' text-anchor='middle'%3E%D0%97%D0%9F%3C/text%3E%3C/svg%3E">
 
@@ -57,7 +58,7 @@
     "areaServed": ["Мурино", "Бугры", "Новое Девяткино", "Санкт-Петербург"],
     "priceRange": "от 2 861 ₽",
     "openingHours": "Mo-Su 08:00-22:00",
-    "sameAs": ["https://www.avito.ru/stavropol/mebel_i_interer/zerkalo_led_podsvetka_sensor_pult_vzmah_7687240760"]
+    "sameAs": ["https://www.avito.ru/murino/mebel_i_interer/zerkalo_s_podsvetkoy_na_zakaz_7687240760"]
   }
   </script>
 <link rel="stylesheet" href="css/studio.css"><link rel="stylesheet" href="css/mirrors.css?v=realistic-1"><link rel="stylesheet" href="css/facelift.css?v=spb-gallery-20261004-2"><style id="direct-calculator-brightness">
@@ -77,6 +78,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
 .action-bar{background:#fff;backdrop-filter:none;border-top-color:#b8cbbd}.action-bar .button--bar-call{background:#fff;color:#174936;border-color:#527e64}.action-bar .button--bar-calc{background:#174936;color:#fff;border-color:#174936}.action-bar .button--bar-calc:hover{background:#216348}
 .calc-btn-call{background:#174936;color:#fff}.calc-btn-max{color:#174936;border-color:#527e64}.projects-grid .project-info span{color:#fff}.calc-preview::before{color:#e9f3ed}.project-filters .filter{color:#174936;border-color:#6e8d7d}.project-filters .filter.active{background:#174936;color:#fff}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+#curved-note[hidden],#deliveryRegionField[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -433,7 +435,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
           </figure>
         </div>
         <div class="avito-reviews-foot">
-          <a class="button button--light" href="https://www.avito.ru/stavropol/mebel_i_interer/zerkala_s_led-podsvetkoy_na_zakaz_ot_2_dney_7687240760?utm_campaign=native&utm_medium=item_page_android&utm_source=soc_sharing_seller" target="_blank" rel="noopener">Читать все отзывы на Авито
+          <a class="button button--light" href="https://www.avito.ru/murino/mebel_i_interer/zerkalo_s_podsvetkoy_na_zakaz_7687240760" target="_blank" rel="noopener">Читать все отзывы на Авито
             <svg viewBox="0 0 20 20" fill="none"><path d="M3 10h13M11 4l6 6-6 6" stroke="currentColor" stroke-width="1.5"/></svg>
           </a>
         </div>
@@ -465,7 +467,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
           <p class="section-copy">Выберите форму, размеры, подсветку и дополнительные опции, затем нажмите «Рассчитать стоимость». Калькулятор покажет итоговую цену для выбранной комплектации.</p>
           <ul class="calc-points">
             <li><span>01</span>Точный алгоритм на основе ваших размеров</li>
-            <li><span>02</span>6 форм, фацет, бронеплёнка, подогрев</li>
+            <li><span>02</span>Формы на выбор, обработка кромки, бронеплёнка, подогрев</li>
             <li><span>03</span>Позвоните нам — ответим в течение 15 минут</li>
           </ul>
         </div>
@@ -539,10 +541,12 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
                 <label><input type="radio" name="shape" value="rounded"><span>Прямоугольник с закруглёнными углами</span></label>
                 <label><input type="radio" name="shape" value="circle"><span>Круг</span></label>
                 <label><input type="radio" name="shape" value="oval"><span>Овал</span></label>
+                <label><input type="radio" name="shape" value="curved"><span>Криволинейное по образцу</span></label>
                 <label><input type="radio" name="shape" value="semicircle"><span>Полукруг</span></label>
                 <label><input type="radio" name="shape" value="double"><span>Из двух частей</span></label>
                 <label class="semidouble-choice"><input type="radio" name="shape" value="semidouble"><span><i class="calc-shape-icon calc-shape-icon--semidouble" aria-hidden="true"></i>Полукруг из 2 частей</span></label>
               </div>
+              <p id="curved-note" class="form-hint" hidden>Сложный контур согласуем по эскизу. Расчёт 900 × 800 мм относится к согласованному образцу; другие размеры и контуры рассчитываются индивидуально. Предпросмотр — условный.</p>
             </div>
 
             <div class="form-row">
@@ -653,7 +657,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
             <button class="button" type="submit">Рассчитать стоимость
               <svg viewBox="0 0 20 20" fill="none"><path d="M3 10h13M11 4l6 6-6 6" stroke="currentColor" stroke-width="1.5"/></svg>
             </button>
-            <a class="calc-avito" href="https://www.avito.ru/stavropol/mebel_i_interer/zerkala_s_led-podsvetkoy_na_zakaz_ot_2_dney_7687240760?utm_campaign=native&utm_medium=item_page_android&utm_source=soc_sharing_seller" target="_blank" rel="noopener">
+            <a class="calc-avito" href="https://www.avito.ru/murino/mebel_i_interer/zerkalo_s_podsvetkoy_na_zakaz_7687240760" target="_blank" rel="noopener">
               <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2c-3 0-5 2-5 5 0 2.3 1.5 4.3 3.5 5l-.7 4.5L10 15.5l2.2 1-1-4.5C13.5 11.3 15 9.3 15 7c0-3-2-5-5-5zm-2 5a2 2 0 1 1 4 0 2 2 0 0 1-4 0z" fill="currentColor"/></svg>
               Наше объявление на Авито
             </a>
@@ -820,7 +824,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
       <div class="contact-meta">
         <div><span>Позвоните нам</span><a href="tel:+79340298528">+7 (934) 029-85-28</a><a href="tel:+79268677809">+7 (926) 867-78-09</a></div>
         <div><span>Оформить заказ онлайн</span><a href="https://max.ru/u/f9LHodD0cOJCsHfbfog1RuUGjeMCEw_wI5D3w-uzWYe4wj6KqPXR9YOSHA8" target="_blank" rel="noopener">MAX · заявка</a></div>
-        <div><span>Наше объявление на Авито</span><a href="https://www.avito.ru/stavropol/mebel_i_interer/zerkalo_led_podsvetka_sensor_pult_vzmah_7687240760" target="_blank" rel="noopener">Зеркало LED · сенсор, пульт, взмах</a></div>
+        <div><span>Наше объявление на Авито</span><a href="https://www.avito.ru/murino/mebel_i_interer/zerkalo_s_podsvetkoy_na_zakaz_7687240760" target="_blank" rel="noopener">Зеркало LED · сенсор, пульт, взмах</a></div>
         <div><span>География выезда</span><a href="#faq">Мурино · Бугры · Новое Девяткино · Санкт-Петербург</a></div>
       </div>
     </div>
@@ -845,7 +849,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
     </a>
   </div>
 
-  <script src="js/main.js?v=rounded-20261021" defer></script><script src="js/studio.js?v=rounded-20261021" defer></script>
+  <script src="js/supplier-pricing.js?v=20261022-1" defer></script><script src="js/main.js?v=supplier-20261022-1" defer></script><script src="js/studio.js?v=rounded-20261021" defer></script>
 
 
 </body>

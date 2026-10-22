@@ -280,6 +280,7 @@
   var SHAPE_NAMES = {
     rect: 'Прямоугольник',
     rounded: 'Прямоугольник с закруглёнными углами',
+    curved: 'Криволинейное по образцу',
     circle: 'Круг',
     oval: 'Овал',
     semicircle: 'Полукруг',
@@ -404,6 +405,8 @@
     updateDeliveryAvailability();
     var s = $('input[name="shape"]:checked');
     if (s) state.shape = s.value;
+    var curvedNote = document.getElementById('curved-note');
+    if (curvedNote) curvedNote.hidden = state.shape !== 'curved';
     var material = $('input[name="material"]:checked');
     state.material = material ? material.value : 'silver';
     var l = $('input[name="light"]:checked');
@@ -436,8 +439,7 @@
     if (!el) return;
     var v = parseInt(el.value, 10) || 0;
     v = Math.max(state.shape === 'semicircle' && id === 'height' ? 800 : 400, v + delta);
-    if (id === 'width') v = Math.min(v, 32100);
-    if (id === 'height' || id === 'height2') v = Math.min(v, 22500);
+    v = Math.min(v, 3210);
     el.value = v;
     if (state.shape === 'circle') {
       var hEl = document.getElementById('height');
@@ -468,6 +470,8 @@
     var rowH2 = document.getElementById('rowH2');
     if (rowH2) rowH2.classList.toggle('hidden', state.shape !== 'double' && state.shape !== 'semidouble');
     updPreview();
+    var result = document.getElementById('calc-result');
+    if (result && result.classList.contains('show')) calc(false);
   }
 
   function fitBox(aspect) {
@@ -595,6 +599,10 @@
         '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + r + '" ry="' + r + '" fill="url(#cornerGlow)" />' +
         '<ellipse cx="' + cx + '" cy="' + (cy + r * 0.25) + '" rx="' + (r * 0.7) + '" ry="' + (r * 0.5) + '" fill="url(#floorGrad)" opacity="0.6" />' +
         logoText(cx - r, cy - r, r * 2, r * 2);
+    } else if (shape === 'curved') {
+      var customBox = fitBox(w / h);
+      var customX = cx - customBox.w / 2, customY = cy - customBox.h / 2;
+      content = '<path transform="translate(' + customX + ' ' + customY + ') scale(' + customBox.w / 100 + ' ' + customBox.h / 100 + ')" d="M 12 18 C 28 -7 69 0 88 24 C 106 47 99 82 73 96 C 49 108 9 95 3 70 C -3 47 1 32 12 18 Z" fill="url(#glassGrad)" />';
     } else if (shape === 'oval') {
       var fitO = fitBox(w / h);
       var rxo = fitO.w / 2;
@@ -804,7 +812,7 @@
       labelW.textContent = 'Ширина, мм';
       labelH.textContent = 'Высота, мм';
       inputW.value = 800;
-      inputH.value = 1800;
+      inputH.value = shape === 'curved' ? 900 : 1800;
     }
 
     onSizeInput();
@@ -878,7 +886,7 @@
     var edgePer;
     var ledPer;
 
-    if (shape === 'rect' || shape === 'rounded') {
+    if (shape === 'rect' || shape === 'rounded' || shape === 'curved') {
       area = (w * h) / 1000000;
       per = 2 * (w + h) / 1000;
       maxD = Math.max(w, h);
@@ -931,7 +939,23 @@
     var w = parseFloat(wEl.value) || 0;
     var h = parseFloat(hEl.value) || 0;
 
-    if (w < 400 || (state.shape !== 'circle' && h < 400)) { alert('Минимальный размер — 400 мм'); return; }
+    function requestQuote(message) {
+      document.getElementById('r-size').textContent = h + ' × ' + w + ' мм · ' + SHAPE_NAMES[state.shape];
+      document.getElementById('r-sum').textContent = 'Индивидуальный расчёт';
+      document.getElementById('r-inc').textContent = message;
+      var link = document.getElementById('r-cta');
+      link.textContent = 'Уточнить стоимость в MAX';
+      link.href = MAX_URL + '?text=' + encodeURIComponent('Хочу уточнить стоимость: ' + SHAPE_NAMES[state.shape] + ', ' + h + '×' + w + ' мм, ' + ({silver:'серебро',clear:'осветлённое',tinted:'тонированное'}[state.material]) + ', ' + (state.light ? 'с подсветкой' : 'без подсветки') + '. ' + message);
+      var result = document.getElementById('calc-result');
+      result.classList.add('show');
+      if (scrollResult !== false) result.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w < 400 || (state.shape !== 'circle' && h < 400)) {
+      requestQuote('Укажите корректные размеры от 400 мм.'); return;
+    }
+    if (Math.max(w, h) > 3210 || Math.min(w, h) > 2250) {
+      requestQuote('Размер превышает формат одного листа 3210 × 2250 мм. Согласуем изготовление из частей.'); return;
+    }
     if ((state.shape === 'double' || state.shape === 'semidouble') && (parseFloat(document.getElementById('height2').value) || 0) < 400) {
       alert('Минимальная высота каждой части — 400 мм');
       return;
@@ -954,10 +978,20 @@
     var h2 = parseFloat(document.getElementById('height2').value) || 0;
     var mirrorRate = state.material === 'silver' ? PRICE.mirror : PRICE.specialMirror;
     var mirrorCost = area * mirrorRate;
-    var edgeCost = state.facet === 'none'
+    var edgeCost = (state.facet === 'none' || state.facet === 'grind')
       ? euroEdgeCost(state.shape, w, state.shape === 'circle' ? w : h, h2)
       : edgePer * (FACET_RATES[state.facet] || 0);
     edgeCost += edgePer * shapeMeterSurcharge(state.shape);
+
+    var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.facet);
+    if (supplierQuote.needsQuote) {
+      requestQuote('Для этого размера, материала или обработки сложного контура стоимость согласуем по эскизу.'); return;
+    }
+    if (supplierQuote.cost !== null) {
+      // The supplier quote already includes cutting and edge processing.
+      mirrorCost = supplierQuote.cost;
+      edgeCost = 0;
+    }
 
     // Единственная база торговой наценки — полотно и обработка.
     var markedBase = (mirrorCost + edgeCost) * (1 + (state.light ? PRICE.markup : PRICE.plainMarkup));
@@ -1037,6 +1071,7 @@
     document.getElementById('r-size').textContent = sizeText;
 
     document.getElementById('r-sum').textContent = fmt(price) + ' ₽';
+    document.getElementById('r-cta').textContent = 'Заказать в MAX';
 
     function row(label, value) {
       return '<div class="row"><span>' + label + '</span><i class="dash"></i><span>' + value + '</span></div>';
