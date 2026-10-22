@@ -279,6 +279,7 @@
 
   var SHAPE_NAMES = {
     rect: 'Прямоугольник',
+    rounded: 'Прямоугольник с закруглёнными углами',
     circle: 'Круг',
     oval: 'Овал',
     semicircle: 'Полукруг',
@@ -566,11 +567,11 @@
       return '<text x="' + (bx + bw - 6) + '" y="' + (by + bh - 7) + '" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="' + fs.toFixed(1) + '" font-weight="600" letter-spacing="0.12em" fill="rgba(255,255,255,0.72)" style="font-family:Arial, Helvetica, sans-serif">Mirror&nbsp;Pro</text>';
     }
 
-    if (shape === 'rect') {
+    if (shape === 'rect' || shape === 'rounded') {
       var aspect = w / h;
       var fit = fitBox(aspect);
       var rw = fit.w, rh = fit.h;
-      var rx = 10 * (rw / 150);
+      var rx = shape === 'rounded' ? Math.min(rw, rh) * 0.12 : 10 * (rw / 150);
       var x = (VB_W - rw) / 2;
       var y = (VB_H - rh) / 2;
       content = '<rect class="mirror-glow" x="' + (x - facetW) + '" y="' + (y - facetW) + '" width="' + (rw + facetW * 2) + '" height="' + (rh + facetW * 2) + '" rx="' + (rx + facetW) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
@@ -877,7 +878,7 @@
     var edgePer;
     var ledPer;
 
-    if (shape === 'rect') {
+    if (shape === 'rect' || shape === 'rounded') {
       area = (w * h) / 1000000;
       per = 2 * (w + h) / 1000;
       maxD = Math.max(w, h);
@@ -1011,6 +1012,10 @@
       var framePurchase = frameBars * 500;
       price += framePurchase + Math.max(1500, framePurchase) + 400;
     }
+
+    // Rounded corners: the rectangular calculation plus 15%, before rounding.
+    var roundedSurcharge = state.shape === 'rounded' ? price * 0.15 : 0;
+    price += roundedSurcharge;
 
     var sizeText = '';
     if (state.shape === 'circle') {
