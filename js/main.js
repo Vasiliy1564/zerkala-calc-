@@ -76,8 +76,8 @@
 
 /* ============================================================
    ЗЕРКАЛА ПРО — дизайн ARCO
-   Интерактив + калькулятор СПб: прайс от 20.10.2026.
-   Наценка только на полотно и обработку: 100% / 150% с LED.
+   Интерактив + калькулятор СПб: прайс от 12.10.2026.
+   Наценка только на полотно и обработку: 115% / 170% с LED.
    ============================================================ */
 (function () {
   'use strict';
@@ -293,11 +293,11 @@
   var AVAIL_H = VB_H - PAD * 2;
 
   var PRICE = {
-    mirror: 2355,
+    mirror: 1750,
     specialMirror: 4950,
-    packaging: 80,
-    plainMarkup: 1,
-    markup: 1.5,
+    packaging: 100,
+    plainMarkup: 1.15,
+    markup: 1.70,
     ledRoll: 700,
     ledRollLen: 5,
     block: 500,
@@ -990,29 +990,14 @@
     }
 
     var h2 = parseFloat(document.getElementById('height2').value) || 0;
-    var mirrorRate = state.material === 'silver' ? PRICE.mirror : PRICE.specialMirror;
-    var mirrorCost = area * mirrorRate;
-    var edgeCost = (state.facet === 'none' || state.facet === 'grind')
-      ? euroEdgeCost(state.shape, w, state.shape === 'circle' ? w : h, h2)
-      : edgePer * (FACET_RATES[state.facet] || 0);
-    edgeCost += edgePer * shapeMeterSurcharge(state.shape);
-
-    var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.facet);
+    var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.facet, h2);
     if (supplierQuote.needsQuote) {
-      requestQuote('Для этого размера, материала или обработки сложного контура стоимость согласуем по эскизу.'); return;
+      requestQuote('Для этой формы, материала или обработки стоимость согласуем по эскизу и прайсу поставщика.'); return;
     }
-    if (supplierQuote.cost !== null) {
-      // The supplier quote already includes cutting and edge processing.
-      mirrorCost = supplierQuote.cost;
-      edgeCost = 0;
-    }
-
-    // Единственная база торговой наценки — полотно и обработка.
-    var markedBase = (mirrorCost + edgeCost) * (1 + (state.light ? PRICE.markup : PRICE.plainMarkup));
-    // Составные формы: прежняя доплата применяется только к этой базе.
-    if (state.shape === 'double') markedBase *= 1 + 2000 / 16469.75;
-    if (state.shape === 'semidouble') markedBase *= 1.2;
-    var price = markedBase + (supplierQuote.includesPackaging ? 0 : area * PRICE.packaging);
+    var mirrorCost = supplierQuote.materialCost;
+    var edgeCost = supplierQuote.edgeCost + supplierQuote.shapeCost;
+    var markedBase = supplierQuote.cost * (1 + window.MirrorSupplierPricing.markup(state.light));
+    var price = markedBase + supplierQuote.packagingCost;
 
     // Упаковка, комплектующие, доставка и монтаж — без торговой наценки.
     if (state.light) {
@@ -1030,7 +1015,7 @@
     if (state.shape === 'double' || state.shape === 'semidouble') {
       totalH += parseFloat(document.getElementById('height2').value) || 0;
     }
-    price += heightSurcharge(totalH);
+    // Size coefficients are already included in supplier edge work.
 
     /* Бронеплёнка: 200 ₽/м² по площади прямоугольника */
     if (state.film) {
@@ -1062,7 +1047,7 @@
     }
 
     // Rounded corners: the rectangular calculation plus 15%, before rounding.
-    var roundedSurcharge = state.shape === 'rounded' ? price * 0.15 : 0;
+    var roundedSurcharge = 0;
     price += roundedSurcharge;
 
     var sizeText = '';
@@ -1102,7 +1087,7 @@
     } else {
       inc += row('Подсветка', 'нет');
     }
-    inc += row('Кромка', state.facet === 'none' ? 'еврокромка' : FACET_LABELS[state.facet]);
+    inc += row('Кромка', state.facet === 'none' ? 'полировка (еврокромка)' : FACET_LABELS[state.facet]);
     if (state.install) {
       inc += row('Установка', state.film ? 'на крепёж, с бронеплёнкой' : 'на крепёж');
     }
@@ -1117,7 +1102,7 @@
     if (state.aluFrame) inc += row('Каркас из алюминиевого уголка 1,5 мм', 'да');
     if (state.ledProfile) inc += row('Светодиодная лента в алюминиевом профиле', 'да');
     if (state.faceFrame !== 'none') inc += row('Алюминиевая рама', FACE_FRAME_LABELS[state.faceFrame]);
-    if (supplierQuote.estimate) inc += '<p class="figure-price-note">Точная стоимость после согласования контура. Установка и доставка — по выбранным условиям.</p>';
+    if (supplierQuote.estimate) inc += '<p class="figure-price-note">Точная стоимость после согласования контура и заготовки. Установка и доставка — по выбранным условиям.</p>';
     document.getElementById('r-inc').innerHTML = inc;
 
     var details = [materialLabels[state.material]];
@@ -1242,6 +1227,7 @@
     updateProfileAvailability();
   }
 })();
+
 
 
 

@@ -1,36 +1,32 @@
-/* Confirmed supplier quotes, 22 October 2026. Prices include cutting and edge work.
-   These are quotes for the listed pieces, not square-metre rates for other sizes.
-   The curved quote applies only to the supplier's agreed sample contour. */
-(function (root) {
-  'use strict';
-  var quotes = {
-    'rect:600:1200': { silver: 2239, clear: 4108 },
-    'rect:600:800': { silver: 1547, clear: 2792 },
-    'rect:500:1400': { silver: 2373, clear: 3728 },
-    'circle:900:900': { silver: 3628, clear: 5730 },
-    'curved:800:900': { silver: 7900, clear: 12500 }
-  };
-  function lookup(shape, material, width, height, edge) {
-    var standardEdge = edge === 'none' || edge === 'grind';
-    var key = shape + ':' + Math.min(width, height) + ':' + Math.max(width, height);
-    var quote = standardEdge && quotes[key];
-    var cost = quote && quote[material];
-    var estimate = false;
-    if (shape === 'curved' && standardEdge && (material === 'silver' || material === 'clear') &&
-        height >= 400 && height <= 1800 && Math.abs(width - Math.round(height * 8 / 9)) < 0.01) {
-      // User-approved estimate by bounding-box area, calibrated to 800 x 900.
-      // Includes edge work and packaging; this is not a supplier tariff.
-      cost = (material === 'silver' ? 7900 : 12500) * (width * height / 1000000) / 0.72;
-      estimate = true;
-    }
-    return {
-      cost: typeof cost === 'number' ? cost : null,
-      includesPackaging: typeof cost === 'number',
-      estimate: estimate,
-      needsQuote: shape === 'curved' && !estimate
-    };
-  }
-  var api = { lookup: lookup };
-  if (typeof module === 'object' && module.exports) module.exports = api;
-  else root.MirrorSupplierPricing = api;
-})(typeof window === 'object' ? window : globalThis);
+/* Supplier tariff 12.10.2026. Dimensions in mm. Packaging is separate. */
+(function(root){
+'use strict';
+function lookup(shape,material,width,height,edge,height2){
+ var missing={cost:null,includesPackaging:false,estimate:false,needsQuote:true};
+ if (['silver','tinted'].indexOf(material)<0 || ['none','grind'].indexOf(edge)<0) return missing;
+ if (['rect','double','circle','oval'].indexOf(shape)<0) return missing;
+ var w=Number(width),h=Number(height),h2=Number(height2||0);
+ if (!(w>0 && h>0) || (shape==='double' && !(h2>0))) return missing;
+ if (shape==='circle')h=w;
+ var curved=shape==='circle'||shape==='oval';
+ var rate=material==='silver'?1750:3300;
+ var edgeRate=curved?(edge==='grind'?120:180):(edge==='grind'?70:90);
+ var parts=shape==='double'?[h,h2]:[h];
+ var materialCost=0,edgeCost=0,packagingArea=0;
+ parts.forEach(function(partH){
+  var area=w*partH/1000000,maxSide=Math.max(w,partH);
+  var sizeFactor=maxSide>=2500?2:maxSide>=2000?1.5:maxSide>=1500?1.3:1;
+  var smallFactor=area<0.04?2:area<0.12?1.5:1;
+  var perimeter=2*(w+partH)/1000;
+  if(shape==='circle')perimeter=Math.PI*w/1000;
+  if(shape==='oval'){var a=w/2000,b=partH/2000;perimeter=Math.PI*(3*(a+b)-Math.sqrt((3*a+b)*(a+3*b)));}
+  materialCost+=Math.max(area,0.2)*rate;
+  edgeCost+=perimeter*edgeRate*sizeFactor*smallFactor;
+  packagingArea+=area;
+ });
+ var shapeCost=curved?(materialCost+edgeCost)*0.5:0;
+ return {cost:Math.max(350,materialCost+edgeCost+shapeCost),materialCost:materialCost,edgeCost:edgeCost,shapeCost:shapeCost,packagingCost:packagingArea*100,includesPackaging:false,estimate:curved,needsQuote:false};
+}
+var api={lookup:lookup,markup:function(light){return light?1.70:1.15;}};
+if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
+})(typeof window==='object'?window:globalThis);
