@@ -300,7 +300,7 @@
     markup: 1.70,
     ledRoll: 700,
     ledRollLen: 5,
-    block: 500,
+    block: 800,
     switch: 500,
     mount: 50,
     mountStep: 2,
@@ -315,19 +315,37 @@
     var select = document.getElementById('delivery-region');
     return select ? select.value : 'murino';
   }
+  function murinoDeliveryPrice() {
+    var shape = $('input[name="shape"]:checked');
+    var w = Number(document.getElementById('width').value) || 0;
+    var h = Number(document.getElementById('height').value) || 0;
+    if (shape && shape.value === 'circle') h = w;
+    if (shape && /double/.test(shape.value)) h += Number(document.getElementById('height2').value) || 0;
+    var longer = Math.max(w, h), shorter = Math.min(w, h);
+    if (longer > 2500 || shorter > 1500) return 2000;
+    if (longer > 2000 || shorter > 1000) return 1500;
+    return 1000;
+  }
   function clientDeliveryPrice() {
-    return state.delivery && deliveryRegion() === 'murino' ? 1000 : 0;
+    return state.delivery && !state.install && deliveryRegion() === 'murino' ? murinoDeliveryPrice() : 0;
   }
   function deliveryDescription() {
-    if (!state.delivery) return 'не выбрана';
-    return deliveryRegion() === 'murino' ? 'по Мурино — 1 000 ₽' :
+    if (state.install && deliveryRegion() === 'murino') return 'по Мурино — включена в установку';
+    if (!state.delivery && !state.install) return 'не выбрана';
+    return deliveryRegion() === 'murino' ? 'по Мурино — ' + fmt(murinoDeliveryPrice()) + ' ₽' :
       (deliveryRegion() === 'spb' ? 'по Санкт-Петербургу — отдельно, не включена в итог' : 'по адресу — отдельно, не включена в итог');
   }
   function updateDeliveryAvailability() {
     var cb = $('input[name="option"][value="delivery"]');
+    var install = $('input[name="option"][value="install"]');
+    var included = !!(install && install.checked);
     var field = document.getElementById('deliveryRegionField');
-    if (cb) cb.disabled = false;
-    if (field) field.hidden = !(cb && cb.checked);
+    if (cb) cb.disabled = included;
+    if (field) field.hidden = !(included || (cb && cb.checked));
+    var option = document.querySelector('#delivery-region option[value="murino"]');
+    if (option) option.textContent = included ? 'Мурино — доставка включена в установку' : 'Мурино — ' + fmt(murinoDeliveryPrice()) + ' ₽';
+    var label = document.querySelector('#deliveryOpt span');
+    if (label) label.textContent = included ? 'Доставка при установке' : 'Доставка';
   }
 
   var FACET_RATES = { grind: 200, '10': 200, '20': 250, '25': 300 };
@@ -1116,7 +1134,7 @@
     if (state.film) details.push('с бронеплёнкой');
     if (state.aluFrame) details.push('с каркасом из алюминиевого уголка 1,5 мм');
     if (state.ledProfile) details.push('со светодиодной лентой в алюминиевом профиле');
-    if (state.delivery) details.push('доставка: ' + deliveryDescription());
+    if (state.delivery || state.install) details.push('доставка: ' + deliveryDescription());
 
     if (state.faceFrame !== 'none') details.push('алюминиевая рама — ' + FACE_FRAME_LABELS[state.faceFrame]);
     var ctaText = '';
