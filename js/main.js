@@ -304,8 +304,8 @@
     switch: 500,
     mount: 50,
     mountStep: 2,
-    delivery: 300,
-    facetDelivery: 1000
+    purchaseTrip: 700,
+    largePurchaseTrip: 1000
   };
 
   function installationPrice(area, light) {
@@ -315,22 +315,27 @@
     var select = document.getElementById('delivery-region');
     return select ? select.value : 'murino';
   }
-  function murinoDeliveryPrice() {
+  function mirrorDeliverySides() {
     var shape = $('input[name="shape"]:checked');
     var w = Number(document.getElementById('width').value) || 0;
     var h = Number(document.getElementById('height').value) || 0;
     if (shape && shape.value === 'circle') h = w;
     if (shape && /double/.test(shape.value)) h += Number(document.getElementById('height2').value) || 0;
-    var longer = Math.max(w, h), shorter = Math.min(w, h);
-    if (longer > 2500 || shorter > 1500) return 2000;
-    if (longer > 2000 || shorter > 1000) return 1500;
-    return 1000;
+    return {longer:Math.max(w, h), shorter:Math.min(w, h)};
+  }
+  function purchaseTripPrice() {
+    return mirrorDeliverySides().longer > 2000 ? PRICE.largePurchaseTrip : PRICE.purchaseTrip;
+  }
+  function murinoDeliveryPrice() {
+    var sides = mirrorDeliverySides();
+    if (sides.longer > 2500 || sides.shorter > 1500) return 1500;
+    if (sides.longer > 2000 || sides.shorter > 1000) return 1000;
+    return 500;
   }
   function clientDeliveryPrice() {
-    return state.delivery && !state.install && deliveryRegion() === 'murino' ? murinoDeliveryPrice() : 0;
+    return (state.delivery || state.install) && deliveryRegion() === 'murino' ? murinoDeliveryPrice() : 0;
   }
   function deliveryDescription() {
-    if (state.install && deliveryRegion() === 'murino') return 'по Мурино — включена в установку';
     if (!state.delivery && !state.install) return 'не выбрана';
     return deliveryRegion() === 'murino' ? 'по Мурино — ' + fmt(murinoDeliveryPrice()) + ' ₽' :
       (deliveryRegion() === 'spb' ? 'по Санкт-Петербургу — отдельно, не включена в итог' : 'по адресу — отдельно, не включена в итог');
@@ -343,9 +348,9 @@
     if (cb) cb.disabled = included;
     if (field) field.hidden = !(included || (cb && cb.checked));
     var option = document.querySelector('#delivery-region option[value="murino"]');
-    if (option) option.textContent = included ? 'Мурино — доставка включена в установку' : 'Мурино — ' + fmt(murinoDeliveryPrice()) + ' ₽';
+    if (option) option.textContent = 'Мурино — ' + fmt(murinoDeliveryPrice()) + ' ₽';
     var label = document.querySelector('#deliveryOpt span');
-    if (label) label.textContent = included ? 'Доставка при установке' : 'Доставка';
+    if (label) label.textContent = included ? 'Доставка добавляется к установке' : 'Доставка';
   }
 
   var FACET_RATES = { grind: 200, '10': 200, '20': 250, '25': 300 };
@@ -1022,9 +1027,6 @@
       price += Math.ceil(ledPer / PRICE.ledRollLen) * PRICE.ledRoll
         + PRICE.block + PRICE.switch
         + Math.ceil(ledPer / PRICE.mountStep) * PRICE.mount;
-      price += (state.facet === 'none' || state.facet === 'grind') ? PRICE.delivery : PRICE.facetDelivery;
-    } else if (state.facet !== 'none' && state.facet !== 'grind') {
-      price += PRICE.facetDelivery;
     }
 
 
@@ -1054,7 +1056,8 @@
     /* Дополнительные 2% ко всем итоговым расчётам, до округления. */
     price *= 1.02;
 
-    // Установка и доставка — без дополнительных процентов.
+    // Поездка за полотном, установка и доставка — без наценки и надбавок.
+    price += purchaseTripPrice();
     if (state.install) price += installationPrice(area, state.light);
     price += clientDeliveryPrice();
 
