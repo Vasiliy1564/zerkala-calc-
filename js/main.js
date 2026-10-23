@@ -1017,9 +1017,9 @@
     }
     // Size coefficients are already included in supplier edge work.
 
-    /* Бронеплёнка: 200 ₽/м² по площади прямоугольника */
+    /* Бронеплёнка: 500 ₽/м² по площади прямоугольника */
     if (state.film) {
-      price += geo.area * 200;
+      price += geo.area * 500;
     }
     /* Подогрев: фиксированная доплата */
     if (state.heat) {
