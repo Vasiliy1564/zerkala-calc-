@@ -353,7 +353,7 @@
     if (label) label.textContent = included ? 'Доставка добавляется к установке' : 'Доставка';
   }
 
-  var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'криволинейная шлифовка', 'curved-polish': 'криволинейная полировка' };
+  var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'криволинейная шлифовка', 'curved-polish': 'криволинейная полировка', facet: 'фацет — по запросу' };
 
   function euroEdgeRate(sideMm) {
     if (sideMm < 120 || sideMm >= 2400) return 270;
@@ -398,15 +398,16 @@
   function updateEdgeAvailability() {
     var curved = state.shape !== 'rect' && state.shape !== 'double';
     var selected = $('input[name="edge"]:checked');
-    var polished = !selected || selected.value.indexOf('polish') !== -1;
-    state.edge = (curved ? 'curved-' : '') + (polished ? 'polish' : 'grind');
+    var treatment = selected ? selected.value : 'polish';
+    state.edge = treatment === 'facet' ? 'facet' : (curved ? 'curved-' : '') + treatment;
     $all('input[name="edge"]').forEach(function (radio) {
-      radio.disabled = (radio.value.indexOf('curved-') === 0) !== curved;
-      radio.checked = radio.value === state.edge;
-      if (radio.parentElement) radio.parentElement.style.opacity = radio.disabled ? '0.45' : '';
+      radio.disabled = false;
+      if (radio.parentElement) radio.parentElement.style.opacity = '';
     });
     var info = document.getElementById('edgeInfo');
-    if (info) info.textContent = 'Выбрана ' + EDGE_LABELS[state.edge];
+    if (info) info.textContent = treatment === 'facet'
+      ? 'Стоимость фацета — по запросу: в прайсе ставка не указана'
+      : 'Выбрана ' + (treatment === 'grind' ? 'шлифовка' : 'полировка');
   }
 
   function readState() {
@@ -982,6 +983,10 @@
     }
 
     var h2 = parseFloat(document.getElementById('height2').value) || 0;
+    if (state.edge === 'facet') {
+      requestQuote('Фацет: стоимость нужно уточнить. В прайсе от 12.10.2026 ставка фацета не указана.');
+      return;
+    }
     var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.edge, h2);
     if (supplierQuote.needsQuote) {
       requestQuote('Для этой формы, материала или обработки стоимость согласуем по эскизу и прайсу поставщика.'); return;
