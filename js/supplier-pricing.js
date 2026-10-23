@@ -28,7 +28,7 @@ function lookup(shape,material,width,height,edge,height2){
  var shapeCost=curved?(materialCost+edgeCost)*0.5:0;
  return {cost:Math.max(350,materialCost+edgeCost+shapeCost),materialCost:materialCost,edgeCost:edgeCost,shapeCost:shapeCost,packagingCost:packagingArea*100,includesPackaging:false,estimate:curved,needsQuote:false};
 }
-var api={lookup:lookup,markup:function(light){return light?1.70:1.15;}};
+var api={lookup:lookup,markup:function(light){return light?0.50:1.00;}};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);
 

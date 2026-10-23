@@ -77,7 +77,7 @@
 /* ============================================================
    ЗЕРКАЛА ПРО — дизайн ARCO
    Интерактив + калькулятор СПб: прайс от 12.10.2026.
-   Наценка только на полотно и обработку: 115% / 170% с LED.
+   Наценка только на полотно и обработку: 100% / 50% с LED.
    ============================================================ */
 (function () {
   'use strict';
@@ -296,16 +296,15 @@
     mirror: 1750,
     specialMirror: 4950,
     packaging: 100,
-    plainMarkup: 1.15,
-    markup: 1.70,
+    plainMarkup: 1.00,
+    markup: 0.50,
     ledRoll: 700,
     ledRollLen: 5,
     block: 800,
     switch: 500,
     mount: 50,
     mountStep: 2,
-    purchaseTrip: 700,
-    largePurchaseTrip: 1000
+    purchaseTrip: 700
   };
 
   function installationPrice(area, light) {
@@ -324,7 +323,7 @@
     return {longer:Math.max(w, h), shorter:Math.min(w, h)};
   }
   function purchaseTripPrice() {
-    return mirrorDeliverySides().longer > 2000 ? PRICE.largePurchaseTrip : PRICE.purchaseTrip;
+    return PRICE.purchaseTrip;
   }
   function murinoDeliveryPrice() {
     var sides = mirrorDeliverySides();
