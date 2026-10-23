@@ -218,7 +218,7 @@
     light: true,
     ctrl: 'wave',
     clr: 'warm',
-    facet: 'none',
+    edge: 'polish',
     film: false,
     heat: false,
     delivery: false,
@@ -353,7 +353,7 @@
     if (label) label.textContent = included ? 'Доставка добавляется к установке' : 'Доставка';
   }
 
-  var FACET_RATES = { grind: 200, '10': 200, '20': 250, '25': 300 };
+  var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'криволинейная шлифовка', 'curved-polish': 'криволинейная полировка' };
 
   function euroEdgeRate(sideMm) {
     if (sideMm < 120 || sideMm >= 2400) return 270;
@@ -395,37 +395,18 @@
     if (!allowed) state.faceFrame = 'none';
   }
 
-  function updateFacetFrameCompatibility() {
-    if (state.shape === 'curved' && state.facet !== 'none' && state.facet !== 'grind') {
-      state.facet = 'none';
-      $('input[name="facet"][value="none"]').checked = true;
-    }
-    var hasFacet = state.facet !== 'none' && state.facet !== 'grind';
-    // A restored incompatible selection keeps the bevel and removes the frame.
-    if (hasFacet && state.faceFrame !== 'none') {
-      $all('input[name="face-frame"]').forEach(function (radio) {
-        radio.checked = radio.value === 'none';
-      });
-      state.faceFrame = 'none';
-    }
-    var rectangular = state.shape === 'rect' || state.shape === 'double';
-    var hasFrame = state.faceFrame !== 'none';
-    $all('input[name="face-frame"]').forEach(function (radio) {
-      radio.disabled = !rectangular || (hasFacet && radio.value !== 'none');
-      if (radio.parentElement) {
-        radio.parentElement.style.opacity = radio.disabled ? '0.45' : '';
-        radio.parentElement.style.cursor = radio.disabled ? 'not-allowed' : '';
-      }
+  function updateEdgeAvailability() {
+    var curved = state.shape !== 'rect' && state.shape !== 'double';
+    var selected = $('input[name="edge"]:checked');
+    var polished = !selected || selected.value.indexOf('polish') !== -1;
+    state.edge = (curved ? 'curved-' : '') + (polished ? 'polish' : 'grind');
+    $all('input[name="edge"]').forEach(function (radio) {
+      radio.disabled = (radio.value.indexOf('curved-') === 0) !== curved;
+      radio.checked = radio.value === state.edge;
+      if (radio.parentElement) radio.parentElement.style.opacity = radio.disabled ? '0.45' : '';
     });
-    $all('input[name="facet"]').forEach(function (radio) {
-      var isFacet = radio.value !== 'none' && radio.value !== 'grind';
-      if (!isFacet) return;
-      radio.disabled = hasFrame || state.shape === 'curved';
-      if (radio.parentElement) {
-        radio.parentElement.style.opacity = radio.disabled ? '0.45' : '';
-        radio.parentElement.style.cursor = radio.disabled ? 'not-allowed' : '';
-      }
-    });
+    var info = document.getElementById('edgeInfo');
+    if (info) info.textContent = 'Выбрана ' + EDGE_LABELS[state.edge];
   }
 
   function readState() {
@@ -435,15 +416,15 @@
     var curvedNote = document.getElementById('curved-note');
     if (curvedNote) curvedNote.hidden = state.shape !== 'curved';
     var material = $('input[name="material"]:checked');
-    state.material = material ? material.value : 'silver';
+    state.material = 'silver';
     var l = $('input[name="light"]:checked');
     if (l) state.light = l.value === 'on';
     var c = $('input[name="ctrl"]:checked');
     if (c) state.ctrl = c.value;
     var cl = $('input[name="clr"]:checked');
     if (cl) state.clr = cl.value;
-    var f = $('input[name="facet"]:checked');
-    if (f) state.facet = f.value;
+    var f = $('input[name="edge"]:checked');
+    if (f) state.edge = f.value;
     function opt(v) {
       var o = $('input[name="option"][value="' + v + '"]');
       return !!(o && o.checked);
@@ -455,7 +436,7 @@
     updateFaceFrameAvailability();
     var frame = $('input[name="face-frame"]:checked');
     state.faceFrame = frame ? frame.value : 'none';
-    updateFacetFrameCompatibility();
+    updateEdgeAvailability();
     state.aluFrame = opt('alu-frame');
     state.ledProfile = state.light && opt('led-profile');
   }
@@ -588,11 +569,10 @@
     var shape = state.shape;
     var hasLight = state.light;
     var clr = state.clr;
-    var facet = state.facet;
 
     var colors = { warm: '#ffd28a', cold: '#bbddff', neutral: '#ffffff' };
     var glowColor = colors[clr] || colors.neutral;
-    var facetW = { none: 0, grind: 0, 10: 3, 20: 6, 25: 8 }[facet] || 0;
+    var facetW = 0;
 
     var cx = VB_W / 2;
     var cy = VB_H / 2;
@@ -890,22 +870,11 @@
     if (installInfo) installInfo.classList.toggle('hidden', !(installCb && installCb.checked));
   }
 
-  function onFacetChange() {
+  function onEdgeChange() {
     readState();
-    var info = document.getElementById('edgeInfo');
-    if (info) {
-      if (state.facet === 'none') {
-        info.textContent = 'Еврокромка включена в расчёт';
-        info.classList.remove('gold');
-      } else if (state.facet === 'grind') {
-        info.textContent = 'Шлифовка';
-        info.classList.remove('gold');
-      } else {
-        info.textContent = 'Фацет ' + state.facet + ' мм';
-        info.classList.add('gold');
-      }
-    }
     renderMirrorSvg();
+    var result = document.getElementById('calc-result');
+    if (result && result.classList.contains('show')) calc();
   }
 
   function calcGeometry() {
@@ -1013,7 +982,7 @@
     }
 
     var h2 = parseFloat(document.getElementById('height2').value) || 0;
-    var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.facet, h2);
+    var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.edge, h2);
     if (supplierQuote.needsQuote) {
       requestQuote('Для этой формы, материала или обработки стоимость согласуем по эскизу и прайсу поставщика.'); return;
     }
@@ -1086,7 +1055,6 @@
        доплаты и прибыль — только во внутреннем расчёте выше. */
     var CLR_LABELS = { warm: 'тёплый', cold: 'холодный', neutral: 'нейтральный' };
     var CTRL_LABELS = { wave: 'взмах рукой', touch: 'сенсор на зеркале', remote: 'пульт ДУ', smart: 'Wi-Fi / умный дом' };
-    var FACET_LABELS = { none: 'без фацета', grind: 'шлифовка', '10': 'фацет 10 мм', '20': 'фацет 20 мм', '25': 'фацет 25 мм' };
 
     document.getElementById('r-size').textContent = sizeText;
 
@@ -1108,7 +1076,7 @@
     } else {
       inc += row('Подсветка', 'нет');
     }
-    inc += row('Кромка', state.facet === 'none' ? 'полировка (еврокромка)' : FACET_LABELS[state.facet]);
+    inc += row('Кромка', EDGE_LABELS[state.edge]);
     if (state.install) {
       inc += row('Установка', state.film ? 'на крепёж, с бронеплёнкой' : 'на крепёж');
     }
@@ -1132,7 +1100,7 @@
     } else {
       details.push('без подсветки');
     }
-    if (state.facet !== 'none') details.push(FACET_LABELS[state.facet]);
+    details.push(EDGE_LABELS[state.edge]);
     if (state.install) details.push('с установкой');
     if (state.film) details.push('с бронеплёнкой');
     if (state.aluFrame) details.push('с каркасом из алюминиевого уголка 1,5 мм');
@@ -1202,8 +1170,8 @@
       });
     });
   });
-  $all('input[name="facet"]').forEach(function (r) {
-    r.addEventListener('change', onFacetChange);
+  $all('input[name="edge"]').forEach(function (r) {
+    r.addEventListener('change', onEdgeChange);
   });
   $all('input[name="option"][value="install"]').forEach(function (r) {
     r.addEventListener('change', function () {
@@ -1248,6 +1216,7 @@
     updateProfileAvailability();
   }
 })();
+
 
 
 

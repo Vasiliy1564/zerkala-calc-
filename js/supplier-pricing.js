@@ -3,14 +3,15 @@
 'use strict';
 function lookup(shape,material,width,height,edge,height2){
  var missing={cost:null,includesPackaging:false,estimate:false,needsQuote:true};
- if (['silver','tinted'].indexOf(material)<0 || ['none','grind'].indexOf(edge)<0) return missing;
+ if (material!=='silver' || ['grind','polish','curved-grind','curved-polish'].indexOf(edge)<0) return missing;
  if (['rect','double','circle','oval'].indexOf(shape)<0) return missing;
  var w=Number(width),h=Number(height),h2=Number(height2||0);
  if (!(w>0 && h>0) || (shape==='double' && !(h2>0))) return missing;
  if (shape==='circle')h=w;
  var curved=shape==='circle'||shape==='oval';
- var rate=material==='silver'?1750:3300;
- var edgeRate=curved?(edge==='grind'?120:180):(edge==='grind'?70:90);
+ var rate=1750;
+ if ((edge.indexOf('curved-')===0)!==curved) return missing;
+ var edgeRate={grind:120,polish:140,'curved-grind':170,'curved-polish':230}[edge];
  var parts=shape==='double'?[h,h2]:[h];
  var materialCost=0,edgeCost=0,packagingArea=0;
  parts.forEach(function(partH){
@@ -30,3 +31,4 @@ function lookup(shape,material,width,height,edge,height2){
 var api={lookup:lookup,markup:function(light){return light?1.70:1.15;}};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);
+
