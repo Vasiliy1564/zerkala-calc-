@@ -77,7 +77,7 @@
 /* ============================================================
    ЗЕРКАЛА ПРО — дизайн ARCO
    Интерактив + калькулятор СПб: прайс от 12.10.2026.
-   Наценка только на полотно и обработку: 100% / 50% с LED.
+   Наценка только на полотно и обработку: 100% / 150% с LED.
    ============================================================ */
 (function () {
   'use strict';
@@ -297,7 +297,7 @@
     specialMirror: 4950,
     packaging: 100,
     plainMarkup: 1.00,
-    markup: 0.50,
+    markup: 1.50,
     ledRoll: 700,
     ledRollLen: 5,
     block: 800,
@@ -416,7 +416,7 @@
     var curvedNote = document.getElementById('curved-note');
     if (curvedNote) curvedNote.hidden = state.shape !== 'curved';
     var material = $('input[name="material"]:checked');
-    state.material = 'silver';
+    state.material = material ? material.value : 'silver';
     var l = $('input[name="light"]:checked');
     if (l) state.light = l.value === 'on';
     var c = $('input[name="ctrl"]:checked');
@@ -776,6 +776,7 @@
       halos + '<g clip-path="url(#realMirrorClip)">' +
       '<rect width="170" height="240" fill="#d7dbd3"/>' +
       '<image href="assets/mirror-reflection.png" width="170" height="240" preserveAspectRatio="xMidYMid slice" opacity=".88"/>' +
+      (state.material === 'bronze' ? '<rect width="170" height="240" fill="#9d693b" opacity=".38"/>' : state.material === 'graphite' ? '<rect width="170" height="240" fill="#333943" opacity=".38"/>' : '') +
       '<rect width="170" height="240" fill="url(#realMirrorSheen)"/></g>' + edges + splitOverlay);
   }
 
@@ -948,7 +949,7 @@
       document.getElementById('r-inc').textContent = message;
       var link = document.getElementById('r-cta');
       link.textContent = 'Уточнить стоимость в MAX';
-      link.href = MAX_URL + '?text=' + encodeURIComponent('Хочу уточнить стоимость: ' + SHAPE_NAMES[state.shape] + ', ' + h + '×' + w + ' мм, ' + ({silver:'серебро',clear:'осветлённое',tinted:'тонированное'}[state.material]) + ', ' + (state.light ? 'с подсветкой' : 'без подсветки') + '. ' + message);
+      link.href = MAX_URL + '?text=' + encodeURIComponent('Хочу уточнить стоимость: ' + SHAPE_NAMES[state.shape] + ', ' + h + '×' + w + ' мм, ' + ({silver:'серебро',graphite:'графит',bronze:'бронза'}[state.material]) + ', ' + (state.light ? 'с подсветкой' : 'без подсветки') + '. ' + message);
       var result = document.getElementById('calc-result');
       result.classList.add('show');
       if (scrollResult !== false) result.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -958,6 +959,9 @@
     }
     if (state.shape === 'curved' && (h < 400 || h > 1800)) {
       requestQuote('Для фигурного зеркала выберите высоту от 400 до 1800 мм. Ширина определяется автоматически.'); return;
+    }
+    if (state.material !== 'silver' && (Math.max(w,h)>2550 || Math.min(w,h)>1605)) {
+      requestQuote('Размер превышает лист зеркала бронза/графит 2550 × 1605 мм. Согласуем изготовление из частей.'); return;
     }
     if (Math.max(w, h) > 3210 || Math.min(w, h) > 2250) {
       requestQuote('Размер превышает формат одного листа 3210 × 2250 мм. Согласуем изготовление из частей.'); return;
@@ -1072,7 +1076,7 @@
       return '<div class="row"><span>' + label + '</span><i class="dash"></i><span>' + value + '</span></div>';
     }
 
-    var materialLabels = {silver:'Серебро, 4 мм', clear:'Осветлённое, 4 мм', tinted:'Тонированное, 4 мм'};
+    var materialLabels = {silver:'Серебро, 4 мм', graphite:'Графит, 4 мм', bronze:'Бронза, 4 мм'};
     var inc = row('Полотно', materialLabels[state.material]);
     if (state.light) {
       inc += row('Подсветка', 'LED COB, ' + CLR_LABELS[state.clr] + ' свет');

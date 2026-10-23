@@ -3,13 +3,14 @@
 'use strict';
 function lookup(shape,material,width,height,edge,height2){
  var missing={cost:null,includesPackaging:false,estimate:false,needsQuote:true};
- if (material!=='silver' || ['grind','polish','curved-grind','curved-polish'].indexOf(edge)<0) return missing;
+ if (['silver','graphite','bronze'].indexOf(material)<0 || ['grind','polish','curved-grind','curved-polish'].indexOf(edge)<0) return missing;
  if (['rect','double','circle','oval'].indexOf(shape)<0) return missing;
  var w=Number(width),h=Number(height),h2=Number(height2||0);
  if (!(w>0 && h>0) || (shape==='double' && !(h2>0))) return missing;
  if (shape==='circle')h=w;
  var curved=shape==='circle'||shape==='oval';
- var rate=1750;
+ var rate=material==='silver'?1750:3300;
+ if (material!=='silver' && (Math.max(w,h,shape==='double'?h2:0)>2550 || Math.min(w,h)>1605 || (shape==='double' && Math.min(w,h2)>1605))) return missing;
  if ((edge.indexOf('curved-')===0)!==curved) return missing;
  var edgeRate={grind:120,polish:140,'curved-grind':170,'curved-polish':230}[edge];
  var parts=shape==='double'?[h,h2]:[h];
@@ -28,7 +29,7 @@ function lookup(shape,material,width,height,edge,height2){
  var shapeCost=curved?(materialCost+edgeCost)*0.5:0;
  return {cost:Math.max(350,materialCost+edgeCost+shapeCost),materialCost:materialCost,edgeCost:edgeCost,shapeCost:shapeCost,packagingCost:packagingArea*100,includesPackaging:false,estimate:curved,needsQuote:false};
 }
-var api={lookup:lookup,markup:function(light){return light?0.50:1.00;}};
+var api={lookup:lookup,markup:function(light){return light?1.50:1.00;}};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);
 
