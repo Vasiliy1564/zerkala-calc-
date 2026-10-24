@@ -331,9 +331,8 @@
   }
   function murinoDeliveryPrice() {
     var sides = mirrorDeliverySides();
-    if (sides.longer > 2500 || sides.shorter > 1500) return 1500;
-    if (sides.longer > 2000 || sides.shorter > 1000) return 1000;
-    return 500;
+    var base = state.install ? 700 : 1000;
+    return base + (sides.longer > 2000 || sides.shorter > 1500 ? 500 : 0);
   }
   function clientDeliveryPrice() {
     return (state.delivery || state.install) && deliveryRegion() === 'murino' ? murinoDeliveryPrice() : 0;
