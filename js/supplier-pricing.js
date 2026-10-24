@@ -1,35 +1,46 @@
-/* Supplier tariff 12.10.2026. Dimensions in mm. Packaging is separate. */
+/* SPb rectangles: supplier tariff 12.10.2026. Figures: Stavropol formula. */
 (function(root){
 'use strict';
+function rectangular(shape){return shape==='rect'||shape==='double';}
 function lookup(shape,material,width,height,edge,height2){
  var missing={cost:null,includesPackaging:false,estimate:false,needsQuote:true};
- if (['silver','graphite','bronze'].indexOf(material)<0 || ['grind','polish','curved-grind','curved-polish'].indexOf(edge)<0) return missing;
- if (['rect','double','circle','oval'].indexOf(shape)<0) return missing;
- var w=Number(width),h=Number(height),h2=Number(height2||0);
- if (!(w>0 && h>0) || (shape==='double' && !(h2>0))) return missing;
- if (shape==='circle')h=w;
- var curved=shape==='circle'||shape==='oval';
- var rate=material==='silver'?1750:3300;
- if (material!=='silver' && (Math.max(w,h,shape==='double'?h2:0)>2550 || Math.min(w,h)>1605 || (shape==='double' && Math.min(w,h2)>1605))) return missing;
- if ((edge.indexOf('curved-')===0)!==curved) return missing;
- var edgeRate={grind:120,polish:140,'curved-grind':170,'curved-polish':230}[edge];
- var parts=shape==='double'?[h,h2]:[h];
- var materialCost=0,edgeCost=0,packagingArea=0;
- parts.forEach(function(partH){
-  var area=w*partH/1000000,maxSide=Math.max(w,partH);
-  var sizeFactor=maxSide>=2500?2:maxSide>=2000?1.5:maxSide>=1500?1.3:1;
-  var smallFactor=area<0.04?2:area<0.12?1.5:1;
-  var perimeter=2*(w+partH)/1000;
-  if(shape==='circle')perimeter=Math.PI*w/1000;
-  if(shape==='oval'){var a=w/2000,b=partH/2000;perimeter=Math.PI*(3*(a+b)-Math.sqrt((3*a+b)*(a+3*b)));}
-  materialCost+=Math.max(area,0.2)*rate;
-  edgeCost+=perimeter*edgeRate*sizeFactor*smallFactor;
-  packagingArea+=area;
- });
- var shapeCost=curved?(materialCost+edgeCost)*0.5:0;
- return {cost:Math.max(350,materialCost+edgeCost+shapeCost),materialCost:materialCost,edgeCost:edgeCost,shapeCost:shapeCost,packagingCost:packagingArea*100,includesPackaging:false,estimate:curved,needsQuote:false};
+ if(['silver','graphite','bronze'].indexOf(material)<0 || ['grind','polish','curved-grind','curved-polish'].indexOf(edge)<0)return missing;
+ if(['rect','double','rounded','circle','oval','capsule','semicircle','semidouble','curved'].indexOf(shape)<0)return missing;
+ var w=Number(width),h=Number(height),h2=Number(height2||0),rect=rectangular(shape);
+ if(!(w>0&&h>0)||(/double/.test(shape)&&!(h2>0)))return missing;
+ if(shape==='circle')h=w;
+ var totalH=h+(shape==='semidouble'?h2:0);
+ var stockHeights=shape==='double'?[h,h2]:[totalH];
+ if(material!=='silver'&&stockHeights.some(function(ph){return Math.max(w,ph)>2550||Math.min(w,ph)>1605;}))return missing;
+ var grind=edge.indexOf('grind')!==-1;
+ var materialCost=0,edgeCost=0,packagingArea=0,perimeter=0,area=0;
+ if(rect){
+  stockHeights.forEach(function(ph){
+   var partArea=w*ph/1000000,maxSide=Math.max(w,ph),partPerimeter=2*(w+ph)/1000;
+   var sizeFactor=maxSide>=2500?2:maxSide>=2000?1.5:maxSide>=1500?1.3:1;
+   var smallFactor=partArea<0.04?2:partArea<0.12?1.5:1;
+   materialCost+=Math.max(partArea,0.2)*(material==='silver'?1750:3300);
+   edgeCost+=partPerimeter*(grind?70:90)*sizeFactor*smallFactor;
+   packagingArea+=partArea;area+=partArea;perimeter+=partPerimeter;
+  });
+ }else{
+  // Same bounding rectangle and edge surcharge as Stavropol (not +50% per order).
+  area=w*totalH/1000000;perimeter=2*(w+totalH)/1000;
+  var extra=shape==='rounded'?0:95;
+  materialCost=area*(material==='silver'?1500:3300);
+  edgeCost=perimeter*((grind?200:150)+extra);
+ }
+ var maxDimension=Math.max(w,totalH);
+ var sizeSurcharge=rect?0:maxDimension<=2000?0:maxDimension<=2500?1200:3000;
+ return {cost:rect?Math.max(350,materialCost+edgeCost):materialCost+edgeCost,materialCost:materialCost,edgeCost:edgeCost,shapeCost:0,packagingCost:packagingArea*100,includesPackaging:false,estimate:shape==='curved',needsQuote:false,pricingMode:rect?'supplier':'stavropol',sizeSurcharge:sizeSurcharge,splitFactor:shape==='semidouble'?1.2:1,roundedFactor:shape==='rounded'?1.15:1,area:area,perimeter:perimeter};
 }
-var api={lookup:lookup,markup:function(light){return light?1.50:1.00;}};
+function markup(light,shape){return light?1.5:(!shape||rectangular(shape)?1:0.8);}
+function purchasingTrip(width,height){
+ var longer=Math.max(Number(width),Number(height)),shorter=Math.min(Number(width),Number(height));
+ if(longer<1800&&shorter<=1500)return 700;
+ if(longer<=2000&&shorter<=1000)return 1000;
+ return 2000;
+}
+var api={lookup:lookup,markup:markup,purchasingTrip:purchasingTrip};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);
-

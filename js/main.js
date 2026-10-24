@@ -300,8 +300,8 @@
     markup: 1.50,
     ledRoll: 700,
     ledRollLen: 5,
-    block: 800,
-    switch: 500,
+    block: 700,
+    switch: 600,
     mount: 50,
     mountStep: 2,
     purchaseTrip: 700
@@ -323,7 +323,8 @@
     return {longer:Math.max(w, h), shorter:Math.min(w, h)};
   }
   function purchaseTripPrice() {
-    return PRICE.purchaseTrip;
+    var sides = mirrorDeliverySides();
+    return window.MirrorSupplierPricing.purchasingTrip(sides.longer, sides.shorter);
   }
   function murinoDeliveryPrice() {
     var sides = mirrorDeliverySides();
@@ -996,8 +997,10 @@
     }
     var mirrorCost = supplierQuote.materialCost;
     var edgeCost = supplierQuote.edgeCost + supplierQuote.shapeCost;
-    var markedBase = supplierQuote.cost * (1 + window.MirrorSupplierPricing.markup(state.light));
-    var price = markedBase + supplierQuote.packagingCost;
+    area = supplierQuote.area;
+    ledPer = supplierQuote.perimeter;
+    var markedBase = supplierQuote.cost * (1 + window.MirrorSupplierPricing.markup(state.light, state.shape));
+    var price = markedBase + supplierQuote.packagingCost + supplierQuote.sizeSurcharge;
 
     // Упаковка, комплектующие, доставка и монтаж — без торговой наценки.
     if (state.light) {
@@ -1016,7 +1019,7 @@
 
     /* Бронеплёнка: 500 ₽/м² по площади прямоугольника */
     if (state.film) {
-      price += geo.area * 500;
+      price += geo.area * (supplierQuote.pricingMode === 'stavropol' ? 200 : 500);
     }
     /* Подогрев: фиксированная доплата */
     if (state.heat) {
@@ -1030,8 +1033,11 @@
 
     /* Налог +6% — применяется последним, ко всем расчётам */
     price *= 1.06;
+    price *= supplierQuote.splitFactor;
     /* Дополнительные 2% ко всем итоговым расчётам, до округления. */
     price *= 1.02;
+    var roundedSurcharge = price * (supplierQuote.roundedFactor - 1);
+    price += roundedSurcharge;
 
     // Поездка за полотном, установка и доставка — без наценки и надбавок.
     price += purchaseTripPrice();
@@ -1045,8 +1051,7 @@
     }
 
     // Rounded corners: the rectangular calculation plus 15%, before rounding.
-    var roundedSurcharge = 0;
-    price += roundedSurcharge;
+
 
     var sizeText = '';
     if (state.shape === 'circle') {
