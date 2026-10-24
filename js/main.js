@@ -353,7 +353,7 @@
     if (label) label.textContent = included ? 'Доставка добавляется к установке' : 'Доставка';
   }
 
-  var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'криволинейная шлифовка', 'curved-polish': 'криволинейная полировка', facet: 'фацет — по запросу' };
+  var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'криволинейная шлифовка', 'curved-polish': 'криволинейная полировка' };
 
   function euroEdgeRate(sideMm) {
     if (sideMm < 120 || sideMm >= 2400) return 270;
@@ -398,16 +398,14 @@
   function updateEdgeAvailability() {
     var curved = state.shape !== 'rect' && state.shape !== 'double';
     var selected = $('input[name="edge"]:checked');
-    var treatment = selected ? selected.value : 'polish';
-    state.edge = treatment === 'facet' ? 'facet' : (curved ? 'curved-' : '') + treatment;
+    var treatment = selected && selected.value === 'grind' ? 'grind' : 'polish';
+    state.edge = (curved ? 'curved-' : '') + treatment;
     $all('input[name="edge"]').forEach(function (radio) {
       radio.disabled = false;
       if (radio.parentElement) radio.parentElement.style.opacity = '';
     });
     var info = document.getElementById('edgeInfo');
-    if (info) info.textContent = treatment === 'facet'
-      ? 'Стоимость фацета — по запросу: в прайсе ставка не указана'
-      : 'Выбрана ' + (treatment === 'grind' ? 'шлифовка' : 'полировка');
+    if (info) info.textContent = 'Выбрана ' + (treatment === 'grind' ? 'шлифовка' : 'полировка');
   }
 
   function readState() {
@@ -573,7 +571,6 @@
 
     var colors = { warm: '#ffd28a', cold: '#bbddff', neutral: '#ffffff' };
     var glowColor = colors[clr] || colors.neutral;
-    var facetW = 0;
 
     var cx = VB_W / 2;
     var cy = VB_H / 2;
@@ -592,8 +589,8 @@
       var rx = shape === 'rounded' ? Math.min(rw, rh) * 0.12 : 10 * (rw / 150);
       var x = (VB_W - rw) / 2;
       var y = (VB_H - rh) / 2;
-      content = '<rect class="mirror-glow" x="' + (x - facetW) + '" y="' + (y - facetW) + '" width="' + (rw + facetW * 2) + '" height="' + (rh + facetW * 2) + '" rx="' + (rx + facetW) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
-        '<rect class="mirror-frame" x="' + x + '" y="' + y + '" width="' + rw + '" height="' + rh + '" rx="' + rx + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + facetW + '" />' +
+      content = '<rect class="mirror-glow" x="' + (x - 0) + '" y="' + (y - 0) + '" width="' + (rw + 0 * 2) + '" height="' + (rh + 0 * 2) + '" rx="' + (rx + 0) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
+        '<rect class="mirror-frame" x="' + x + '" y="' + y + '" width="' + rw + '" height="' + rh + '" rx="' + rx + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + 0 + '" />' +
         '<rect class="mirror-body" x="' + x + '" y="' + y + '" width="' + rw + '" height="' + rh + '" rx="' + rx + '" fill="url(#glassGrad)" stroke="#2a3a4e" stroke-width="1" />' +
         '<rect x="' + (x + 10) + '" y="' + (y + 10) + '" width="' + (rw * 0.3) + '" height="' + (rh * 0.3) + '" rx="4" fill="url(#windowGrad)" opacity="0.6" />' +
         '<rect x="' + (x + rw * 0.55) + '" y="' + (y + 15) + '" width="' + (rw * 0.25) + '" height="' + (rh * 0.25) + '" rx="3" fill="url(#windowGrad)" opacity="0.4" />' +
@@ -604,8 +601,8 @@
     } else if (shape === 'circle') {
       var fitC = fitBox(1);
       var r = Math.min(fitC.w, fitC.h) / 2;
-      content = '<circle class="mirror-glow" cx="' + cx + '" cy="' + cy + '" r="' + (r + 4 + facetW) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
-        '<circle class="mirror-frame" cx="' + cx + '" cy="' + cy + '" r="' + (r + facetW) + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + facetW + '" />' +
+      content = '<circle class="mirror-glow" cx="' + cx + '" cy="' + cy + '" r="' + (r + 4 + 0) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
+        '<circle class="mirror-frame" cx="' + cx + '" cy="' + cy + '" r="' + (r + 0) + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + 0 + '" />' +
         '<circle class="mirror-body" cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="url(#glassGrad)" stroke="#2a3a4e" stroke-width="1" />' +
         '<circle cx="' + (cx - r * 0.2) + '" cy="' + (cy - r * 0.25) + '" r="' + (r * 0.3) + '" fill="url(#windowGrad)" opacity="0.5" />' +
         '<circle cx="' + (cx + r * 0.3) + '" cy="' + (cy - r * 0.15) + '" r="' + (r * 0.22) + '" fill="url(#windowGrad)" opacity="0.3" />' +
@@ -621,8 +618,8 @@
       var fitO = fitBox(w / h);
       var rxo = fitO.w / 2;
       var ryo = fitO.h / 2;
-      content = '<ellipse class="mirror-glow" cx="' + cx + '" cy="' + cy + '" rx="' + (rxo + 4 + facetW) + '" ry="' + (ryo + 4 + facetW) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
-        '<ellipse class="mirror-frame" cx="' + cx + '" cy="' + cy + '" rx="' + (rxo + facetW) + '" ry="' + (ryo + facetW) + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + facetW + '" />' +
+      content = '<ellipse class="mirror-glow" cx="' + cx + '" cy="' + cy + '" rx="' + (rxo + 4 + 0) + '" ry="' + (ryo + 4 + 0) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
+        '<ellipse class="mirror-frame" cx="' + cx + '" cy="' + cy + '" rx="' + (rxo + 0) + '" ry="' + (ryo + 0) + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + 0 + '" />' +
         '<ellipse class="mirror-body" cx="' + cx + '" cy="' + cy + '" rx="' + rxo + '" ry="' + ryo + '" fill="url(#glassGrad)" stroke="#2a3a4e" stroke-width="1" />' +
         '<ellipse cx="' + (cx - rxo * 0.2) + '" cy="' + (cy - ryo * 0.3) + '" rx="' + (rxo * 0.35) + '" ry="' + (ryo * 0.3) + '" fill="url(#windowGrad)" opacity="0.5" />' +
         '<ellipse cx="' + (cx + rxo * 0.3) + '" cy="' + (cy - ryo * 0.15) + '" rx="' + (rxo * 0.25) + '" ry="' + (ryo * 0.22) + '" fill="url(#windowGrad)" opacity="0.3" />' +
@@ -645,9 +642,9 @@
         rectW = 0;
       }
       var pathMain = 'M ' + (boxX + rr) + ' ' + boxY + ' A ' + rr + ' ' + rr + ' 0 0 0 ' + boxX + ' ' + (boxY + rr) + ' A ' + rr + ' ' + rr + ' 0 0 0 ' + (boxX + rr) + ' ' + (boxY + boxH) + ' L ' + (boxX + boxW) + ' ' + (boxY + boxH) + ' L ' + (boxX + boxW) + ' ' + boxY + ' Z';
-      var pathGlow = 'M ' + (boxX + rr) + ' ' + (boxY - facetW) + ' A ' + (rr + facetW) + ' ' + (rr + facetW) + ' 0 0 0 ' + (boxX - facetW) + ' ' + (boxY + rr) + ' A ' + (rr + facetW) + ' ' + (rr + facetW) + ' 0 0 0 ' + (boxX + rr) + ' ' + (boxY + boxH + facetW) + ' L ' + (boxX + boxW + facetW) + ' ' + (boxY + boxH + facetW) + ' L ' + (boxX + boxW + facetW) + ' ' + (boxY - facetW) + ' Z';
+      var pathGlow = 'M ' + (boxX + rr) + ' ' + (boxY - 0) + ' A ' + (rr + 0) + ' ' + (rr + 0) + ' 0 0 0 ' + (boxX - 0) + ' ' + (boxY + rr) + ' A ' + (rr + 0) + ' ' + (rr + 0) + ' 0 0 0 ' + (boxX + rr) + ' ' + (boxY + boxH + 0) + ' L ' + (boxX + boxW + 0) + ' ' + (boxY + boxH + 0) + ' L ' + (boxX + boxW + 0) + ' ' + (boxY - 0) + ' Z';
       content = '<path class="mirror-glow" d="' + pathGlow + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
-        '<path class="mirror-frame" d="' + pathMain + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + facetW + '" />' +
+        '<path class="mirror-frame" d="' + pathMain + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + 0 + '" />' +
         '<path class="mirror-body" d="' + pathMain + '" fill="url(#glassGrad)" stroke="#2a3a4e" stroke-width="1" />' +
         '<ellipse cx="' + (boxX + boxW - rectW * 0.5) + '" cy="' + (boxY + boxH * 0.3) + '" rx="' + Math.max(1, rectW * 0.3) + '" ry="' + (boxH * 0.22) + '" fill="url(#windowGrad)" opacity="0.5" />' +
         '<ellipse cx="' + (boxX + boxW - rectW * 0.2) + '" cy="' + (boxY + boxH * 0.55) + '" rx="' + Math.max(1, rectW * 0.15) + '" ry="' + (boxH * 0.18) + '" fill="url(#windowGrad)" opacity="0.3" />' +
@@ -741,13 +738,7 @@
       outline.setAttribute('stroke', '#edf0e9');
       outline.setAttribute('stroke-width', '0.45');
       edges += outline.outerHTML;
-      if (facetW) {
-        outline.setAttribute('stroke', '#f5f6ef');
-        outline.setAttribute('stroke-width', String(facetW));
-        outline.setAttribute('opacity', '0.35');
-        outline.setAttribute('clip-path', 'url(#realMirrorClip)');
-        edges += outline.outerHTML;
-      }
+
       if (hasLight) {
         // A crisp LED band remains visible over the reflection; its halo alone
         // is insufficient on a pale wall. Both follow the selected temperature.
@@ -987,10 +978,7 @@
     }
 
     var h2 = parseFloat(document.getElementById('height2').value) || 0;
-    if (state.edge === 'facet') {
-      requestQuote('Фацет: стоимость нужно уточнить. В прайсе от 12.10.2026 ставка фацета не указана.');
-      return;
-    }
+
     var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.edge, h2);
     if (supplierQuote.needsQuote) {
       requestQuote('Для этой формы, материала или обработки стоимость согласуем по эскизу и прайсу поставщика.'); return;
