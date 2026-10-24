@@ -223,7 +223,6 @@
     heat: false,
     delivery: false,
     faceFrame: 'none',
-    aluFrame: false,
     ledProfile: false,
     install: false
   };
@@ -440,7 +439,6 @@
     var frame = $('input[name="face-frame"]:checked');
     state.faceFrame = frame ? frame.value : 'none';
     updateEdgeAvailability();
-    state.aluFrame = opt('alu-frame');
     state.ledProfile = state.light && opt('led-profile');
   }
 
@@ -993,6 +991,8 @@
     ledPer = supplierQuote.perimeter;
     var markedBase = supplierQuote.cost * (1 + window.MirrorSupplierPricing.markup(state.light, state.shape));
     var price = markedBase + supplierQuote.packagingCost + supplierQuote.sizeSurcharge;
+    var reinforcement = window.MirrorSupplierPricing.reinforcement(state.shape, w, h, h2);
+    price += reinforcement.cost;
     var costEvaProfileLight = state.light ? ledPer * PRICE.evaPackPrice / PRICE.evaPackLength : 0;
     price += costEvaProfileLight;
 
@@ -1022,7 +1022,6 @@
 
     /* Дополнительные алюминиевые опции — по расчётному периметру,
        без минимальной покупки 6 м. Ставки скрыты в клиентском интерфейсе. */
-    if (state.aluFrame) price += geo.per * 200;
     if (state.ledProfile && state.light) price += geo.per * 600;
 
     /* Налог +6% — применяется последним, ко всем расчётам */
@@ -1097,7 +1096,6 @@
     }
 
     inc += row('Доставка', deliveryDescription());
-    if (state.aluFrame) inc += row('Каркас из алюминиевого уголка 1,5 мм', 'да');
     if (state.ledProfile) inc += row('Светодиодная лента в алюминиевом профиле', 'да');
     if (state.faceFrame !== 'none') inc += row('Алюминиевая рама', FACE_FRAME_LABELS[state.faceFrame]);
     if (supplierQuote.estimate) inc += '<p class="figure-price-note">Точная стоимость после согласования контура и заготовки. Установка и доставка — по выбранным условиям.</p>';
@@ -1112,7 +1110,6 @@
     details.push(EDGE_LABELS[state.edge]);
     if (state.install) details.push('с установкой');
     if (state.film) details.push('с бронеплёнкой');
-    if (state.aluFrame) details.push('с каркасом из алюминиевого уголка 1,5 мм');
     if (state.ledProfile) details.push('со светодиодной лентой в алюминиевом профиле');
     if (state.delivery || state.install) details.push('доставка: ' + deliveryDescription());
 
@@ -1191,7 +1188,7 @@
       if (res && res.classList.contains('show')) calc();
     });
   });
-  $all('input[name="option"][value="film"], input[name="option"][value="heat"], input[name="option"][value="delivery"], input[name="option"][value="alu-frame"], input[name="option"][value="led-profile"]').forEach(function (r) {
+  $all('input[name="option"][value="film"], input[name="option"][value="heat"], input[name="option"][value="delivery"], input[name="option"][value="led-profile"]').forEach(function (r) {
     r.addEventListener('change', function () {
       readState();
       var res = document.getElementById('calc-result');

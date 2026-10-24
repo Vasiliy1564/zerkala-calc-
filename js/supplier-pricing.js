@@ -41,6 +41,12 @@ function purchasingTrip(width,height){
  if(longer<=2000&&shorter<=1000)return 1000;
  return 2000;
 }
-var api={lookup:lookup,markup:markup,purchasingTrip:purchasingTrip};
+function reinforcement(shape,width,height,height2){
+ var w=Number(width),h=shape==='circle'?w:Number(height);
+ if(shape==='double'||shape==='semidouble')h+=Number(height2||0);
+ var metres=h<=1800?0:h<=2000?2*h/1000:2*(w+h)/1000;
+ return {metres:metres,cost:metres*349,rate:349};
+}
+var api={lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);
