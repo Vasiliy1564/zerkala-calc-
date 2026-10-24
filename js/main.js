@@ -229,6 +229,8 @@
   };
 
   var FACE_FRAME_LABELS = { white: 'белая', black: 'чёрная', gold: 'золотая' };
+  var FACE_FRAME_PRICES = {white:396, black:373, gold:315};
+  var FACE_FRAME_DELIVERY = {white:600, black:600, gold:990};
   function faceFramePerimeter(shape, w, h, h2) {
   var totalH = h + (shape.indexOf('double') !== -1 ? h2 : 0);
   if (shape === 'circle') return Math.PI * w / 1000;
@@ -250,7 +252,7 @@
 }
 
   function faceFrameStock(shape, w, h, h2) {
-  var barLength = 2700, billedLength = 3, bars;
+  var barLength = 2700, billedLength = 2.7, bars;
   if (shape === 'rect' || shape === 'double') {
     var sides = shape === 'double' ? [w,w,h,h,w,w,h2,h2] : [w,w,h,h];
     var pieces = [];
@@ -1034,8 +1036,10 @@
 
     if (state.faceFrame !== 'none') {
       var frameBars = faceFrameStock(state.shape, w, h, parseFloat((document.getElementById('height2') || {}).value) || 0).bars;
-      var framePurchase = frameBars * 500;
-      price += framePurchase + Math.max(1500, framePurchase) + 400;
+      var frameUnitPrice = FACE_FRAME_PRICES[state.faceFrame];
+      var framePurchase = frameBars * frameUnitPrice;
+      var frameDelivery = FACE_FRAME_DELIVERY[state.faceFrame];
+      price += framePurchase + frameDelivery;
     }
 
     // Rounded corners: the rectangular calculation plus 15%, before rounding.
