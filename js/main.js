@@ -302,6 +302,8 @@
     markup: 1.50,
     ledRoll: 700,
     ledRollLen: 5,
+    evaPackPrice: 1010,
+    evaPackLength: 6,
     block: 700,
     switch: 600,
     mount: 50,
@@ -991,6 +993,8 @@
     ledPer = supplierQuote.perimeter;
     var markedBase = supplierQuote.cost * (1 + window.MirrorSupplierPricing.markup(state.light, state.shape));
     var price = markedBase + supplierQuote.packagingCost + supplierQuote.sizeSurcharge;
+    var costEvaProfileLight = state.light ? ledPer * PRICE.evaPackPrice / PRICE.evaPackLength : 0;
+    price += costEvaProfileLight;
 
     // Упаковка, комплектующие, доставка и монтаж — без торговой наценки.
     if (state.light) {
