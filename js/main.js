@@ -340,7 +340,7 @@
   }
   function deliveryDescription() {
     if (!state.delivery && !state.install) return 'не выбрана';
-    return deliveryRegion() === 'murino' ? 'по Мурино — ' + fmt(murinoDeliveryPrice()) + ' ₽' :
+    return deliveryRegion() === 'murino' ? 'по Мурино, включена в итоговую стоимость' :
       (deliveryRegion() === 'spb' ? 'по Санкт-Петербургу — отдельно, не включена в итог' : 'по адресу — отдельно, не включена в итог');
   }
   function updateDeliveryAvailability() {
@@ -351,9 +351,9 @@
     if (cb) cb.disabled = included;
     if (field) field.hidden = !(included || (cb && cb.checked));
     var option = document.querySelector('#delivery-region option[value="murino"]');
-    if (option) option.textContent = 'Мурино — ' + fmt(murinoDeliveryPrice()) + ' ₽';
+    if (option) option.textContent = 'Мурино';
     var label = document.querySelector('#deliveryOpt span');
-    if (label) label.textContent = included ? 'Доставка добавляется к установке' : 'Доставка';
+    if (label) label.textContent = included ? 'Доставка учтена в итоговой стоимости' : 'Доставка';
   }
 
   var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'криволинейная шлифовка', 'curved-polish': 'криволинейная полировка' };
@@ -1222,9 +1222,3 @@
     updateProfileAvailability();
   }
 })();
-
-
-
-
-
-
