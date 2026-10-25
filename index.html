@@ -9,6 +9,11 @@
   }
   var userNavigated = false;
   function startAtTop() {
+    if (new URLSearchParams(location.search).get("calculator") === "1") {
+      var target = document.getElementById("quote-form");
+      if (target) target.scrollIntoView({behavior:"instant",block:"start"});
+      return;
+    }
     if (!userNavigated && (!location.hash || location.hash === '#top')) {
       window.scrollTo({top:0,left:0,behavior:'instant'});
     }
@@ -31,12 +36,12 @@
   <meta name="description" content="Зеркала на заказ по вашим размерам в Санкт-Петербурге и Мурино: с LED-подсветкой и без, для ванной, прихожей и в полный рост. Калькулятор цены, доставка и монтаж.">
   <meta name="keywords" content="зеркала на заказ Мурино, зеркала на заказ Санкт-Петербург, зеркала с подсветкой СПб, зеркала без подсветки СПб, зеркала Бугры, зеркала Новое Девяткино">
   <meta name="theme-color" content="#f5f5f7">
-  <title>Зеркала на заказ в СПб и Мурино — с подсветкой | Зеркало Pro</title>
+  <title>Зеркала на заказ в Мурино и СПб — с подсветкой | Зеркало Pro</title>
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ru_RU">
-  <meta property="og:title" content="Зеркала на заказ в СПб и Мурино | Зеркало Pro">
+  <meta property="og:title" content="Зеркала на заказ в Мурино и СПб | Зеркало Pro">
   <meta property="og:description" content="Зеркала по вашим размерам, с подсветкой и без. Замер, изготовление, доставка и монтаж в Мурино, Буграх, Новом Девяткино и Санкт-Петербурге.">
   <link rel="canonical" href="https://zerkalo-pro-spb.ru/">
   <meta property="og:url" content="https://zerkalo-pro-spb.ru/">
@@ -96,6 +101,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
       <a class="logo" href="#top" aria-label="ЗЕРКАЛА ПРО — на главную">ЗЕРКАЛА&nbsp;ПРО</a>
       <div class="nav-links" id="site-menu">
         <a href="#products">Зеркала</a>
+        <a href="zerkala-s-podsvetkoy-murino.html">С подсветкой</a>
         <a href="#projects">Проекты</a>
         <a href="#about">О нас</a>
         <a href="#avito-reviews">Отзывы</a>
@@ -161,7 +167,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
           <article class="product">
             <img src="assets/projects/bathroom-dark.jpg" alt="Прямоугольное зеркало с LED-подсветкой на тёмной стене" loading="lazy">
             <div class="product-copy">
-              <h3>Зеркала с LED-подсветкой</h3>
+              <h3><a href="zerkala-s-podsvetkoy-murino.html">Зеркала с LED-подсветкой</a></h3>
               <p>COB-лента 320 LED/м — ровный свет без точек и тёмных зон.</p>
               <a class="text-link" href="#quote-form">Рассчитать <svg viewBox="0 0 20 20" fill="none"><path d="M3 10h13M11 4l6 6-6 6" stroke="currentColor" stroke-width="1.5"/></svg></a>
             </div>
@@ -682,7 +688,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
           <p class="section-copy">Изготовление зеркал на заказ для квартиры и дома. Сравните варианты и рассчитайте стоимость в онлайн-калькуляторе.</p>
         </div>
         <div class="steps">
-          <article class="step"><h3>Зеркала с подсветкой на заказ</h3><p>LED-зеркало можно подобрать для ванной, прихожей или спальни. Выберите тёплый, нейтральный или холодный свет и удобное управление. В калькуляторе можно сравнить стоимость зеркала с подсветкой и без неё.</p></article>
+          <article class="step"><h3>Зеркала с подсветкой на заказ</h3><p>LED-зеркало можно подобрать для ванной, прихожей или спальни. Выберите тёплый, нейтральный или холодный свет и удобное управление. В калькуляторе можно сравнить стоимость зеркала с подсветкой и без неё.</p><p><a class="text-link" href="zerkala-s-podsvetkoy-murino.html">Зеркала с подсветкой в Мурино — варианты и заказ →</a></p></article>
           <article class="step"><h3>Настенные зеркала в полный рост</h3><p>Для гардеробной и прихожей изготавливаем высокие зеркала по размерам свободного участка стены. Для ванной — зеркала над раковиной или тумбой. До изготовления согласуем ориентацию, обработку кромки и крепление.</p></article>
           <article class="step"><h3>Зеркала в алюминиевой раме</h3><p>Для прямоугольных зеркал доступны чёрная, белая и золотая алюминиевые рамы. Форму и оформление можно сравнить в калькуляторе; совместимость рамы, обработки кромки и подсветки учитывается при выборе опций.</p></article>
           <article class="step"><h3>Заказ, доставка и монтаж</h3><p>Принимаем заказы в Мурино, Буграх, Новом Девяткино и Санкт-Петербурге (СПб). Отправьте ширину, высоту и адрес: согласуем изготовление, доставку и установку зеркала. Выезд в другие районы Петербурга обсуждаем индивидуально.</p></article>
