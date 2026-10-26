@@ -1,3 +1,50 @@
 [hidden]{display:none!important}#quantity-field{display:block;font-weight:650;margin:24px 0 16px}#quantity-field input{width:100%;font-size:24px;padding:14px;color:#203b32}#quote-form .order-add-row{margin:14px 0}#quote-form .order-add-row .button{margin-top:10px}#r-quantity{font-size:14px;margin-top:8px}
 
 #quantity-field .quantity-stepper{display:flex;align-items:center;background:white;border:1px solid #bbc9bf;border-radius:12px;margin-top:10px;overflow:hidden}#quantity-field .quantity-stepper input{border:0;border-radius:0;margin:0;text-align:center;min-width:0;flex:1;scroll-margin:28px}#quantity-field .quantity-stepper button{flex:0 0 52px;min-height:58px;border:0;background:#edf0e8;color:#203b32;font-size:26px}#quantity-field .quantity-stepper button:disabled{opacity:.4}.quantity-presets{display:flex;gap:8px;margin-top:10px}.quantity-presets button{flex:1;min-height:44px;border:1px solid #bbc9bf;border-radius:10px;background:white;color:#203b32;font-size:16px}.quantity-presets button[aria-pressed=true]{background:#203b32;color:white}body.quantity-editing{padding-bottom:45vh}#quick-light{margin:22px 0 12px}#quick-light>p{font-size:14px;font-weight:650;margin:0 0 10px}.quick-light-options{display:grid;grid-template-columns:1fr 1fr;gap:9px}.quick-light-options button{min-height:56px;padding:10px;border:1px solid #bbc9bf;border-radius:13px;background:white;color:#203b32;font-size:15px;font-weight:650}.quick-light-options button[aria-pressed=true]{background:#203b32;color:white}.scroll-guide{position:fixed;top:68%;z-index:15;width:22px;min-height:58px;padding:2px 0;border:1px solid #203b3240;border-radius:12px;background:#f6f4efed;color:#203b32;font-size:24px;box-shadow:0 2px 7px #203b3210}.scroll-guide small{display:block;font-size:9px;line-height:1.3}.scroll-guide-left{left:2px}.scroll-guide-right{right:2px}.scroll-guide:focus-visible,.quick-light-options button:focus-visible,.quantity-presets button:focus-visible{outline:3px solid #957945;outline-offset:2px}@media(max-width:700px){#calculator .container{padding-left:28px;padding-right:28px}}
+
+/* Compact, higher contrast calculator controls. */
+#calculator{background:#f8faf7;color:#173d2e}
+#quote-form .field{margin-top:12px;margin-bottom:12px}
+#quote-form .field>label,#quote-form #quantity-field{font-size:14px;font-weight:600;line-height:1.3}
+#quote-form .field>label{margin-bottom:6px}
+#quote-form .options{gap:6px;align-items:stretch}
+#quote-form .options label{min-width:0}
+#quote-form .options label span{min-height:40px;height:100%;padding:7px 8px;border:1px solid #afc2b5;border-radius:8px;background:#fff;color:#173d2e;font-size:13px;line-height:1.25;font-weight:500;box-shadow:none}
+#quote-form .options input:checked+span{background:#126347;border-color:#126347;color:#fff;font-weight:550}
+#quote-form .options input:disabled+span{opacity:.55}
+#quote-form .options--checks{grid-template-columns:repeat(2,minmax(0,1fr))}
+#quote-form .options--checks label span{padding:7px 9px}
+#quote-form .options[data-kind=material],#quote-form .options[data-kind=clr]{grid-template-columns:repeat(3,minmax(0,1fr))}
+#quote-form .options svg,#quote-form .calc-shape-icon{max-height:18px;max-width:14px;flex-shrink:0}
+#quote-form .stepper{border:1px solid #afc2b5;border-radius:8px;background:#fff}
+#quote-form .stepper input{padding:8px 4px;font-size:20px;min-height:40px;font-weight:550;color:#173d2e}
+#quote-form .stepper-btn{width:42px;min-height:40px;padding:5px;font-size:23px;color:#28634b}
+#quote-form .form-hint,#quote-form .edge-info,#quote-form .install-info,#quote-form .form-disclaimer{font-size:11px;line-height:1.4;color:#43624e;margin:5px 0 9px}
+#quote-form .install-info{padding:9px;border-radius:8px}
+#quote-form .calc-result{margin:16px 0;padding:16px;border-radius:12px;background:#fff;border:1px solid #c1d0c4}
+#quote-form #r-sum{font-size:30px;line-height:1.2;margin:10px 0;color:#123e2b}
+#quote-form .calc-result-size,#quote-form .calc-result-label{font-size:12px;color:#3b5b46}
+#quote-form .calc-included{font-size:12px}
+#quote-form .calc-included .row{padding:5px 0;gap:9px;line-height:1.35}
+#quote-form .calc-included .row span{margin:0;color:#365a45}
+#quote-form .calc-included .row span:first-child{font-weight:550;color:#234d36}
+#quote-form .button,#mirror-order .button{padding:11px 12px;min-height:42px;font-size:14px;border-radius:9px;line-height:1.3}
+#quote-form .secondary{margin-top:10px}
+#quick-light{margin:12px 0 10px}
+#quick-light>p{font-size:13px;margin:0 0 6px;font-weight:550}
+#quick-light .quick-light-options{gap:6px}
+#quick-light .quick-light-options button{min-height:40px;padding:8px;border-radius:8px;font-size:13px;font-weight:550;border-color:#afc2b5;background:#fff;color:#173d2e}
+#quick-light .quick-light-options button[aria-pressed=true]{background:#126347;color:#fff;border-color:#126347}
+#quantity-field{margin:12px 0!important}
+#quantity-field select,#mirror-order select{display:block;width:100%;height:40px;min-height:40px;margin-top:6px;padding:6px 10px;border:1px solid #afc2b5;border-radius:8px;background:#fff;color:#173d2e;font:16px/1.3 system-ui,sans-serif}
+#mirror-order{margin-top:18px;padding:16px;border-radius:12px}
+#mirror-order h3{font-size:17px;margin:0 0 9px}
+#mirror-order h4{font-size:15px;margin:14px 0 8px}
+#mirror-order p,#mirror-order .account-note{font-size:12px;line-height:1.4;margin:6px 0 10px}
+#mirror-order .order-item{padding:10px 0}
+#mirror-order .order-item>strong{font-size:14px;font-weight:550}
+#mirror-order label{font-size:13px;margin:8px 0}
+#mirror-order .order-item-actions button{padding:8px;min-height:38px;font-size:13px;border-radius:8px}
+#mirror-order .profit-summary{gap:9px}
+#mirror-order .profit-summary strong{font-size:22px}
+#mirror-order .order-clear{font-size:13px;padding:10px 0}
