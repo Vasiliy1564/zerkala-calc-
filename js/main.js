@@ -781,7 +781,15 @@
       '<rect width="170" height="240" fill="url(#realMirrorSheen)"/></g>' + edges + splitOverlay);
   }
 
+  // Keep the entered rectangular dimensions when a dependent shape temporarily
+  // derives its width/height (circle, half-circle, wave).
+  var enteredDimensions = null;
+  function dependentShape(shape) { return ['circle','semicircle','semidouble','curved'].indexOf(shape) !== -1; }
   function pickShape(shape) {
+    var previousShape = state.shape;
+    var previousWidth = document.getElementById('width').value;
+    var previousHeight = document.getElementById('height').value;
+    if (!dependentShape(previousShape)) enteredDimensions = {width:previousWidth,height:previousHeight};
     state.shape = shape;
     var fieldH = document.getElementById('fieldH');
     var labelW = document.getElementById('labelW');
@@ -801,36 +809,28 @@
     if (shape === 'circle') {
       fieldH.classList.add('hidden');
       labelW.textContent = 'Диаметр, мм';
-      inputW.value = 900;
-      inputH.value = 900;
     } else if (shape === 'semicircle') {
       fieldH.classList.remove('hidden');
       labelH.textContent = 'Высота (диаметр круга), мм';
       labelW.textContent = 'Ширина = ½ высоты, мм';
-      inputH.value = 1800;
-      inputW.value = 900;
     } else if (shape === 'double') {
       fieldH.classList.remove('hidden');
       labelW.textContent = 'Ширина, мм';
       labelH.textContent = 'Высота верхней, мм';
-      inputW.value = 800;
-      inputH.value = 1600;
-      document.getElementById('height2').value = 600;
     } else if (shape === 'semidouble') {
       fieldH.classList.remove('hidden');
       labelW.textContent = 'Ширина = ½ общей высоты, мм';
       labelH.textContent = 'Высота верхней части, мм';
-      inputW.value = 800;
-      inputH.value = 1000;
-      document.getElementById('height2').value = 800;
     } else {
       fieldH.classList.remove('hidden');
       labelW.textContent = shape === 'curved' ? 'Ширина автоматически, мм' : 'Ширина, мм';
       labelH.textContent = shape === 'curved' ? 'Высота, мм (до 1800)' : 'Высота, мм';
-      inputW.value = 800;
-      inputH.value = shape === 'curved' ? 900 : 1800;
     }
 
+    if (!dependentShape(shape) && dependentShape(previousShape) && enteredDimensions) {
+      inputW.value = enteredDimensions.width;
+      inputH.value = enteredDimensions.height;
+    }
     onSizeInput();
     updPreview();
   }
@@ -1152,6 +1152,7 @@
       ctaText = 'Здравствуйте! Хочу заказать ' + SHAPE_NAMES[state.shape].toLowerCase() + ' зеркало ' + (state.shape === 'circle' ? 'Ø' + w : h + '×' + w) + ' мм' + (details.length ? ' — ' + details.join(', ') : '') + (supplierQuote.estimate ? '. Ориентировочная стоимость по калькулятору: ' : '. Стоимость по калькулятору: ') + fmt(Math.round(price)) + ' ₽.';
     }
     document.getElementById('r-cta').href = MAX_URL + '?text=' + encodeURIComponent(ctaText);
+    if (window.updateSelectedMirrorTotal) window.updateSelectedMirrorTotal();
 
     var res = document.getElementById('calc-result');
     res.classList.add('show');
