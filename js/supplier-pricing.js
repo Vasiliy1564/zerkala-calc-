@@ -29,7 +29,7 @@ function lookup(shape,material,width,height,edge,height2){
  var shapeCost=rect?0:(materialCost+edgeCost)*0.5;
  return {cost:Math.max(350,materialCost+edgeCost+shapeCost),materialCost:materialCost,edgeCost:edgeCost,shapeCost:shapeCost,packagingCost:packagingArea*100,includesPackaging:false,estimate:shape==='curved',needsQuote:false,pricingMode:'supplier',sizeSurcharge:0,splitFactor:shape==='semidouble'?1.2:1,roundedFactor:1,area:area,perimeter:perimeter};
 }
-function markup(light,shape){return light?1.5:(!shape||rectangular(shape)?1:0.8);}
+function markup(light,shape){return light?1.5:1;}
 function purchasingTrip(width,height){
  var longer=Math.max(Number(width),Number(height)),shorter=Math.min(Number(width),Number(height));
  if(longer<1800&&shorter<=1500)return 700;
