@@ -48,3 +48,29 @@
 #mirror-order .profit-summary{gap:9px}
 #mirror-order .profit-summary strong{font-size:22px}
 #mirror-order .order-clear{font-size:13px;padding:10px 0}
+
+/* Narrow scroll hints and one compact row for light and installation. */
+.scroll-guide{width:14px;min-height:28px;height:28px;padding:0;border:0;border-radius:5px;font-size:18px;line-height:28px;box-shadow:none;background:#f8faf7dd;color:#28634b}
+.scroll-guide-left{left:1px}.scroll-guide-right{right:1px}
+#quick-light .quick-light-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+#quick-light .quick-light-options button{min-width:0;min-height:34px;padding:6px 3px;font-size:clamp(10px,2.8vw,12px);line-height:1.2;font-weight:550;white-space:nowrap;border-radius:7px}
+#quick-install[aria-pressed=true]{box-shadow:inset 0 -2px 0 #8be0b6}
+@media(max-width:700px){#calculator .container{padding-left:18px;padding-right:18px}}
+
+/* Compact both the option wrapper and its label; avoid double padding on the site. */
+#quote-form .field{gap:5px;margin:10px 0}
+#quote-form .field>label,#quote-form #quantity-field{font-size:13px;font-weight:550;letter-spacing:0;line-height:1.25}
+#quote-form .options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+#quote-form .options label,#quote-form .options label:has(input:checked){display:block;min-height:0;height:auto;min-width:0;padding:0;border:0;background:transparent;transition:none}
+#quote-form .options label span{display:flex;align-items:center;justify-content:center;width:100%;height:auto;min-height:34px;padding:6px 7px;font-size:12px;font-weight:500;line-height:1.2;letter-spacing:0;white-space:normal;border-radius:7px}
+#quote-form .options input:checked+span{font-weight:550}
+#quote-form .options--checks label span{justify-content:flex-start}
+#quote-form .options[data-kind=material],#quote-form .options[data-kind=clr]{grid-template-columns:repeat(3,minmax(0,1fr))}
+#quote-form .stepper input{font-size:18px;min-height:36px;padding:6px 4px}
+#quote-form .stepper-btn{min-height:36px;font-size:21px}
+#quote-form .form-row{gap:10px}
+#calculator .dim-labels{font-size:11px;gap:12px}
+#quick-light>p{font-size:12px}
+#quote-form .calc-result.show{animation:none}
+#quote-form{overflow-anchor:none}
+html.calc-position-hold,html.calc-position-hold body{scroll-behavior:auto!important;overflow-anchor:none!important}
