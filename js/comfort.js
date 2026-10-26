@@ -62,7 +62,7 @@
  ['left','right'].forEach(function(side){var button=quantityButton('↓','Прокрутить вниз: ниже есть дополнительные настройки',function(){
   var viewport=window.visualViewport?window.visualViewport.height:window.innerHeight;
   window.scrollBy({top:Math.max(180,Math.round(viewport*0.65)),behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
- });button.className='scroll-guide scroll-guide-'+side;button.title='Прокрутить вниз';guides.appendChild(button);});document.body.appendChild(guides);
+ });button.className='scroll-guide scroll-guide-'+side;button.title='Прокрутить вниз';var caption=document.createElement('small');caption.textContent='Прокрутите вниз';button.appendChild(caption);guides.appendChild(button);});document.body.appendChild(guides);
  function updateGuides(){var bottom=document.documentElement.scrollHeight-(window.scrollY+window.innerHeight);guides.hidden=bottom<100;}
  window.addEventListener('scroll',updateGuides,{passive:true});window.addEventListener('resize',updateGuides);
  document.addEventListener('focusin',updateGuides);document.addEventListener('focusout',function(){setTimeout(updateGuides,0);});

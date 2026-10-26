@@ -74,3 +74,19 @@
 #quote-form .calc-result.show{animation:none}
 #quote-form{overflow-anchor:none}
 html.calc-position-hold,html.calc-position-hold body{scroll-behavior:auto!important;overflow-anchor:none!important}
+
+/* Overlay arrows do not reserve columns or create a frame around the calculator. */
+#calculator .container{width:100%;padding-left:10px;padding-right:10px;box-sizing:border-box}
+#calculator .calc-form{border:0;border-radius:0;box-shadow:none;padding:0;background:transparent;min-width:0}
+#scroll-down-guides .scroll-guide{position:fixed;width:16px;height:auto;min-height:0;padding:0;margin:0;border:0;border-radius:0;box-shadow:none;background:transparent;color:#1767d2;font-size:22px;line-height:1.1;z-index:15}
+#scroll-down-guides .scroll-guide-left{left:0}#scroll-down-guides .scroll-guide-right{right:0}
+#scroll-down-guides .scroll-guide small{display:block;writing-mode:vertical-rl;font:9px/1.1 system-ui,sans-serif;letter-spacing:.02em;color:#1767d2;margin:4px auto 0}
+
+#calculator .container{max-width:1240px}
+
+/* One continuous size control: no separate painted rectangle behind the number. */
+#quote-form .stepper{display:flex;align-items:center;overflow:hidden;background:#fff;border:1px solid #afc2b5;border-radius:8px;box-shadow:none}
+#quote-form .stepper input,#quote-form .stepper input:focus{background:transparent!important;background-image:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;outline:none;min-width:0;flex:1;width:100%;margin:0;text-align:center;appearance:textfield;-moz-appearance:textfield;color:#173d2e;-webkit-text-fill-color:#173d2e}
+#quote-form .stepper input::-webkit-inner-spin-button,#quote-form .stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+#quote-form .stepper:focus-within{border-color:#1767d2;box-shadow:0 0 0 1px #1767d233}
+#quote-form .stepper-btn{background:transparent;border:0;border-radius:0;flex:0 0 40px;width:40px}
