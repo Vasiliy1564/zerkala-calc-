@@ -218,7 +218,7 @@
     light: true,
     ctrl: 'wave',
     clr: 'warm',
-    edge: 'polish',
+    edge: 'grind',
     film: false,
     heat: false,
     delivery: false,
@@ -280,6 +280,7 @@
 
   var SHAPE_NAMES = {
     rect: 'Прямоугольник',
+    arch: 'Арочное',
     rounded: 'Прямоугольник с закруглёнными углами',
     curved: 'Фигурное — волна',
     circle: 'Круг',
@@ -599,6 +600,13 @@
         '<rect x="' + x + '" y="' + y + '" width="' + rw + '" height="' + rh + '" rx="' + rx + '" fill="url(#cornerGlow)" />' +
         '<rect x="' + x + '" y="' + (y + rh * 0.6) + '" width="' + rw + '" height="' + (rh * 0.4) + '" rx="' + rx + '" fill="url(#floorGrad)" />' +
         logoText(x, y, rw, rh);
+    } else if (shape === 'arch') {
+      var archFit = fitBox(w / h), aw = archFit.w, ah = archFit.h;
+      var ax = (VB_W - aw) / 2, ay = (VB_H - ah) / 2, ar = aw / 2;
+      var archPath = 'M ' + ax + ' ' + (ay + ah) + ' V ' + (ay + ar) +
+        ' A ' + ar + ' ' + ar + ' 0 0 1 ' + (ax + aw) + ' ' + (ay + ar) +
+        ' V ' + (ay + ah) + ' Z';
+      content = '<path class="mirror-body" d="' + archPath + '" fill="url(#glassGrad)" />';
     } else if (shape === 'circle') {
       var fitC = fitBox(1);
       var r = Math.min(fitC.w, fitC.h) / 2;
@@ -883,7 +891,7 @@
     var edgePer;
     var ledPer;
 
-    if (shape === 'rect' || shape === 'rounded' || shape === 'curved') {
+    if (shape === 'rect' || shape === 'rounded' || shape === 'arch' || shape === 'curved') {
       area = (w * h) / 1000000;
       per = 2 * (w + h) / 1000;
       maxD = Math.max(w, h);
@@ -964,6 +972,9 @@
       return;
     }
 
+    if (state.shape === 'arch' && h < w / 2) {
+      requestQuote('Для арочного зеркала высота должна быть не меньше половины ширины.'); return;
+    }
     var geo = calcGeometry();
     var area = geo.area;
     var per = geo.per;
@@ -1044,7 +1055,7 @@
       price += framePurchase + frameDelivery;
     }
 
-    // Rounded corners: the rectangular calculation plus 15%, before rounding.
+    // Rounded contours: supplier +50% is already included before the sales markup.
 
 
     var sizeText = '';
