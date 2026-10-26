@@ -1074,6 +1074,23 @@
     var CLR_LABELS = { warm: 'тёплый', cold: 'холодный', neutral: 'нейтральный' };
     var CTRL_LABELS = { wave: 'взмах рукой', touch: 'сенсор на зеркале', remote: 'пульт ДУ', smart: 'Wi-Fi / умный дом' };
 
+    if (window.onPersonalCalculation) {
+      var orderTrip=purchaseTripPrice(),orderDelivery=clientDeliveryPrice();
+      var orderInstall=state.install?installationPrice(area,state.light):0;
+      window.onPersonalCalculation({total:price,rows:[
+        {key:'mirror',sale:price-orderTrip-orderDelivery-orderInstall,cost:null,expense:'mirror'},
+        {key:'purchase-trip',sale:orderTrip,cost:orderTrip},
+        {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
+        {key:'installation',sale:orderInstall,cost:null,expense:'install'}
+      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,
+        size:sizeText.split(' · ')[0],material:state.material,
+        materialLabel:({silver:'Серебро, 4 мм',graphite:'Графит, 4 мм',bronze:'Бронза, 4 мм'}[state.material]),
+        edge:state.edge,edgeLabel:EDGE_LABELS[state.edge],light:state.light,ctrl:state.ctrl,clr:state.clr,
+        film:state.film,heat:state.heat,ledProfile:state.ledProfile,faceFrame:state.faceFrame,
+        install:state.install,delivery:state.delivery,region:deliveryRegion(),estimate:supplierQuote.estimate
+      }});
+    }
+
     document.getElementById('r-size').textContent = sizeText;
 
     document.getElementById('r-sum').textContent = fmt(price) + ' ₽';
@@ -1140,6 +1157,8 @@
     res.classList.add('show');
     if (scrollResult !== false) res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
+
+  window.calculateMirrorInPlace = function () { calc(false); };
 
   var deliveryRegionSelect = document.getElementById('delivery-region');
   if (deliveryRegionSelect) deliveryRegionSelect.addEventListener('change', function () {

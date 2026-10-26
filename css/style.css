@@ -461,3 +461,6 @@ a{color:inherit;text-decoration:none}
   .lightbox{padding:14px}
   .lightbox-close{right:14px;top:14px}
 }
+/* Multiple mirrors, one customer order. Client sees only the final total. */
+.mirror-order{margin-top:28px;padding:24px;border:1px solid #b8cbbd;border-radius:16px;background:#fff;color:#203b32}
+.mirror-order h3{margin:0 0 14px;font-size:24px}.mirror-order p{font-size:14px;line-height:1.6;margin:10px 0}.mirror-order label{display:block;font-size:14px;margin:14px 0 6px}.mirror-order input{display:block;width:100%;padding:12px;margin:6px 0 12px;border:1px solid #a7bdad;border-radius:9px;font:inherit;color:#203b32}.mirror-order .button{width:100%;margin:14px 0;justify-content:center}.mirror-order .button:disabled{opacity:.5}.order-item{border-top:1px solid #d8ded5;padding:18px 0}.order-item button{padding:10px 16px;background:#f4f7f2;border:1px solid #a7bdad;border-radius:8px;color:#203b32;font:inherit}.mirror-order .order-clear{padding:12px 0;border:0;background:none;color:#805048;font:inherit}#order-total{display:block;font-size:30px;margin:8px 0}#order-summary{padding:12px 0}.mirror-order [hidden]{display:none!important}
