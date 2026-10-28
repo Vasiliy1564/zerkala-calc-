@@ -312,7 +312,7 @@
   };
 
   function installationPrice(area, light) {
-    return Math.max(light ? 3500 : 3000, area * 2355);
+    return (light ? 2500 : 2000) + Math.max(0, area - 1) * 700;
   }
   function deliveryRegion() {
     var select = document.getElementById('delivery-region');
@@ -336,24 +336,22 @@
     return base + (sides.longer > 2000 || sides.shorter > 1500 ? 500 : 0);
   }
   function clientDeliveryPrice() {
-    return (state.delivery || state.install) && deliveryRegion() === 'murino' ? murinoDeliveryPrice() : 0;
+    return state.delivery && deliveryRegion() === 'murino' ? murinoDeliveryPrice() : 0;
   }
   function deliveryDescription() {
-    if (!state.delivery && !state.install) return 'не выбрана';
+    if (!state.delivery) return 'не выбрана';
     return deliveryRegion() === 'murino' ? 'по Мурино, включена в итоговую стоимость' :
       (deliveryRegion() === 'spb' ? 'по Санкт-Петербургу — отдельно, не включена в итог' : 'по адресу — отдельно, не включена в итог');
   }
   function updateDeliveryAvailability() {
     var cb = $('input[name="option"][value="delivery"]');
-    var install = $('input[name="option"][value="install"]');
-    var included = !!(install && install.checked);
     var field = document.getElementById('deliveryRegionField');
-    if (cb) cb.disabled = included;
-    if (field) field.hidden = !(included || (cb && cb.checked));
+    if (cb) cb.disabled = false;
+    if (field) field.hidden = !(cb && cb.checked);
     var option = document.querySelector('#delivery-region option[value="murino"]');
     if (option) option.textContent = 'Мурино';
     var label = document.querySelector('#deliveryOpt span');
-    if (label) label.textContent = included ? 'Доставка учтена в итоговой стоимости' : 'Доставка';
+    if (label) label.textContent = 'Доставка';
   }
 
   var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'криволинейная шлифовка', 'curved-polish': 'криволинейная полировка' };
@@ -1138,7 +1136,7 @@
     if (state.install) details.push('с установкой');
     if (state.film) details.push('с бронеплёнкой');
     if (state.ledProfile) details.push('со светодиодной лентой в алюминиевом профиле');
-    if (state.delivery || state.install) details.push('доставка: ' + deliveryDescription());
+    if (state.delivery) details.push('доставка: ' + deliveryDescription());
 
     if (state.faceFrame !== 'none') details.push('алюминиевая рама — ' + FACE_FRAME_LABELS[state.faceFrame]);
     var ctaText = '';
@@ -1252,3 +1250,4 @@
     updateProfileAvailability();
   }
 })();
+

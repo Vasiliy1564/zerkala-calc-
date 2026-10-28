@@ -2,15 +2,32 @@
 (function(root){
 'use strict';
 function bounded(value,min,max,fallback){var n=Number(value);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback;}
+
+// Reprice service rows in orders saved before the tariff change.
+function refreshServices(data){
+ if(!data||!data.mirror||!Array.isArray(data.rows))return data;
+ var m=data.mirror,w=Number(m.width),h=m.shape==='circle'?w:Number(m.height);
+ if(m.shape==='double'||m.shape==='semidouble')h+=Number(m.height2)||0;
+ if(!(w>0&&h>0))return data;
+ var area=w*h/1000000,installation=m.install?(m.light?2500:2000)+Math.max(0,area-1)*700:0;
+ var total=data.total;
+ var rows=data.rows.map(function(row){
+  var sale=row.key==='installation'?installation:row.key==='customer-delivery'&&!m.delivery?0:row.sale;
+  total+=sale-row.sale;
+  return Object.assign({},row,{sale:sale});
+ });
+ return Object.assign({},data,{rows:rows,total:total});
+}
+
 function calculate(items,settings){
  settings=settings||{};
  var goods=0,trip=0,delivery=0,install=0,count=0,regions={},known=0,missing={};
  items.forEach(function(item){
-  var qty=Math.floor(bounded(item.qty,1,999,1)),data=item.data;
+  var qty=Math.floor(bounded(item.qty,1,999,1)),data=refreshServices(item.data);
   if(!data||!data.mirror||!Number.isFinite(data.total))throw Error('Некорректная позиция заказа');
   count+=qty;goods+=data.total*qty;
   var mirror=data.mirror;
-  if(mirror.install||mirror.delivery)regions[mirror.region]=true;
+  if(mirror.delivery)regions[mirror.region]=true;
   data.rows.forEach(function(row){
    if(row.key==='purchase-trip'){
     goods-=row.sale*qty;trip=Math.max(trip,row.sale);return;
@@ -39,5 +56,6 @@ function calculate(items,settings){
  known+=bounded(settings.other||0,0,100000000,0);
  return {count:count,total:total,goods:goods,trip:trip,delivery:delivery,installation:install,discount:discount,discountRate:discountRate,installationAfterDiscount:install-discount,known:known,tax:tax,profit:total-known-tax,missing:Object.keys(missing),mixedRegions:mixedRegions,externalDelivery:!!(regions.spb||regions.other)};
 }
-var api={calculate:calculate};if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorOrderPricing=api;
+var api={refreshServices:refreshServices,calculate:calculate};if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorOrderPricing=api;
 })(typeof window==='object'?window:globalThis);
+
