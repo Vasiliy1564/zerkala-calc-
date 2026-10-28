@@ -10,8 +10,8 @@ function entries(items,t){
   var data=refresh(item.data),base=data.total,installation=0;
   data.rows.forEach(function(row){if(row.key==='purchase-trip'||row.key==='customer-delivery')base-=row.sale;if(row.key==='installation')installation+=row.sale;});
   var before=base*item.qty,discount=installation*item.qty*t.discountRate/100,subtotal=before-discount;
-  running+=subtotal;var display=Math.round(running)-shown;
-  if(i===items.length-1)display=t.total-Math.round(t.trip+t.delivery)-shown;
+  running+=subtotal+(t.trip+t.delivery)*item.qty/t.count;var display=Math.round(running)-shown;
+  if(i===items.length-1)display=t.total-shown;
   shown+=display;
   return {item:item,data:data,before:before,installation:installation*item.qty,discount:discount,subtotal:subtotal,display:display};
  });
@@ -25,7 +25,7 @@ function params(item){
  if(m.faceFrame&&m.faceFrame!=='none')lines.push('Лицевая рама: '+({black:'чёрная',white:'белая',gold:'золотая'}[m.faceFrame]||m.faceFrame)+'.');
  return lines;
 }
-function itemText(entry,index){var lines=params(entry.item);if(index!==undefined)lines[0]=(index+1)+'. '+lines[0];return lines.join('\n');}
+function itemText(entry,index){var lines=params(entry.item);if(index!==undefined)lines[0]=(index+1)+'. '+lines[0];lines.push('Стоимость позиции: '+money(entry.display)+'.');return lines.join('\n');}
 function quote(items,t,title){
  if(!items.length||t.mixedRegions||t.needsQuote)return '';
  var list=entries(items,t),lines=[title||'Расчёт заказа зеркал','Количество: '+t.count+' шт.',''];
