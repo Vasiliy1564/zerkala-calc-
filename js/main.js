@@ -297,17 +297,12 @@
   var PRICE = {
     mirror: 1750,
     specialMirror: 4950,
-    packaging: 100,
     plainMarkup: 1.00,
     markup: 1.50,
     ledRoll: 600,
     ledRollLen: 5,
-    evaPackPrice: 1010,
-    evaPackLength: 6,
     block: 650,
     switch: 500,
-    mount: 50,
-    mountStep: 2,
     purchaseTrip: 350
   };
 
@@ -921,8 +916,7 @@
       maxD = Math.max(w, h, h2v);
     } else if (shape === 'semidouble') {
       /* Базовая стоимость совпадает с обычным полукругом тех же общих
-         габаритов. Надбавка 20% за изготовление из двух частей применяется
-         к окончательной цене ниже. */
+         габаритов. Отдельная процентная надбавка за две части не добавляется. */
       var h2SemiCalc = parseFloat(document.getElementById('height2').value) || 800;
       var totalSemiCalc = h + h2SemiCalc;
       area = (w * totalSemiCalc) / 1000000;
@@ -1003,26 +997,8 @@
     area = supplierQuote.area;
     ledPer = supplierQuote.perimeter;
     var markedBase = supplierQuote.cost * (1 + window.MirrorSupplierPricing.markup(state.light, state.shape));
-    var price = markedBase + supplierQuote.packagingCost + supplierQuote.sizeSurcharge;
-    var reinforcement = window.MirrorSupplierPricing.reinforcement(state.shape, w, h, h2);
-    price += reinforcement.cost;
-    var costEvaProfileLight = state.light ? ledPer * PRICE.evaPackPrice / PRICE.evaPackLength : 0;
-    price += costEvaProfileLight;
-
-    // Упаковка, комплектующие, доставка и монтаж — без торговой наценки.
-    if (state.light) {
-      price += Math.ceil(ledPer / PRICE.ledRollLen) * PRICE.ledRoll
-        + PRICE.block + PRICE.switch
-        + Math.ceil(ledPer / PRICE.mountStep) * PRICE.mount;
-    }
-
-
-    /* Для составных форм доплата определяется по общей высоте двух частей. */
-    var totalH = h;
-    if (state.shape === 'double' || state.shape === 'semidouble') {
-      totalH += parseFloat(document.getElementById('height2').value) || 0;
-    }
-    // Size coefficients are already included in supplier edge work.
+    var price = markedBase;
+    if (state.light) price += Math.ceil(ledPer / PRICE.ledRollLen) * PRICE.ledRoll + PRICE.block + PRICE.switch;
 
     /* Бронеплёнка: 500 ₽/м² по площади прямоугольника */
     if (state.film) {
@@ -1036,14 +1012,6 @@
     /* Дополнительные алюминиевые опции — по расчётному периметру,
        без минимальной покупки 6 м. Ставки скрыты в клиентском интерфейсе. */
     if (state.ledProfile && state.light) price += geo.per * 600;
-
-    /* Налог +6% — применяется последним, ко всем расчётам */
-    price *= 1.06;
-    price *= supplierQuote.splitFactor;
-    /* Дополнительные 2% ко всем итоговым расчётам, до округления. */
-    price *= 1.02;
-    var roundedSurcharge = price * (supplierQuote.roundedFactor - 1);
-    price += roundedSurcharge;
 
     // Поездка за полотном, установка и доставка — без наценки и надбавок.
     price += purchaseTripPrice();
@@ -1085,7 +1053,7 @@
         {key:'purchase-trip',sale:orderTrip,cost:orderTrip},
         {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
         {key:'installation',sale:orderInstall,cost:null,expense:'install'}
-      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,circleBlankVersion:1,componentTariffVersion:1,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
+      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
         size:sizeText.split(' · ')[0],material:state.material,
         materialLabel:({silver:'Серебро, 4 мм',graphite:'Графит, 4 мм',bronze:'Бронза, 4 мм'}[state.material]),
         edge:state.edge,edgeLabel:EDGE_LABELS[state.edge],light:state.light,ctrl:state.ctrl,clr:state.clr,

@@ -63,7 +63,7 @@ function refreshCircleCalculation(data){
  if(old.needsQuote||quote.needsQuote)return data;
  var dm=quote.materialCost-old.materialCost,de=quote.edgeCost-old.edgeCost;
  var ds=(dm+de)*0.5,base=dm+de+ds,margin=base*markup(m.light,m.shape);
- var six=(base+margin)*0.06,two=(base+margin+six)*0.02,delta=base+margin+six+two;
+ var six=m.pricingVersion===2?0:(base+margin)*0.06,two=m.pricingVersion===2?0:(base+margin+six)*0.02,delta=base+margin+six+two;
  var changes={'Зеркальная заготовка':[dm,dm],'Обработка кромки':[de,de],
   'Закругление: надбавка поставщика 50%':[ds,ds],
   'Наценка на зеркало и обработку':[margin,0],'Надбавка 6%':[six,0],'Дополнительная надбавка 2%':[two,0]};
@@ -85,8 +85,8 @@ function refreshComponentCalculation(data){
  if(m.shape==='double'||m.shape==='semidouble')h+=Number(m.height2)||0;
  if(!(w>0&&h>0))return data;
  var rolls=Math.ceil((2*(w+h)/1000)/5),led=-100*rolls,block=-50,button=-100;
- var base=led+block+button,six=base*0.06,two=(base+six)*0.02;
- var split=m.shape==='semidouble'?1.2:1,delta=(base+six)*split*1.02;
+ var base=led+block+button,six=m.pricingVersion===2?0:base*0.06,two=m.pricingVersion===2?0:(base+six)*0.02;
+ var split=m.pricingVersion===2?1:m.shape==='semidouble'?1.2:1,delta=(base+six)*split*(m.pricingVersion===2?1:1.02);
  var changes={'LED-лента':[led,led],'Блок питания':[block,block],'Управление':[button,button],
   'Надбавка 6%':[six,0],'Полукруг из двух частей':[(base+six)*(split-1),0],
   'Дополнительная надбавка 2%':[two*split,0]};
@@ -97,7 +97,31 @@ function refreshComponentCalculation(data){
  return Object.assign({},data,{total:data.total+delta,rows:rows,mirror:Object.assign({},m,{componentTariffVersion:1})});
 }
 
-var api={tariffs:{silver:1750,special:3300,straightGrind:70,straightPolish:90,curvedGrind:120,curvedPolish:180,simpleTemplate:0.3,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
+
+// Replace the pre-4.14 automatic extras in saved orders. New calculations
+// contain only procurement with markup, the three LED items and selected options.
+function refreshCleanCalculation(data){
+ data=refreshComponentCalculation(data);
+ if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.pricingVersion===2)return data;
+ var m=data.mirror,w=Number(m.width),h=m.shape==='circle'?w:Number(m.height),h2=Number(m.height2)||0;
+ if(!(w>0&&h>0))return data;
+ var q=lookup(m.shape,m.material,w,h,m.edge,h2,{category:m.supplierCategory,cost:m.supplierCost});
+ if(q.needsQuote)return data;
+ var base=q.cost*(1+markup(m.light,m.shape));
+ var led=m.light?Math.ceil(q.perimeter/5)*600+650+500:0;
+ var extras=(m.film?q.area*500:0)+(m.heat?2500:0)+(m.ledProfile&&m.light?q.perimeter*600:0);
+ var legacy=base+led+extras+q.packagingCost+reinforcement(m.shape,w,h,h2).cost;
+ if(m.light)legacy+=q.perimeter*1010/6+Math.ceil(q.perimeter/2)*50;
+ legacy*=1.06*q.splitFactor*1.02;
+ var clean=base+led+extras,delta=clean-legacy;
+ var excluded=['Упаковка','Заднее усиление П-профилем 20×20×1,5 мм','EVA-профиль под LED-ленту','Крепления','Доплата за размер','Надбавка 6%','Дополнительная надбавка 2%','Полукруг из двух частей','Закруглённые углы'];
+ var generic=data.rows.some(function(row){return row.key==='mirror';});
+ var rows=data.rows.filter(function(row){return excluded.indexOf(row.name)===-1;}).map(function(row){return row.key==='mirror'?Object.assign({},row,{sale:row.sale+delta}):Object.assign({},row);});
+ var total=generic?data.total+delta:rows.reduce(function(sum,row){return sum+row.sale;},0);
+ return Object.assign({},data,{rows:rows,total:total,mirror:Object.assign({},m,{pricingVersion:2})});
+}
+
+var api={refreshCleanCalculation:refreshCleanCalculation,tariffs:{silver:1750,special:3300,straightGrind:70,straightPolish:90,curvedGrind:120,curvedPolish:180,simpleTemplate:0.3,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);
 

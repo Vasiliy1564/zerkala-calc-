@@ -4,7 +4,7 @@
 function bounded(value,min,max,fallback){var n=Number(value);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback;}
 function deliveryPrice(count,installedCount,requested){return !requested?0:installedCount>0?500:count>5?2000:1000;}
 function refreshServices(data){
- if(root.MirrorSupplierPricing)data=root.MirrorSupplierPricing.refreshComponentCalculation(data);
+ if(root.MirrorSupplierPricing)data=root.MirrorSupplierPricing.refreshCleanCalculation(data);
  if(!data||!data.mirror||!Array.isArray(data.rows))return data;
  var m=data.mirror,w=Number(m.width),h=m.shape==='circle'?w:Number(m.height);
  if(m.shape==='double'||m.shape==='semidouble')h+=Number(m.height2)||0;
