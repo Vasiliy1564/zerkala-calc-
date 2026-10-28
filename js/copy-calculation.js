@@ -32,7 +32,7 @@
  var price=document.getElementById('r-sum');
  if(price){price.setAttribute('role','button');price.tabIndex=0;price.title='Скопировать подробный расчёт';price.setAttribute('aria-label','Скопировать расчёт выбранного зеркала');price.addEventListener('click',function(){single.click();});price.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();single.click();}});}
  var send=document.getElementById('order-send');if(send){
-  var all=button('copy-order','Скопировать заказ с ценами'),notice=document.createElement('p');notice.id='copy-order-status';notice.setAttribute('role','status');notice.style.fontSize='12px';send.before(all,notice);
+  var all=button('copy-order','Скопировать заказ для клиента'),notice=document.createElement('p');notice.id='copy-order-status';notice.setAttribute('role','status');notice.style.fontSize='12px';send.before(all,notice);
   all.onclick=function(){copy(window.getMirrorOrderText?window.getMirrorOrderText():'',all,notice);};
   var summary=document.getElementById('order-summary');
   summary.addEventListener('click',function(e){if(e.target.closest('[data-copy-order]'))all.click();});

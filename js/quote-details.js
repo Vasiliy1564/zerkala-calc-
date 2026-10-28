@@ -25,24 +25,16 @@ function params(item){
  if(m.faceFrame&&m.faceFrame!=='none')lines.push('Лицевая рама: '+({black:'чёрная',white:'белая',gold:'золотая'}[m.faceFrame]||m.faceFrame)+'.');
  return lines;
 }
-function itemText(entry,index){
- var item=entry.item,lines=params(item);if(index!==undefined)lines[0]=(index+1)+'. '+lines[0];
- lines.push('Зеркало с обработкой и выбранными опциями: '+exact((entry.before-entry.installation)/item.qty)+' за 1 шт. × '+item.qty+' = '+exact(entry.before-entry.installation)+'.');
- if(entry.installation)lines.push('Установка до скидки: '+exact(entry.installation)+'.');
- if(entry.discount)lines.push('Скидка на установку: −'+exact(entry.discount)+'.');
- lines.push('Стоимость позиции: '+money(entry.display)+'.');return lines.join('\n');
-}
+function itemText(entry,index){var lines=params(entry.item);if(index!==undefined)lines[0]=(index+1)+'. '+lines[0];return lines.join('\n');}
 function quote(items,t,title){
  if(!items.length||t.mixedRegions||t.needsQuote)return '';
  var list=entries(items,t),lines=[title||'Расчёт заказа зеркал','Количество: '+t.count+' шт.',''];
  list.forEach(function(entry,i){lines.push(itemText(entry,i),'');});
- lines.push('Общие услуги на весь заказ:','Поездка за зеркалами: '+exact(t.trip)+'.','Доставка клиенту: '+exact(t.delivery)+'.');
  if(t.externalDelivery)lines.push('Доставка по адресу согласуется отдельно и не включена в итог.');
  if(!items.some(function(item){return item.data.mirror.install||item.data.mirror.delivery;}))lines.push('Доставка клиенту не выбрана.');
- if(t.discount)lines.push('Общая скидка на установку '+t.discountRate+'%: −'+exact(t.discount)+' (уже учтена в позициях).');
  lines.push('','Итоговая стоимость: '+money(t.total)+'.');
  if(items.some(function(item){return item.data.mirror.estimate;}))lines.push('Стоимость фигурного контура уточняется после согласования.');
- lines.push('Суммы позиций округлены до рублей с сохранением общего итога.');
+
  return lines.join('\n');
 }
 window.MirrorOrderView={entries:entries,quote:quote,itemText:itemText,money:money};
