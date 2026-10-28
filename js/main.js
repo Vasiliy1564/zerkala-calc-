@@ -300,12 +300,12 @@
     packaging: 100,
     plainMarkup: 1.00,
     markup: 1.50,
-    ledRoll: 700,
+    ledRoll: 600,
     ledRollLen: 5,
     evaPackPrice: 1010,
     evaPackLength: 6,
-    block: 700,
-    switch: 600,
+    block: 650,
+    switch: 500,
     mount: 50,
     mountStep: 2,
     purchaseTrip: 700
@@ -415,6 +415,12 @@
     if (s) state.shape = s.value;
     var curvedNote = document.getElementById('curved-note');
     if (curvedNote) curvedNote.hidden = state.shape !== 'curved';
+    var supplierField=document.getElementById('supplier-procurement');
+    if(supplierField)supplierField.hidden=state.shape!=='curved';
+    var supplierCategory=document.getElementById('supplier-category');
+    var supplierCost=document.getElementById('supplier-cost');
+    state.supplierCategory=supplierCategory?supplierCategory.value:'quoted';
+    state.supplierCost=supplierCost&&supplierCost.value!==''?Number(supplierCost.value):null;
     var material = $('input[name="material"]:checked');
     state.material = material ? material.value : 'silver';
     var l = $('input[name="light"]:checked');
@@ -989,9 +995,9 @@
 
     var h2 = parseFloat(document.getElementById('height2').value) || 0;
 
-    var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.edge, h2);
+    var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.edge, h2,{category:state.supplierCategory,cost:state.supplierCost});
     if (supplierQuote.needsQuote) {
-      requestQuote('Для этой формы, материала или обработки стоимость согласуем по эскизу и прайсу поставщика.'); return;
+      requestQuote(state.shape==='curved'?'Стоимость сложного контура — после расчёта производителя.':'Для этой формы, материала или обработки стоимость согласуем по эскизу и прайсу поставщика.'); return;
     }
     var mirrorCost = supplierQuote.materialCost;
     var edgeCost = supplierQuote.edgeCost + supplierQuote.shapeCost;
@@ -1080,7 +1086,7 @@
         {key:'purchase-trip',sale:orderTrip,cost:orderTrip},
         {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
         {key:'installation',sale:orderInstall,cost:null,expense:'install'}
-      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,circleBlankVersion:1,
+      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,circleBlankVersion:1,componentTariffVersion:1,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
         size:sizeText.split(' · ')[0],material:state.material,
         materialLabel:({silver:'Серебро, 4 мм',graphite:'Графит, 4 мм',bronze:'Бронза, 4 мм'}[state.material]),
         edge:state.edge,edgeLabel:EDGE_LABELS[state.edge],light:state.light,ctrl:state.ctrl,clr:state.clr,

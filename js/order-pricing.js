@@ -5,7 +5,7 @@ function bounded(value,min,max,fallback){var n=Number(value);return Number.isFin
 
 // Reprice service rows in orders saved before the tariff change.
 function refreshServices(data){
- if(root.MirrorSupplierPricing)data=root.MirrorSupplierPricing.refreshCircleCalculation(data);
+ if(root.MirrorSupplierPricing)data=root.MirrorSupplierPricing.refreshComponentCalculation(data);
  if(!data||!data.mirror||!Array.isArray(data.rows))return data;
  var m=data.mirror,w=Number(m.width),h=m.shape==='circle'?w:Number(m.height);
  if(m.shape==='double'||m.shape==='semidouble')h+=Number(m.height2)||0;
@@ -22,12 +22,13 @@ function refreshServices(data){
 
 function calculate(items,settings){
  settings=settings||{};
- var goods=0,trip=0,delivery=0,install=0,count=0,regions={},known=0,missing={};
+ var goods=0,trip=0,delivery=0,install=0,count=0,needsQuote=false,regions={},known=0,missing={};
  items.forEach(function(item){
   var qty=Math.floor(bounded(item.qty,1,999,1)),data=refreshServices(item.data);
   if(!data||!data.mirror||!Number.isFinite(data.total))throw Error('Некорректная позиция заказа');
   count+=qty;goods+=data.total*qty;
   var mirror=data.mirror;
+  if(mirror.shape==='curved'&&mirror.supplierCategory!=='simple-template'&&!(Number(mirror.supplierCost)>0))needsQuote=true;
   if(mirror.delivery)regions[mirror.region]=true;
   data.rows.forEach(function(row){
    if(row.key==='purchase-trip'){
@@ -55,7 +56,7 @@ function calculate(items,settings){
   if(expenses[key]!==''&&expenses[key]!==null&&expenses[key]!==undefined){known+=bounded(expenses[key],0,100000000,0);delete missing[key];}
  });
  known+=bounded(settings.other||0,0,100000000,0);
- return {count:count,total:total,goods:goods,trip:trip,delivery:delivery,installation:install,discount:discount,discountRate:discountRate,installationAfterDiscount:install-discount,known:known,tax:tax,profit:total-known-tax,missing:Object.keys(missing),mixedRegions:mixedRegions,externalDelivery:!!(regions.spb||regions.other)};
+ return {count:count,needsQuote:needsQuote,total:total,goods:goods,trip:trip,delivery:delivery,installation:install,discount:discount,discountRate:discountRate,installationAfterDiscount:install-discount,known:known,tax:tax,profit:total-known-tax,missing:Object.keys(missing),mixedRegions:mixedRegions,externalDelivery:!!(regions.spb||regions.other)};
 }
 var api={refreshServices:refreshServices,calculate:calculate};if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorOrderPricing=api;
 })(typeof window==='object'?window:globalThis);

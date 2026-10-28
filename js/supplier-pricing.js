@@ -2,7 +2,8 @@
 (function(root){
 'use strict';
 function rectangular(shape){return shape==='rect'||shape==='double';}
-function lookup(shape,material,width,height,edge,height2){
+function lookup(shape,material,width,height,edge,height2,options){
+ options=options||{};
  var missing={cost:null,includesPackaging:false,estimate:false,needsQuote:true};
  if(['silver','graphite','bronze'].indexOf(material)<0 || ['grind','polish','curved-grind','curved-polish'].indexOf(edge)<0)return missing;
  if(['rect','double','arch','rounded','circle','oval','capsule','semicircle','semidouble','curved'].indexOf(shape)<0)return missing;
@@ -12,6 +13,12 @@ function lookup(shape,material,width,height,edge,height2){
  var totalH=h+(shape==='semidouble'?h2:0);
  var stockHeights=shape==='double'?[h,h2]:[totalH];
  if(material!=='silver'&&stockHeights.some(function(ph){return Math.max(w,ph)>2550||Math.min(w,ph)>1605;}))return missing;
+ if(shape==='curved'&&options.category!=='simple-template'){
+  var quoted=Number(options.cost);
+  if(!Number.isFinite(quoted)||quoted<=0)return missing;
+  var quotedArea=w*totalH/1000000;
+  return {cost:quoted,materialCost:quoted,edgeCost:0,shapeCost:0,packagingCost:quotedArea*100,includesPackaging:false,estimate:false,needsQuote:false,pricingMode:'quoted',sizeSurcharge:0,splitFactor:1,roundedFactor:1,shapeRate:0,area:quotedArea,perimeter:2*(w+totalH)/1000};
+ }
  var grind=edge.indexOf('grind')!==-1;
  var materialCost=0,edgeCost=0,packagingArea=0,perimeter=0,area=0;
  {
@@ -32,8 +39,9 @@ function lookup(shape,material,width,height,edge,height2){
  }
  // All rounded shapes use the rectangular blank and straight-edge tariff,
  // then the supplier's 50% shape surcharge. Extras are outside this base.
- var shapeCost=rect?0:(materialCost+edgeCost)*0.5;
- return {cost:Math.max(350,materialCost+edgeCost+shapeCost),materialCost:materialCost,edgeCost:edgeCost,shapeCost:shapeCost,packagingCost:packagingArea*100,includesPackaging:false,estimate:shape==='curved',needsQuote:false,pricingMode:'supplier',sizeSurcharge:0,splitFactor:shape==='semidouble'?1.2:1,roundedFactor:1,area:area,perimeter:perimeter};
+ var shapeRate=rect?0:(shape==='curved'&&options.category==='simple-template'?0.3:0.5);
+ var shapeCost=(materialCost+edgeCost)*shapeRate;
+ return {cost:Math.max(350,materialCost+edgeCost+shapeCost),materialCost:materialCost,edgeCost:edgeCost,shapeCost:shapeCost,packagingCost:packagingArea*100,includesPackaging:false,estimate:shape==='curved',needsQuote:false,pricingMode:'supplier',shapeRate:shapeRate,sizeSurcharge:0,splitFactor:shape==='semidouble'?1.2:1,roundedFactor:1,area:area,perimeter:perimeter};
 }
 function markup(light,shape){return light?1.5:1;}
 function purchasingTrip(width,height){
@@ -70,7 +78,29 @@ function refreshCircleCalculation(data){
  return Object.assign({},data,{total:data.total+delta,rows:rows,mirror:Object.assign({},m,{circleBlankVersion:1})});
 }
 
-var api={refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
+
+// Reprice LED components in orders from earlier app releases.
+function refreshComponentCalculation(data){
+ data=refreshCircleCalculation(data);
+ if(!data||!data.mirror||!Array.isArray(data.rows))return data;
+ var m=data.mirror;if(!m.light||m.componentTariffVersion===1)return data;
+ var w=Number(m.width),h=m.shape==='circle'?w:Number(m.height);
+ if(m.shape==='double'||m.shape==='semidouble')h+=Number(m.height2)||0;
+ if(!(w>0&&h>0))return data;
+ var rolls=Math.ceil((2*(w+h)/1000)/5),led=-100*rolls,block=-50,button=-100;
+ var base=led+block+button,six=base*0.06,two=(base+six)*0.02;
+ var split=m.shape==='semidouble'?1.2:1,delta=(base+six)*split*1.02;
+ var changes={'LED-лента':[led,led],'Блок питания':[block,block],'Управление':[button,button],
+  'Надбавка 6%':[six,0],'Полукруг из двух частей':[(base+six)*(split-1),0],
+  'Дополнительная надбавка 2%':[two*split,0]};
+ var rows=data.rows.map(function(row){
+  var change=row.key==='mirror'?[delta,0]:changes[row.name];
+  return change?Object.assign({},row,{sale:row.sale+change[0],cost:row.cost===null?null:row.cost+change[1]}):Object.assign({},row);
+ });
+ return Object.assign({},data,{total:data.total+delta,rows:rows,mirror:Object.assign({},m,{componentTariffVersion:1})});
+}
+
+var api={tariffs:{silver:1750,special:3300,straightGrind:70,straightPolish:90,curvedGrind:120,curvedPolish:180,simpleTemplate:0.3,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);
 
