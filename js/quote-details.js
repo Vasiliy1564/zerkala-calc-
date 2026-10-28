@@ -21,7 +21,7 @@ function params(item){
  if(m.light)lines.push('Цвет света: '+({warm:'тёплый',neutral:'нейтральный',cold:'холодный'}[m.clr]||m.clr)+'.','Управление: '+({wave:'взмах рукой',touch:'сенсор',remote:'пульт',smart:'Wi-Fi'}[m.ctrl]||m.ctrl)+'.');
  lines.push('Установка: '+(m.install?'да':'нет')+'.','Бронеплёнка: '+(m.film?'да':'нет')+'.','Подогрев: '+(m.heat?'да':'нет')+'.');
  if(m.aluFrame)lines.push('Каркас из алюминиевого уголка: да.');
- if(m.ledProfile)lines.push('LED-лента в алюминиевом профиле: да.');
+ if(m.ledProfile)lines.push('Светодиодная лента в профиле: да.');
  if(m.faceFrame&&m.faceFrame!=='none')lines.push('Лицевая рама: '+({black:'чёрная',white:'белая',gold:'золотая'}[m.faceFrame]||m.faceFrame)+'.');
  return lines;
 }

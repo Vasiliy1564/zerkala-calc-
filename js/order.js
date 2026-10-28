@@ -21,7 +21,7 @@ window.updateSelectedMirrorTotal=function(){
  var total=window.MirrorOrderPricing.calculate([{qty:qty,data:current}],{}).total;
  $('r-sum').textContent=money(total);$('r-quantity').textContent='Количество: '+qty+' шт.';
  var m=current.mirror,lines=['Здравствуйте! Хочу заказать '+m.name.toLowerCase()+(m.light?' с подсветкой':'')+'.','Размеры: '+m.size+'.','Количество: '+qty+' шт.','Полотно: '+m.materialLabel+'.','Кромка: '+m.edgeLabel+'.'];
- if(m.light)lines.push('Цвет света: '+({warm:'тёплый',neutral:'нейтральный',cold:'холодный'}[m.clr]||m.clr)+'.','Управление: '+({wave:'взмах рукой',touch:'сенсор',remote:'пульт',smart:'Wi-Fi'}[m.ctrl]||m.ctrl)+'.');if(m.ledProfile)lines.push('Светодиодная лента в алюминиевом профиле: да.');
+ if(m.light)lines.push('Цвет света: '+({warm:'тёплый',neutral:'нейтральный',cold:'холодный'}[m.clr]||m.clr)+'.','Управление: '+({wave:'взмах рукой',touch:'сенсор',remote:'пульт',smart:'Wi-Fi'}[m.ctrl]||m.ctrl)+'.');if(m.ledProfile)lines.push('Светодиодная лента в профиле: да.');
  if(m.install)lines.push('Установка: включена.');if(m.film)lines.push('Бронеплёнка: да.');if(m.heat)lines.push('Подогрев: да.');if(m.faceFrame!=='none')lines.push('Рама: '+({black:'чёрная',white:'белая',gold:'золотая'}[m.faceFrame]||m.faceFrame)+'.');
  lines.push('Доставка: '+((m.delivery||m.install)?m.region==='murino'?'включена в итоговую стоимость':'по согласованию, не включена в итоговую стоимость':'не включена в расчёт')+'.','',(m.estimate?'Ориентировочная стоимость: ':'Итоговая стоимость: ')+money(total)+'.');
  if(m.estimate)lines.push('Точная стоимость после согласования контура.');

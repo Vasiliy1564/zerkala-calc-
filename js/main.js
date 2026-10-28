@@ -1094,7 +1094,7 @@
     }
 
     inc += row('Доставка', deliveryDescription());
-    if (state.ledProfile) inc += row('Светодиодная лента в алюминиевом профиле', 'да');
+    if (state.ledProfile) inc += row('Светодиодная лента в профиле', 'да');
     if (state.faceFrame !== 'none') inc += row('Алюминиевая рама', FACE_FRAME_LABELS[state.faceFrame]);
     if (supplierQuote.estimate) inc += '<p class="figure-price-note">Точная стоимость после согласования контура и заготовки. Установка и доставка — по выбранным условиям.</p>';
     document.getElementById('r-inc').innerHTML = inc;
