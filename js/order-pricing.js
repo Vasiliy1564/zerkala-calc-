@@ -5,6 +5,7 @@ function bounded(value,min,max,fallback){var n=Number(value);return Number.isFin
 
 // Reprice service rows in orders saved before the tariff change.
 function refreshServices(data){
+ if(root.MirrorSupplierPricing)data=root.MirrorSupplierPricing.refreshCircleCalculation(data);
  if(!data||!data.mirror||!Array.isArray(data.rows))return data;
  var m=data.mirror,w=Number(m.width),h=m.shape==='circle'?w:Number(m.height);
  if(m.shape==='double'||m.shape==='semidouble')h+=Number(m.height2)||0;

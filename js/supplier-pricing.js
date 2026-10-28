@@ -16,11 +16,17 @@ function lookup(shape,material,width,height,edge,height2){
  var materialCost=0,edgeCost=0,packagingArea=0,perimeter=0,area=0;
  {
   stockHeights.forEach(function(ph){
-   var partArea=w*ph/1000000,maxSide=Math.max(w,ph),partPerimeter=2*(w+ph)/1000;
+   var partArea=w*ph/1000000,partPerimeter=2*(w+ph)/1000;
+   // Circle procurement uses a square blank of at least 1000 x 1000 mm.
+   // Product dimensions still determine LEDs, packaging and installation.
+   var blankW=shape==='circle'?Math.max(1000,w):w;
+   var blankH=shape==='circle'?Math.max(1000,ph):ph;
+   var billedArea=blankW*blankH/1000000,billedPerimeter=2*(blankW+blankH)/1000;
+   var maxSide=Math.max(blankW,blankH);
    var sizeFactor=maxSide>=2500?2:maxSide>=2000?1.5:maxSide>=1500?1.3:1;
-   var smallFactor=partArea<0.04?2:partArea<0.12?1.5:1;
-   materialCost+=Math.max(partArea,0.2)*(material==='silver'?1750:3300);
-   edgeCost+=partPerimeter*(grind?70:90)*sizeFactor*smallFactor;
+   var smallFactor=billedArea<0.04?2:billedArea<0.12?1.5:1;
+   materialCost+=Math.max(billedArea,0.2)*(material==='silver'?1750:3300);
+   edgeCost+=billedPerimeter*(grind?70:90)*sizeFactor*smallFactor;
    packagingArea+=partArea;area+=partArea;perimeter+=partPerimeter;
   });
  }
@@ -42,6 +48,29 @@ function reinforcement(shape,width,height,height2){
  var metres=h<=1800?0:h<=2000?2*h/1000:2*(w+h)/1000;
  return {metres:metres,cost:metres*349,rate:349};
 }
-var api={lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
+
+// Update circles already stored in carts without adding the difference twice.
+function refreshCircleCalculation(data){
+ if(!data||!data.mirror||!Array.isArray(data.rows))return data;
+ var m=data.mirror,d=Number(m.width);
+ if(m.shape!=='circle'||m.circleBlankVersion===1||!(d>0&&d<1000))return data;
+ var old=lookup('rect',m.material,d,d,m.edge,0),quote=lookup('circle',m.material,d,d,m.edge,0);
+ if(old.needsQuote||quote.needsQuote)return data;
+ var dm=quote.materialCost-old.materialCost,de=quote.edgeCost-old.edgeCost;
+ var ds=(dm+de)*0.5,base=dm+de+ds,margin=base*markup(m.light,m.shape);
+ var six=(base+margin)*0.06,two=(base+margin+six)*0.02,delta=base+margin+six+two;
+ var changes={'Зеркальная заготовка':[dm,dm],'Обработка кромки':[de,de],
+  'Закругление: надбавка поставщика 50%':[ds,ds],
+  'Наценка на зеркало и обработку':[margin,0],'Надбавка 6%':[six,0],'Дополнительная надбавка 2%':[two,0]};
+ var rows=data.rows.map(function(row){
+  var change=row.key==='mirror'?[delta,0]:changes[row.name];
+  if(!change)return Object.assign({},row);
+  return Object.assign({},row,{sale:row.sale+change[0],cost:row.cost===null?null:row.cost+change[1]});
+ });
+ return Object.assign({},data,{total:data.total+delta,rows:rows,mirror:Object.assign({},m,{circleBlankVersion:1})});
+}
+
+var api={refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);
+

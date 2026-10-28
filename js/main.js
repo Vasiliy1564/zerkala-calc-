@@ -1080,7 +1080,7 @@
         {key:'purchase-trip',sale:orderTrip,cost:orderTrip},
         {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
         {key:'installation',sale:orderInstall,cost:null,expense:'install'}
-      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,
+      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,circleBlankVersion:1,
         size:sizeText.split(' · ')[0],material:state.material,
         materialLabel:({silver:'Серебро, 4 мм',graphite:'Графит, 4 мм',bronze:'Бронза, 4 мм'}[state.material]),
         edge:state.edge,edgeLabel:EDGE_LABELS[state.edge],light:state.light,ctrl:state.ctrl,clr:state.clr,
