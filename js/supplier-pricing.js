@@ -100,7 +100,7 @@ function refreshComponentCalculation(data){
 
 // Replace the pre-4.14 automatic extras in saved orders. New calculations
 // contain only procurement with markup, the three LED items and selected options.
-function refreshCleanCalculation(data){
+function refreshCleanBaseCalculation(data){
  data=refreshComponentCalculation(data);
  if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.pricingVersion===2)return data;
  var m=data.mirror,w=Number(m.width),h=m.shape==='circle'?w:Number(m.height),h2=Number(m.height2)||0;
@@ -121,7 +121,22 @@ function refreshCleanCalculation(data){
  return Object.assign({},data,{rows:rows,total:total,mirror:Object.assign({},m,{pricingVersion:2})});
 }
 
+// EVA is charged by the metre only for illuminated mirrors, with no markup.
+function refreshCleanCalculation(data){
+ data=refreshCleanBaseCalculation(data);
+ if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.evaTariffVersion===1)return data;
+ var m=data.mirror,delta=0,metres=0;
+ if(m.light){
+  var q=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost});
+  if(q.needsQuote)return data;
+  metres=q.perimeter;delta=metres*119;
+ }
+ var generic=data.rows.some(function(row){return row.key==='mirror';});
+ var rows=data.rows.map(function(row){return row.key==='mirror'?Object.assign({},row,{sale:row.sale+delta}):Object.assign({},row);});
+ if(m.light&&!generic)rows.push({key:'',name:'EVA-профиль под LED-ленту',sale:delta,cost:delta,note:metres.toFixed(2)+' м × 119 ₽/м'});
+ return Object.assign({},data,{total:data.total+delta,rows:rows,mirror:Object.assign({},m,{evaTariffVersion:1})});
+}
+
 var api={refreshCleanCalculation:refreshCleanCalculation,tariffs:{silver:1750,special:3300,straightGrind:70,straightPolish:90,curvedGrind:120,curvedPolish:180,simpleTemplate:0.3,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);
-

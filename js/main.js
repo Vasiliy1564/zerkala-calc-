@@ -998,7 +998,7 @@
     ledPer = supplierQuote.perimeter;
     var markedBase = supplierQuote.cost * (1 + window.MirrorSupplierPricing.markup(state.light, state.shape));
     var price = markedBase;
-    if (state.light) price += Math.ceil(ledPer / PRICE.ledRollLen) * PRICE.ledRoll + PRICE.block + PRICE.switch;
+    if (state.light) price += Math.ceil(ledPer / PRICE.ledRollLen) * PRICE.ledRoll + PRICE.block + PRICE.switch + ledPer * 119;
 
     /* Бронеплёнка: 500 ₽/м² по площади прямоугольника */
     if (state.film) {
@@ -1053,7 +1053,7 @@
         {key:'purchase-trip',sale:orderTrip,cost:orderTrip},
         {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
         {key:'installation',sale:orderInstall,cost:null,expense:'install'}
-      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
+      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
         size:sizeText.split(' · ')[0],material:state.material,
         materialLabel:({silver:'Серебро, 4 мм',graphite:'Графит, 4 мм',bronze:'Бронза, 4 мм'}[state.material]),
         edge:state.edge,edgeLabel:EDGE_LABELS[state.edge],light:state.light,ctrl:state.ctrl,clr:state.clr,
