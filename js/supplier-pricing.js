@@ -122,7 +122,7 @@ function refreshCleanBaseCalculation(data){
 }
 
 // EVA is charged by the metre only for illuminated mirrors, with no markup.
-function refreshCleanCalculation(data){
+function refreshEVACalculation(data){
  data=refreshCleanBaseCalculation(data);
  if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.evaTariffVersion===1)return data;
  var m=data.mirror,delta=0,metres=0;
@@ -136,6 +136,23 @@ function refreshCleanCalculation(data){
  if(m.light&&!generic)rows.push({key:'',name:'EVA-профиль под LED-ленту',sale:delta,cost:delta,note:metres.toFixed(2)+' м × 119 ₽/м'});
  return Object.assign({},data,{total:data.total+delta,rows:rows,mirror:Object.assign({},m,{evaTariffVersion:1})});
 }
+
+function refreshProfileCalculation(data){
+ if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.ledProfileTariffVersion===1)return data;
+ var m=data.mirror,delta=0,metres=0;
+ if(m.ledProfile&&m.light){
+  var q=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost});
+  if(q.needsQuote)return data;
+  metres=q.perimeter;delta=metres*(250-600);
+ }
+ var rows=data.rows.map(function(row){
+  if(row.key==='mirror')return Object.assign({},row,{sale:row.sale+delta});
+  if(m.ledProfile&&m.light&&(row.expense==='profile'||row.name==='LED-профиль'))return Object.assign({},row,{sale:metres*250});
+  return Object.assign({},row);
+ });
+ return Object.assign({},data,{rows:rows,total:data.total+delta,mirror:Object.assign({},m,{ledProfileTariffVersion:1})});
+}
+function refreshCleanCalculation(data){return refreshProfileCalculation(refreshEVACalculation(data));}
 
 var api={refreshCleanCalculation:refreshCleanCalculation,tariffs:{silver:1750,special:3300,straightGrind:70,straightPolish:90,curvedGrind:120,curvedPolish:180,simpleTemplate:0.3,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;

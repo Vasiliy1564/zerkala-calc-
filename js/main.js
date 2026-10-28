@@ -1011,7 +1011,7 @@
 
     /* Дополнительные алюминиевые опции — по расчётному периметру,
        без минимальной покупки 6 м. Ставки скрыты в клиентском интерфейсе. */
-    if (state.ledProfile && state.light) price += geo.per * 600;
+    if (state.ledProfile && state.light) price += geo.per * 250;
 
     // Поездка за полотном, установка и доставка — без наценки и надбавок.
     price += purchaseTripPrice();
@@ -1053,7 +1053,7 @@
         {key:'purchase-trip',sale:orderTrip,cost:orderTrip},
         {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
         {key:'installation',sale:orderInstall,cost:null,expense:'install'}
-      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
+      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:1,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
         size:sizeText.split(' · ')[0],material:state.material,
         materialLabel:({silver:'Серебро, 4 мм',graphite:'Графит, 4 мм',bronze:'Бронза, 4 мм'}[state.material]),
         edge:state.edge,edgeLabel:EDGE_LABELS[state.edge],light:state.light,ctrl:state.ctrl,clr:state.clr,
