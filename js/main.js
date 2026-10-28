@@ -308,7 +308,7 @@
     switch: 500,
     mount: 50,
     mountStep: 2,
-    purchaseTrip: 700
+    purchaseTrip: 350
   };
 
   function installationPrice(area, light) {
@@ -331,15 +331,13 @@
     return window.MirrorSupplierPricing.purchasingTrip(sides.longer, sides.shorter);
   }
   function murinoDeliveryPrice() {
-    var sides = mirrorDeliverySides();
-    var base = state.install ? 700 : 1000;
-    return base + (sides.longer > 2000 || sides.shorter > 1500 ? 500 : 0);
+    return state.install ? 500 : 1000;
   }
   function clientDeliveryPrice() {
-    return state.delivery && deliveryRegion() === 'murino' ? murinoDeliveryPrice() : 0;
+    return (state.delivery || state.install) && deliveryRegion() === 'murino' ? murinoDeliveryPrice() : 0;
   }
   function deliveryDescription() {
-    if (!state.delivery) return 'не выбрана';
+    if (!state.delivery && !state.install) return 'не выбрана';
     return deliveryRegion() === 'murino' ? 'по Мурино, включена в итоговую стоимость' :
       (deliveryRegion() === 'spb' ? 'по Санкт-Петербургу — отдельно, не включена в итог' : 'по адресу — отдельно, не включена в итог');
   }
@@ -347,11 +345,12 @@
     var cb = $('input[name="option"][value="delivery"]');
     var field = document.getElementById('deliveryRegionField');
     if (cb) cb.disabled = false;
-    if (field) field.hidden = !(cb && cb.checked);
+    var installed=$('input[name="option"][value="install"]');
+    if (field) field.hidden = !((cb && cb.checked) || (installed && installed.checked));
     var option = document.querySelector('#delivery-region option[value="murino"]');
     if (option) option.textContent = 'Мурино';
     var label = document.querySelector('#deliveryOpt span');
-    if (label) label.textContent = 'Доставка';
+    if (label) label.textContent = installed && installed.checked ? 'Доставка при установке' : 'Доставка';
   }
 
   var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'криволинейная шлифовка', 'curved-polish': 'криволинейная полировка' };
@@ -1142,7 +1141,7 @@
     if (state.install) details.push('с установкой');
     if (state.film) details.push('с бронеплёнкой');
     if (state.ledProfile) details.push('со светодиодной лентой в алюминиевом профиле');
-    if (state.delivery) details.push('доставка: ' + deliveryDescription());
+    if (state.delivery || state.install) details.push('доставка: ' + deliveryDescription());
 
     if (state.faceFrame !== 'none') details.push('алюминиевая рама — ' + FACE_FRAME_LABELS[state.faceFrame]);
     var ctaText = '';

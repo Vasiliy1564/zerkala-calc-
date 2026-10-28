@@ -45,10 +45,7 @@ function lookup(shape,material,width,height,edge,height2,options){
 }
 function markup(light,shape){return light?1.5:1;}
 function purchasingTrip(width,height){
- var longer=Math.max(Number(width),Number(height)),shorter=Math.min(Number(width),Number(height));
- if(longer<1800&&shorter<=1500)return 700;
- if(longer<=2000&&shorter<=1000)return 1000;
- return 2000;
+ return Math.max(Number(width),Number(height))<=2000?350:700;
 }
 function reinforcement(shape,width,height,height2){
  var w=Number(width),h=shape==='circle'?w:Number(height);
