@@ -10,7 +10,7 @@
 
 
  // Keep the edited field clear of the keyboard and fixed action buttons.
- var focusedSize=null,sizeTimer=0,focusToken=0;
+ var focusedSize=null,sizeTimer=0,focusToken=0,placeOnFocus=false;
  function sizeInput(el){return el&&el.matches&&el.matches('input:not([type=radio]):not([type=checkbox]):not([type=hidden]),textarea,select')&&!el.disabled&&!el.readOnly;}
  function keepSizeVisible(){
   if(!focusedSize||document.activeElement!==focusedSize)return;
@@ -22,13 +22,20 @@
    var r=bar.getBoundingClientRect();if(r.height>0&&r.top>top&&r.top<bottom)bottom=r.top-20;
   });
   var rect=focusedSize.getBoundingClientRect(),safeTop=top+32;
+  // Place the control near the top once, even when a WebView reports no keyboard resize.
+  // Later viewport notifications only correct an actual overlap.
+  var field=focusedSize.closest('.field')||focusedSize;
+  var label=field.querySelector&&field.querySelector('label');
+  var labelHeight=label?label.getBoundingClientRect().height+12:0;
+  var target=top+Math.max(72,labelHeight+32);
+  if(placeOnFocus){placeOnFocus=false;if(rect.top>target){window.scrollBy({top:rect.top-target,left:0,behavior:'instant'});return;}}
   var delta=rect.bottom>bottom?rect.bottom-bottom:rect.top<safeTop?rect.top-safeTop:0;
   if(Math.abs(delta)>2)window.scrollBy({top:delta,left:0,behavior:'instant'});
  }
  function scheduleSizeVisibility(){clearTimeout(sizeTimer);sizeTimer=setTimeout(keepSizeVisible,100);}
  document.addEventListener('focusin',function(e){
   if(!sizeInput(e.target)||!form.contains(e.target))return;
-  focusedSize=e.target;var token=++focusToken;
+  focusedSize=e.target;placeOnFocus=true;var token=++focusToken;
   document.documentElement.classList.add('size-input-editing');
   scheduleSizeVisibility();
   setTimeout(function(){if(token===focusToken)keepSizeVisible();},450);
