@@ -85,7 +85,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 #curved-note[hidden],#deliveryRegionField[hidden]{display:none!important}
 </style>
-<link rel="stylesheet" href="css/comfort.css?v=item-totals-20261028"></head>
+<link rel="stylesheet" href="css/comfort.css?v=item-totals-20261028"><style>html.size-input-editing,html.size-input-editing body{scroll-behavior:auto!important;overflow-anchor:none!important}html.size-input-editing .action-bar,html.size-input-editing #return-to-calculator{display:none!important}#width,#height,#height2{scroll-margin-top:40px;scroll-margin-bottom:40px}</style></head>
 <body>
   <a class="skip-link" href="#main">К содержимому</a>
 
@@ -526,8 +526,8 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
               </svg>
             </div>
             <div class="dim-labels" id="dimLabels">
-              <span id="lblH">1800 мм</span>
-              <span id="lblW">800 мм</span>
+              <span id="lblH">180 см</span>
+              <span id="lblW">80 см</span>
             </div>
           </div>
 
@@ -558,28 +558,28 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
 
             <div class="form-row">
               <div class="field" id="fieldH">
-                <label for="height" id="labelH">Высота, мм</label>
+                <label for="height" id="labelH">Высота, см</label>
                 <div class="stepper">
                   <button type="button" class="stepper-btn" data-adj="height" data-delta="-100" aria-label="Уменьшить">−</button>
-                  <input id="height" type="number" name="height" min="400" step="1" value="1800">
+                  <input id="height" type="text" inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?" name="height" min="40" step="0.1" value="180">
                   <button type="button" class="stepper-btn" data-adj="height" data-delta="100" aria-label="Увеличить">+</button>
                 </div>
               </div>
               <div class="field" id="fieldW">
-                <label for="width" id="labelW">Ширина, мм</label>
+                <label for="width" id="labelW">Ширина, см</label>
                 <div class="stepper">
                   <button type="button" class="stepper-btn" data-adj="width" data-delta="-100" aria-label="Уменьшить">−</button>
-                  <input id="width" type="number" name="width" min="400" step="1" value="800">
+                  <input id="width" type="text" inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?" name="width" min="40" step="0.1" value="80">
                   <button type="button" class="stepper-btn" data-adj="width" data-delta="100" aria-label="Увеличить">+</button>
                 </div>
               </div>
             </div>
 
             <div class="field hidden" id="rowH2">
-              <label for="height2">Высота нижней части, мм</label>
+              <label for="height2">Высота нижней части, см</label>
               <div class="stepper">
                 <button type="button" class="stepper-btn" data-adj="height2" data-delta="-100" aria-label="Уменьшить">−</button>
-                <input id="height2" type="number" name="height2" min="400" step="1" value="600">
+                <input id="height2" type="text" inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?" name="height2" min="40" step="0.1" value="60">
                 <button type="button" class="stepper-btn" data-adj="height2" data-delta="100" aria-label="Увеличить">+</button>
               </div>
               <p class="form-hint" id="w2hint">Ширина нижней части = ширине верхней</p>
@@ -875,10 +875,10 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
     </a>
   </div>
 
-  <script src="js/supplier-pricing.js?v=profile-250-20261028" defer></script><script src="js/main.js?v=profile-250-20261028" defer></script><script src="js/studio.js?v=eva-pricing-20261028-v415" defer></script>
+  <script src="js/supplier-pricing.js?v=profile-250-20261028" defer></script><script src="js/size-units.js?v=cm-20261029" defer></script><script src="js/main.js?v=cm-keyboard-20261029" defer></script><script src="js/studio.js?v=eva-pricing-20261028-v415" defer></script>
 
 
-<script src="js/order-pricing.js?v=profile-250-20261028" defer></script><script src="js/quote-details.js?v=profile-label-20261028" defer></script><script src="js/order.js?v=profile-label-20261028" defer></script>
-<script src="js/comfort.js?v=eva-pricing-20261028-v415" defer></script><script src="js/copy-calculation.js?v=item-totals-20261028" defer></script></body>
+<script src="js/order-pricing.js?v=profile-250-20261028" defer></script><script src="js/quote-details.js?v=cm-keyboard-20261029" defer></script><script src="js/order.js?v=cm-keyboard-20261029" defer></script>
+<script src="js/comfort.js?v=cm-keyboard-20261029" defer></script><script src="js/copy-calculation.js?v=cm-keyboard-20261029" defer></script></body>
 </html>
 

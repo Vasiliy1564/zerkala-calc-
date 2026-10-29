@@ -6,9 +6,41 @@
 
  // A bounded native picker avoids keyboard entry and accidental 13 instead of 3.
  function quantityButton(text,label,action){var b=document.createElement('button');b.type='button';b.textContent=text;b.setAttribute('aria-label',label);b.addEventListener('click',action);return b;}
- quantity.addEventListener('focus',function(){quantity.scrollIntoView({behavior:'auto',block:'center'});});
 
 
+
+ // Keep the edited field clear of the keyboard and fixed action buttons.
+ var focusedSize=null,sizeTimer=0,focusToken=0;
+ function sizeInput(el){return el&&el.matches&&el.matches('input:not([type=radio]):not([type=checkbox]):not([type=hidden]),textarea,select')&&!el.disabled&&!el.readOnly;}
+ function keepSizeVisible(){
+  if(!focusedSize||document.activeElement!==focusedSize)return;
+  var vp=window.visualViewport,top=vp?vp.offsetTop:0,height=vp?vp.height:window.innerHeight;
+  if(!(height>0))return;
+  var bottom=top+height-28;
+  document.querySelectorAll('.action-bar,#return-to-calculator').forEach(function(bar){
+   if(bar.hidden||!bar.getClientRects().length)return;
+   var r=bar.getBoundingClientRect();if(r.height>0&&r.top>top&&r.top<bottom)bottom=r.top-20;
+  });
+  var rect=focusedSize.getBoundingClientRect(),safeTop=top+32;
+  var delta=rect.bottom>bottom?rect.bottom-bottom:rect.top<safeTop?rect.top-safeTop:0;
+  if(Math.abs(delta)>2)window.scrollBy({top:delta,left:0,behavior:'instant'});
+ }
+ function scheduleSizeVisibility(){clearTimeout(sizeTimer);sizeTimer=setTimeout(keepSizeVisible,100);}
+ document.addEventListener('focusin',function(e){
+  if(!sizeInput(e.target)||!form.contains(e.target))return;
+  focusedSize=e.target;var token=++focusToken;
+  document.documentElement.classList.add('size-input-editing');
+  scheduleSizeVisibility();
+  setTimeout(function(){if(token===focusToken)keepSizeVisible();},450);
+ });
+ document.addEventListener('focusout',function(e){
+  if(e.target!==focusedSize)return;
+  focusedSize=null;++focusToken;clearTimeout(sizeTimer);
+  document.documentElement.classList.remove('size-input-editing');
+ });
+ window.addEventListener('resize',scheduleSizeVisibility);
+ if(window.visualViewport){window.visualViewport.addEventListener('resize',scheduleSizeVisibility);}
+ if(window.ResizeObserver)new ResizeObserver(scheduleSizeVisibility).observe(form);
  var activePosition=null;
  function beginPosition(anchor){
   if(activePosition)return activePosition;

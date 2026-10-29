@@ -17,7 +17,7 @@ function entries(items,t){
  });
 }
 function params(item){
- var m=item.data.mirror,lines=[m.name+' — '+item.qty+' шт.','Размеры: '+m.size+'.','Полотно: '+m.materialLabel+'.','Кромка: '+m.edgeLabel+'.','Подсветка: '+(m.light?'да':'нет')+'.'];
+ var m=item.data.mirror,lines=[m.name+' — '+item.qty+' шт.','Размеры: '+window.MirrorSize.dimensions(m.size)+'.','Полотно: '+m.materialLabel+'.','Кромка: '+m.edgeLabel+'.','Подсветка: '+(m.light?'да':'нет')+'.'];
  if(m.light)lines.push('Цвет света: '+({warm:'тёплый',neutral:'нейтральный',cold:'холодный'}[m.clr]||m.clr)+'.','Управление: '+({wave:'взмах рукой',touch:'сенсор',remote:'пульт',smart:'Wi-Fi'}[m.ctrl]||m.ctrl)+'.');
  lines.push('Установка: '+(m.install?'да':'нет')+'.','Бронеплёнка: '+(m.film?'да':'нет')+'.','Подогрев: '+(m.heat?'да':'нет')+'.');
  if(m.aluFrame)lines.push('Каркас из алюминиевого уголка: да.');
@@ -31,7 +31,7 @@ function quote(items,t,title){
  var list=entries(items,t),lines=[title||'Расчёт заказа зеркал','Количество: '+t.count+' шт.',''];
  list.forEach(function(entry,i){lines.push(itemText(entry,i),'');});
  if(t.externalDelivery)lines.push('Доставка по адресу согласуется отдельно и не включена в итог.');
- if(!items.some(function(item){return item.data.mirror.install||item.data.mirror.delivery;}))lines.push('Доставка клиенту не выбрана.');
+ if(!items.some(function(item){return item.data.mirror.install||item.data.mirror.delivery;}))lines.push('Доставка не включена.');
  lines.push('','Итоговая стоимость: '+money(t.total)+'.');
  if(items.some(function(item){return item.data.mirror.estimate;}))lines.push('Стоимость фигурного контура уточняется после согласования.');
 
