@@ -1,4 +1,12 @@
 /* Journey-first interface. Existing transport/address engines remain the source of truth. */
+// Highlight route decisions without changing the instruction text.
+function routeInstruction(tag,text,className){
+ const el=node(tag,undefined,className);let offset=0;
+ for(const match of text.matchAll(/«[^»]+»|лини[яи] № \d+|(?:автобус|трамвай|троллейбус)[а-я]* № [\dА-Яа-яЭэ]+/gi)){
+  el.append(document.createTextNode(text.slice(offset,match.index)),node('strong',match[0],'routeKey'));offset=match.index+match[0].length;
+ }
+ el.append(document.createTextNode(text.slice(offset)));return el;
+}
 let walkingIndex=0,walkingActiveKey='',journeyFinished=false;
 function rememberJourney(){try{if(guidancePlan&&!journeyFinished)localStorage.setItem('put.journey.v24',JSON.stringify({plan:guidancePlan,points,index:guidanceIndex,walkingIndex,time:Date.now()}));}catch(e){}}
 function forgetJourney(){try{localStorage.removeItem('put.journey.v24')}catch(e){}}
@@ -10,7 +18,7 @@ guidanceSteps=function(p){return originalGuidanceSteps(p).map(s=>{
  if(s.kind==='pedestrian'){
   const fromMetro=!!METRO.get(s.from?.metroId||s.from?.id),toMetro=!!METRO.get(s.point?.metroId||s.point?.id);
   s.title=fromMetro?'Из метро к '+(BUS.has(s.point.id)?'остановке':'месту назначения'):toMetro?'Пешком ко входу в метро':BUS.has(s.point.id)?'Пешком к остановке':'Пешком до адреса';
-  s.text='От «'+s.from.name+'» до «'+s.point.name+'».';
+  s.text='От «'+s.from.name+'» до «'+s.point.name+'».'+(fromMetro?' '+stationExitHint(METRO.get(s.from.metroId||s.from.id),s.nextRide):'');
  }
  return s;
 });};
@@ -70,7 +78,7 @@ drawGuidance=function(){
  const bar=node('div',undefined,'progressTrack'),fill=node('div');fill.style.width=((guidanceIndex+1)/steps.length*100)+'%';bar.append(fill);
  guide.append(progress,bar,node('h2',step.title));
  if(step.kind==='pedestrian')walkingPanel(guide,step);else{
-  guide.append(node('p',step.text,'currentInstruction'));
+  guide.append(routeInstruction('p',step.text,'currentInstruction'));
   if(step.leg){const stops=node('details',undefined,'stopDetails');stops.append(node('summary','Остановки по пути'),makeJourney(step.leg,planTable(step.leg),step.leg.transport));guide.append(stops)}
   guide.append(mapButton(step.point,'Где находится это место'));
  }
@@ -82,9 +90,9 @@ renderPlan=function(p){
  const results=$('results'),technical=node('details',undefined,'card routeDetails');technical.append(node('summary','Остановки, пересадки и данные маршрута'));while(results.firstChild)technical.append(results.firstChild);
  const summary=node('section',undefined,'tripSummary');summary.append(node('div','ВАША ПОЕЗДКА','eyebrow'),node('h2',shortRoute(p)),node('p',points.from.name+' → '+points.to.name,'routeEndpoints'),node('p','≈ '+timeRange(p.metrics.time)+' · '+transferCountText(p.metrics.transfers),'routeEstimate'),node('p','Оценка времени без ожидания и пробок. Пешие участки уточняются отдельно.','hint'));
  const guide=node('section',undefined,'card guideCard');guide.id='tripGuide';guide.setAttribute('aria-live','polite');
- const itinerary=node('details',undefined,'card fullItinerary');itinerary.append(node('summary','Весь путь по шагам'));
- const list=node('ol',undefined,'compactItinerary');guidanceSteps(p).forEach((s,i)=>{const li=node('li'),b=node('button',s.title);b.onclick=()=>{changeJourneyStep(i);document.body.classList.add('travelling')};li.append(b);list.append(li)});itinerary.append(list);
- results.append(summary,guide,itinerary,technical);document.body.classList.add('travelling');$('editJourney').hidden=false;$('editJourney').textContent='Изменить маршрут';drawGuidance();
+ const itinerary=node('details',undefined,'card fullItinerary');itinerary.open=true;itinerary.append(node('summary','Весь путь по шагам'));
+ const list=node('ol',undefined,'compactItinerary');guidanceSteps(p).forEach((s,i)=>{const li=node('li'),b=node('button');b.append(node('strong',s.title,'routeAction'),routeInstruction('span',s.text,'itineraryInstruction'));b.onclick=()=>{changeJourneyStep(i);document.body.classList.add('travelling')};li.append(b);list.append(li)});itinerary.append(list);
+ results.append(summary,itinerary,guide,technical);document.body.classList.add('travelling');$('editJourney').hidden=false;$('editJourney').textContent='Изменить маршрут';drawGuidance();
 };
 // Keep the same input elements and listeners when switching between search and trip.
 const planner=node('section');planner.id='planner';const first=document.querySelector('main>h1'),resultsStart=$('choices');let part=first;while(part&&part!==resultsStart){const next=part.nextSibling;if(part!==$('status'))planner.append(part);part=next;}document.querySelector('header').after(planner);

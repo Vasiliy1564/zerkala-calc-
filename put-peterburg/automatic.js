@@ -98,18 +98,17 @@ function guidanceSteps(p){
  if(p.access>=35)steps.push({title:'Дойдите до места посадки',text:firstStop.name+'. Около '+Math.round(p.access)+' м по прямой; путь по улицам может быть длиннее.',point:firstStop,from:points.from,kind:'pedestrian',done:'Я на месте посадки'});
  for(let i=0;i<p.legs.length;i++){
   const leg=p.legs[i],next=p.legs.slice(i+1).find(l=>l.type==='ride');
-  if(leg.type==='transfer'){steps.push({title:'Пересадка в метро',text:leg.instruction,point:METRO.get(leg.to),done:'Я перешёл на нужную линию'});continue}
+  if(leg.type==='transfer'){steps.push({title:'Пересадка в метро',text:leg.instruction||('По указателям перейдите со станции «'+METRO.get(leg.from).name+'» на «'+METRO.get(leg.to).name+'», линия № '+METRO.get(leg.to).line+'.'),point:METRO.get(leg.to),done:'Я перешёл на нужную линию'});continue}
   if(leg.type==='walk'){
    const a=leg.pointFrom||BUS.get(leg.from)||METRO.get(leg.from),b=leg.pointTo||BUS.get(leg.stopTo)||METRO.get(leg.stopTo);if(!a||!b)continue;
-   steps.push({title:METRO.has(a.id)?'Выйдите из метро к остановке':METRO.has(b.id)?'Пройдите к метро':'Перейдите на следующую остановку',text:(METRO.has(a.id)?stationExitHint(a,next)+' ':'')+a.name+' → '+b.name+'. Около '+Math.round(leg.meters)+' м по прямой. Пешеходный путь проверьте на карте.',point:b,from:a,kind:'pedestrian',done:'Я у места пересадки'});continue;
+   steps.push({title:METRO.has(a.id)?'Выйдите из метро к остановке':METRO.has(b.id)?'Пройдите к метро':'Перейдите на следующую остановку',text:(METRO.has(a.id)?stationExitHint(a,next)+' ':'')+a.name+' → '+b.name+'. Около '+Math.round(leg.meters)+' м по прямой. Пешеходный путь проверьте на карте.',point:b,from:a,nextRide:next,kind:'pedestrian',done:'Я у места пересадки'});continue;
   }
   if(leg.type!=='ride')continue;
   const table=planTable(leg),a=table.get(leg.from),b=table.get(leg.to),r=leg.route?patternById.get(leg.route):null;
-  const service=leg.line?'метро, линия № '+leg.line:transportName(leg.transport)+(leg.transport==='rail'?'':' № '+r.ref);
-  const direction=leg.direction||r?.to;
+  const service=leg.line?'метро, линия № '+leg.line+' · '+LINES.get(leg.line).name:transportName(leg.transport)+(leg.transport==='rail'?'':' № '+r.ref);
+  const direction=leg.line?metroDirection(leg).terminus:leg.direction||r?.to;
   const boarding=leg.boardPlatform?' Зал «'+leg.boardPlatform.station+'-'+leg.boardPlatform.hall+'».':'';
-  const metroHint=' Выходите: «'+b.name+'».';
-  steps.push({title:'Сядьте: '+service,text:'Откуда: «'+a.name+'».'+boarding+' В сторону «'+direction+'».'+metroHint,point:a,done:'Я сел — что дальше?'});
+  steps.push({title:'Сядьте: '+service,text:(leg.line?'Станция посадки: «':'Остановка посадки: «')+a.name+'».'+boarding+'\nВ сторону конечной '+(leg.line?'станции':'остановки')+' «'+direction+'».\nЕхать '+(leg.stops.length-1)+' остановок.\n'+(leg.line?'Выйти на станции: «':'Выйти на остановке: «')+b.name+'».',point:a,done:'Я сел — что дальше?'});
   steps.push({title:'Выходите: «'+b.name+'»',text:'Ехать '+(leg.stops.length-1)+' остановок. '+(next?'Здесь выйдите и следуйте следующему шагу пересадки.':'Здесь выйдите — дальше к месту назначения.'),point:b,leg,done:'Я вышел'});
  }
  steps.push({title:'Дойдите до места назначения',text:points.to.name+(p.egress>=35?'. Около '+Math.round(p.egress)+' м по прямой.':'. Вы у места назначения.'),point:points.to,from:planTable(rides.at(-1)).get(rides.at(-1).to),kind:'pedestrian',done:'Завершить поездку'});
