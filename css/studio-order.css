@@ -2,3 +2,5 @@
 .studio-intro{grid-area:intro}.studio-options{grid-area:options}.atelier-grid>.studio-scene{grid-area:scene}
 .studio-controls button{color:#f5ebf2;border-color:#736271}.studio-controls button[aria-pressed=true]{background:#fc734d;color:#fff;border-color:#fc734d}.studio-note{color:#d9b8ce}.atelier h2 em{color:#f59acc}
 @media(max-width:900px){.atelier-grid{grid-template-areas:"intro" "scene" "options";gap:24px}.studio-controls{margin-top:0}}
+
+.studio-scene{scroll-margin-top:100px}.studio-shape-icon{width:30px;height:38px;flex:none;overflow:visible}.studio-controls button:last-child{grid-column:auto}
