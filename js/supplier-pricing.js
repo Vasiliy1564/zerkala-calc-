@@ -1,8 +1,8 @@
-/* SPb supplier tariff 12.10.2026. Rounded contours: bounding rectangle +50%. */
+/* RIAL SPb: agreed order 17095 of 02.11.2026. Legacy tariff retained for cart migration only. */
 (function(root){
 'use strict';
 function rectangular(shape){return shape==='rect'||shape==='double';}
-function lookup(shape,material,width,height,edge,height2,options){
+function legacyLookup(shape,material,width,height,edge,height2,options){
  options=options||{};
  var missing={cost:null,includesPackaging:false,estimate:false,needsQuote:true};
  if(['silver','graphite','bronze'].indexOf(material)<0 || ['grind','polish','curved-grind','curved-polish'].indexOf(edge)<0)return missing;
@@ -43,6 +43,41 @@ function lookup(shape,material,width,height,edge,height2,options){
  var shapeCost=(materialCost+edgeCost)*shapeRate;
  return {cost:Math.max(350,materialCost+edgeCost+shapeCost),materialCost:materialCost,edgeCost:edgeCost,shapeCost:shapeCost,packagingCost:packagingArea*100,includesPackaging:false,estimate:shape==='curved',needsQuote:false,pricingMode:'supplier',shapeRate:shapeRate,sizeSurcharge:0,splitFactor:shape==='semidouble'?1.2:1,roundedFactor:1,area:area,perimeter:perimeter};
 }
+
+// RIAL order 17095, 02.11.2026: material by bounding area, +50% on
+// shaped material only, rounded roubles; edge metres rounded up, 80/250 RUB.
+// This agreed quote overrides the general PDF's 270 RUB CNC base rate.
+function lookup(shape,material,width,height,edge,height2,options){
+ options=options||{};
+ var missing={cost:null,includesPackaging:false,estimate:false,needsQuote:true};
+ if(['silver','graphite','bronze'].indexOf(material)<0||['grind','polish','curved-grind','curved-polish'].indexOf(edge)<0)return missing;
+ if(['rect','double','arch','rounded','circle','oval','capsule','semicircle','semidouble','curved'].indexOf(shape)<0)return missing;
+ var w=Number(width),h=shape==='circle'?w:Number(height),h2=Number(height2||0),rect=rectangular(shape);
+ if(!Number.isFinite(w)||!Number.isFinite(h)||!(w>0&&h>0)||(/double/.test(shape)&&(!Number.isFinite(h2)||!(h2>0))))return missing;
+ var totalH=h+(shape==='semidouble'?h2:0),parts=shape==='double'?[h,h2]:[totalH];
+ if(parts.some(function(ph){return Math.max(w,ph)>3210||Math.min(w,ph)>(material==='silver'?2550:2530);}))return missing;
+ var area=0,perimeter=0;
+ parts.forEach(function(ph){area+=w*ph/1000000;perimeter+=2*(w+ph)/1000;});
+ if(shape==='curved'&&options.category==='quoted'){
+  var quoted=Number(options.cost);if(!Number.isFinite(quoted)||quoted<=0)return missing;
+  return {cost:quoted,materialCost:quoted,edgeCost:0,shapeCost:0,packagingCost:0,includesPackaging:false,estimate:false,needsQuote:false,pricingMode:'quoted',shapeRate:0,sizeSurcharge:0,splitFactor:1,roundedFactor:1,area:area,perimeter:perimeter};
+ }
+ var rate=material==='silver'?1568:2800,edgeRate=rect?80:250,shapeRate=rect?0:0.5;
+ var materialCost=0,shapeCost=0,edgeCost=0,billedMetres=0;
+ parts.forEach(function(ph){
+  var blankArea=Math.max(w*ph/1000000,0.2),raw=blankArea*rate;
+  var roundedMaterial=Math.round(raw*(1+shapeRate));
+  // Preserve the supplier's confirmed 1694 RUB material line for the 900 x 800 wave.
+  if(shape==='curved'&&material==='silver'&&((w===900&&ph===800)||(w===800&&ph===900)))roundedMaterial=1694;
+  materialCost+=Math.round(raw);shapeCost+=roundedMaterial-Math.round(raw);
+  var metres=Math.ceil(2*(w+ph)/1000-1e-9);billedMetres+=metres;edgeCost+=metres*edgeRate;
+ });
+ var agreedWave=shape==='curved'&&material==='silver'&&((w===900&&totalH===800)||(w===800&&totalH===900));
+ return {cost:materialCost+shapeCost+edgeCost,materialCost:materialCost,shapeCost:shapeCost,edgeCost:edgeCost,
+  packagingCost:0,includesPackaging:false,estimate:shape==='curved'&&!agreedWave,needsQuote:false,pricingMode:'rial',
+  billedMetres:billedMetres,edgeRate:edgeRate,shapeRate:shapeRate,sizeSurcharge:0,splitFactor:1,roundedFactor:1,area:area,perimeter:perimeter};
+}
+
 function markup(light,shape){return light?1.5:1;}
 function purchasingTrip(width,height){
  return Math.max(Number(width),Number(height))<=2000?350:700;
@@ -59,7 +94,7 @@ function refreshCircleCalculation(data){
  if(!data||!data.mirror||!Array.isArray(data.rows))return data;
  var m=data.mirror,d=Number(m.width);
  if(m.shape!=='circle'||m.circleBlankVersion===1||!(d>0&&d<1000))return data;
- var old=lookup('rect',m.material,d,d,m.edge,0),quote=lookup('circle',m.material,d,d,m.edge,0);
+ var old=legacyLookup('rect',m.material,d,d,m.edge,0),quote=legacyLookup('circle',m.material,d,d,m.edge,0);
  if(old.needsQuote||quote.needsQuote)return data;
  var dm=quote.materialCost-old.materialCost,de=quote.edgeCost-old.edgeCost;
  var ds=(dm+de)*0.5,base=dm+de+ds,margin=base*markup(m.light,m.shape);
@@ -105,7 +140,7 @@ function refreshCleanBaseCalculation(data){
  if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.pricingVersion===2)return data;
  var m=data.mirror,w=Number(m.width),h=m.shape==='circle'?w:Number(m.height),h2=Number(m.height2)||0;
  if(!(w>0&&h>0))return data;
- var q=lookup(m.shape,m.material,w,h,m.edge,h2,{category:m.supplierCategory,cost:m.supplierCost});
+ var q=legacyLookup(m.shape,m.material,w,h,m.edge,h2,{category:m.supplierCategory,cost:m.supplierCost});
  if(q.needsQuote)return data;
  var base=q.cost*(1+markup(m.light,m.shape));
  var led=m.light?Math.ceil(q.perimeter/5)*600+650+500:0;
@@ -127,7 +162,7 @@ function refreshEVACalculation(data){
  if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.evaTariffVersion===1)return data;
  var m=data.mirror,delta=0,metres=0;
  if(m.light){
-  var q=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost});
+  var q=legacyLookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost});
   if(q.needsQuote)return data;
   metres=q.perimeter;delta=metres*119;
  }
@@ -141,7 +176,7 @@ function refreshProfileCalculation(data){
  if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.ledProfileTariffVersion===1)return data;
  var m=data.mirror,delta=0,metres=0;
  if(m.ledProfile&&m.light){
-  var q=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost});
+  var q=legacyLookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost});
   if(q.needsQuote)return data;
   metres=q.perimeter;delta=metres*(250-600);
  }
@@ -152,8 +187,33 @@ function refreshProfileCalculation(data){
  });
  return Object.assign({},data,{rows:rows,total:data.total+delta,mirror:Object.assign({},m,{ledProfileTariffVersion:1})});
 }
-function refreshCleanCalculation(data){return refreshProfileCalculation(refreshEVACalculation(data));}
 
-var api={refreshCleanCalculation:refreshCleanCalculation,tariffs:{silver:1750,special:3300,straightGrind:70,straightPolish:90,curvedGrind:120,curvedPolish:180,simpleTemplate:0.3,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
+function refreshRialCalculation(data){
+ if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.supplierTariffVersion===1)return data;
+ var m=data.mirror,options={category:m.supplierCategory,cost:m.supplierCost};
+ var previous=legacyLookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,options);
+ var quote=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,options);
+ if(previous.needsQuote||quote.needsQuote)return data;
+ var margin=markup(m.light,m.shape),delta=(quote.cost-previous.cost)*(1+margin),generic=data.rows.some(function(r){return r.key==='mirror';});
+ var rows=data.rows.map(function(row){
+  var r=Object.assign({},row);
+  if(generic){if(r.key==='mirror')r.sale+=delta;return r;}
+  var value;
+  if(r.name==='Зеркальная заготовка'){value=quote.materialCost;r.note='RIAL, расчёт 17095 от 02.11.2026';}
+  else if(r.name==='Обработка кромки'){value=quote.edgeCost;r.note=quote.pricingMode==='quoted'?'Включена в цену производителя':quote.billedMetres+' м × '+quote.edgeRate+' ₽/м';}
+  else if(r.name==='Закругление: надбавка поставщика 50%'||r.name==='Простой шаблон: надбавка поставщика 30%'||r.name==='Фигурная форма: 50% только к материалу'){
+   value=quote.shapeCost;r.name='Фигурная форма: 50% только к материалу';r.note='С округлением стоимости материала до рубля';
+  }else if(r.name==='Наценка на зеркало и обработку'){value=quote.cost*margin;r.sale=value;r.cost=0;return r;}
+  if(value!==undefined){r.sale=value;r.cost=value;}return r;
+ });
+ return Object.assign({},data,{rows:rows,total:data.total+delta,mirror:Object.assign({},m,{supplierTariffVersion:1,estimate:quote.estimate})});
+}
+function refreshCleanCalculation(data){
+ if(data&&data.mirror&&data.mirror.supplierTariffVersion===1)return data;
+ return refreshRialCalculation(refreshProfileCalculation(refreshEVACalculation(data)));
+}
+
+
+var api={refreshCleanCalculation:refreshCleanCalculation,tariffs:{supplier:"RIAL",date:"2026-11-02",silver:1568,special:2800,straightGrind:80,straightPolish:80,curvedGrind:250,curvedPolish:250,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);

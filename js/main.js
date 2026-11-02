@@ -295,8 +295,8 @@
   var AVAIL_H = VB_H - PAD * 2;
 
   var PRICE = {
-    mirror: 1750,
-    specialMirror: 4950,
+    mirror: 1568,
+    specialMirror: 2800,
     plainMarkup: 1.00,
     markup: 1.50,
     ledRoll: 600,
@@ -413,7 +413,7 @@
     if(supplierField)supplierField.hidden=state.shape!=='curved';
     var supplierCategory=document.getElementById('supplier-category');
     var supplierCost=document.getElementById('supplier-cost');
-    state.supplierCategory=supplierCategory?supplierCategory.value:'quoted';
+    state.supplierCategory=supplierCategory?supplierCategory.value:'rial';
     state.supplierCost=supplierCost&&supplierCost.value!==''?Number(supplierCost.value):null;
     var material = $('input[name="material"]:checked');
     state.material = material ? material.value : 'silver';
@@ -1026,7 +1026,7 @@
       price += framePurchase + frameDelivery;
     }
 
-    // Rounded contours: supplier +50% is already included before the sales markup.
+    // RIAL's +50% applies only to shaped material; edge processing is separate.
 
 
     var sizeText = '';
@@ -1053,7 +1053,7 @@
         {key:'purchase-trip',sale:orderTrip,cost:orderTrip},
         {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
         {key:'installation',sale:orderInstall,cost:null,expense:'install'}
-      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:1,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
+      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:1,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:1,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
         size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),material:state.material,
         materialLabel:({silver:'Серебро, 4 мм',graphite:'Графит, 4 мм',bronze:'Бронза, 4 мм'}[state.material]),
         edge:state.edge,edgeLabel:EDGE_LABELS[state.edge],light:state.light,ctrl:state.ctrl,clr:state.clr,

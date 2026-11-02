@@ -34,7 +34,7 @@ function calculate(items,settings){
   count+=qty;goods+=data.total*qty;
   var mirror=data.mirror;
   if(mirror.install)installedCount+=qty;
-  if(mirror.shape==='curved'&&mirror.supplierCategory!=='simple-template'&&!(Number(mirror.supplierCost)>0))needsQuote=true;
+  if(mirror.shape==='curved'&&mirror.supplierCategory==='quoted'&&!(Number(mirror.supplierCost)>0))needsQuote=true;
   if(mirror.install||mirror.delivery)regions[mirror.region||'murino']=true;
   data.rows.forEach(function(row){
    if(row.key==='purchase-trip'){goods-=row.sale*qty;trip=Math.max(trip,row.sale);return;}
