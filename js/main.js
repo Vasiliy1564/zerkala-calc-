@@ -597,7 +597,7 @@
       var aspect = w / h;
       var fit = fitBox(aspect);
       var rw = fit.w, rh = fit.h;
-      var rx = shape === 'rounded' ? Math.min(rw, rh) * 0.12 : 10 * (rw / 150);
+      var rx = shape === 'rounded' ? Math.min(rw, rh) * 0.12 : 0;
       var x = (VB_W - rw) / 2;
       var y = (VB_H - rh) / 2;
       content = '<rect class="mirror-glow" x="' + (x - 0) + '" y="' + (y - 0) + '" width="' + (rw + 0 * 2) + '" height="' + (rh + 0 * 2) + '" rx="' + (rx + 0) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
