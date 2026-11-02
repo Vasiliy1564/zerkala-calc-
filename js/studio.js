@@ -6,6 +6,23 @@ function render(shape){split.hidden=shape!=='semidouble';split.style.display=sha
 document.querySelectorAll('[data-silhouette]').forEach(b=>{b.querySelector('.studio-shape-icon path').setAttribute('d',forms[b.dataset.silhouette][0]);b.addEventListener('click',()=>{render(b.dataset.silhouette);document.querySelectorAll('[data-silhouette]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));scene.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});});});
 const toggle=document.querySelector('.light-toggle');toggle.addEventListener('click',()=>{const on=scene.classList.toggle('lit');toggle.setAttribute('aria-pressed',String(on));toggle.innerHTML=(on?'Подсветка включена':'Включить подсветку')+' <span>↗</span>';render(scene.dataset.shape)});
 render('rect');
+function refreshMaterial(){
+ const selected=document.querySelector('input[name="material"]:checked');
+ const material=selected?selected.value:'silver';
+ document.querySelectorAll('[data-studio-material]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.studioMaterial===material)));
+ if(window.MirrorMaterialReflection){
+  const reflection=scene.querySelector('g[clip-path]');
+  reflection.innerHTML='<g transform="scale('+600/170+' '+530/240+')">'+window.MirrorMaterialReflection(material).replace(/material(Frost|Patina|Decor)/g,'studioMaterial$1')+'</g><rect width="600" height="530" fill="url(#glassNatural)"/>';
+ }
+}
+document.querySelectorAll('[data-studio-material]').forEach(b=>b.addEventListener('click',()=>{
+ const input=document.querySelector('input[name="material"][value="'+b.dataset.studioMaterial+'"]');
+ if(input){input.checked=true;input.dispatchEvent(new Event('change',{bubbles:true}));}
+ scene.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
+}));
+document.querySelectorAll('input[name="material"]').forEach(input=>input.addEventListener('change',refreshMaterial));
+refreshMaterial();
+
 const link=document.querySelector('.atelier a[href="#quote-form"], .atelier a[href="#calculator"]');if(link)link.addEventListener('click',()=>{const input=document.querySelector('#quote-form input[name="shape"][value="'+scene.dataset.shape+'"]');if(input){input.checked=true;input.dispatchEvent(new Event('change',{bubbles:true}));}const light=document.querySelector('#quote-form input[name="light"][value="'+(scene.classList.contains('lit')?'on':'off')+'"]');if(light){light.checked=true;light.dispatchEvent(new Event('change',{bubbles:true}));}});
 if('IntersectionObserver'in window&&!matchMedia('(prefers-reduced-motion: reduce)').matches){const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('studio-reveal');observer.unobserve(e.target)}}),{threshold:.12});document.querySelectorAll('.section-head,.product,.story-copy,.atelier-grid').forEach(e=>observer.observe(e))}
 })();

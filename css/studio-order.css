@@ -4,3 +4,5 @@
 @media(max-width:900px){.atelier-grid{grid-template-areas:"intro" "scene" "options";gap:24px}.studio-controls{margin-top:0}}
 
 .studio-scene{scroll-margin-top:100px}.studio-shape-icon{width:30px;height:38px;flex:none;overflow:visible}.studio-controls button:last-child{grid-column:auto}
+
+.studio-materials{margin-bottom:24px}.studio-materials>p:first-child{font-weight:600;margin:0 0 12px}.studio-material-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.studio-material-controls button{background:#292a30;border:1px solid #736271;color:#f5ebf2;border-radius:8px;padding:12px 8px;font:inherit;font-size:13px;cursor:pointer}.studio-material-controls button[aria-pressed=true]{background:#fc734d;border-color:#fc734d;color:#fff}.studio-material-controls button:focus-visible{outline:2px solid #f59acc;outline-offset:3px}

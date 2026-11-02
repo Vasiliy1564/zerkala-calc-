@@ -557,6 +557,17 @@
     renderMirrorSvg();
   }
 
+  function materialReflection(material) {
+    material=material||state.material||'silver';
+    var satin=material.indexOf('satin')===0;
+    var tones={silver:['#c8d7cf',.035],crystal:['#ffffff',.08],graphite:['#252c36',.58],bronze:['#9b6235',.43],antique:['#82704a',.27],satinSilver:['#e1e4de',.55],satinBronze:['#ab8058',.58],satinGraphite:['#535963',.64],decorative:['#d5ddd6',.12]};
+    var tone=tones[material]||tones.silver;
+    var defs='<defs><filter id="materialFrost"><feGaussianBlur stdDeviation="3"/></filter><filter id="materialPatina"><feTurbulence type="fractalNoise" baseFrequency=".12" numOctaves="3" seed="7"/><feColorMatrix type="matrix" values="0 0 0 0 .15 0 0 0 0 .12 0 0 0 0 .08 0 0 0 1.8 -.8"/></filter><pattern id="materialDecor" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M16 0L32 16 16 32 0 16Z" fill="none" stroke="#edf0e8" stroke-width="1.4" opacity=".65"/></pattern></defs>';
+    return defs+'<g class="mirror-material-surface" data-material="'+material+'"><rect width="170" height="240" fill="#d7dbd3"/><image class="mirror-reflection" href="assets/mirror-reflection.png" width="170" height="240" preserveAspectRatio="xMidYMid slice" opacity="'+(satin?'.55':'.94')+'"'+(satin?' filter="url(#materialFrost)"':'')+'/><rect class="mirror-material-tint" width="170" height="240" fill="'+tone[0]+'" opacity="'+tone[1]+'"/>'+(material==='antique'?'<rect width="170" height="240" filter="url(#materialPatina)" opacity=".6"/>':'')+(material==='decorative'?'<rect width="170" height="240" fill="url(#materialDecor)"/>':'')+'</g>';
+  }
+
+  window.MirrorMaterialReflection=materialReflection;
+
   function renderMirrorSvg() {
     var svg = document.getElementById('mirrorSvg');
     if (!svg) return;
@@ -620,7 +631,9 @@
     } else if (shape === 'curved') {
       var customBox = fitBox(w / h);
       var customX = cx - customBox.w / 2, customY = cy - customBox.h / 2;
-      content = '<path transform="translate(' + customX + ' ' + customY + ') scale(' + customBox.w / 100 + ' ' + customBox.h / 100 + ')" d="M 50 0 C 37 0 31 9 25 13 C 14 19 0 22 0 32 C 0 40 17 44 16 50 C 15 56 2 60 3 68 C 4 76 20 79 26 87 C 32 95 35 100 49 100 C 64 100 68 93 78 89 C 88 84 100 80 99 71 C 98 63 85 60 87 53 C 89 46 100 41 100 32 C 100 22 84 16 76 12 C 67 8 64 0 50 0 Z" fill="url(#glassGrad)" />';
+      var waveCoordinate=0;
+      var wavePath="M 50 0 C 37 0 31 9 25 13 C 14 19 0 22 0 32 C 0 40 17 44 16 50 C 15 56 2 60 3 68 C 4 76 20 79 26 87 C 32 95 35 100 49 100 C 64 100 68 93 78 89 C 88 84 100 80 99 71 C 98 63 85 60 87 53 C 89 46 100 41 100 32 C 100 22 84 16 76 12 C 67 8 64 0 50 0 Z".replace(/\d+(?:\.\d+)?/g,function(n){var isX=waveCoordinate++%2===0;return (isX?customX:customY)+Number(n)*(isX?customBox.w:customBox.h)/100;});
+      content = '<path d="'+wavePath+'" fill="url(#glassGrad)" />';
     } else if (shape === 'oval') {
       var fitO = fitBox(w / h);
       var rxo = fitO.w / 2;
@@ -734,7 +747,7 @@
       outline.setAttribute('fill', 'none');
       if (hasLight) {
         outline.setAttribute('stroke', glowColor);
-        outline.setAttribute('stroke-width', '8');
+        outline.setAttribute('stroke-width', '5');
         outline.setAttribute('filter', 'url(#realMirrorHalo)');
         halos += outline.outerHTML;
         outline.removeAttribute('filter');
@@ -752,7 +765,7 @@
         outline.removeAttribute('opacity');
         outline.setAttribute('clip-path', 'url(#realMirrorClip)');
         outline.setAttribute('stroke', glowColor);
-        outline.setAttribute('stroke-width', '4');
+        outline.setAttribute('stroke-width', '1.2');
         outline.setAttribute('class', 'mirror-led-band');
         edges += outline.outerHTML;
       }
@@ -770,12 +783,10 @@
     }
     svg.insertAdjacentHTML('beforeend',
       '<defs><clipPath id="realMirrorClip">' + clipShapes + '</clipPath>' +
-      '<filter id="realMirrorHalo" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>' +
+      '<filter id="realMirrorHalo" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>' +
       '<linearGradient id="realMirrorSheen" x2="1" y2="1"><stop stop-color="#f5fbff" stop-opacity=".22"/><stop offset=".38" stop-color="#fff" stop-opacity=".03"/><stop offset=".52" stop-color="#fff" stop-opacity=".13"/><stop offset=".68" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#78958a" stop-opacity=".16"/></linearGradient></defs>' +
       halos + '<g clip-path="url(#realMirrorClip)">' +
-      '<rect width="170" height="240" fill="#d7dbd3"/>' +
-      '<image href="assets/mirror-reflection.png" width="170" height="240" preserveAspectRatio="xMidYMid slice" opacity=".88"/>' +
-      (state.material === 'bronze' ? '<rect width="170" height="240" fill="#9d693b" opacity=".38"/>' : state.material === 'graphite' ? '<rect width="170" height="240" fill="#333943" opacity=".38"/>' : '') +
+      materialReflection() +
       '<rect width="170" height="240" fill="url(#realMirrorSheen)"/></g>' + edges + splitOverlay);
   }
 
@@ -1162,6 +1173,7 @@
   $all('input[name="material"]').forEach(function (r) {
     r.addEventListener('change', function () {
       readState();
+      renderMirrorSvg();
       var res = document.getElementById('calc-result');
       if (res && res.classList.contains('show')) calc(false);
     });
