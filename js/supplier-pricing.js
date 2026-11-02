@@ -1,4 +1,4 @@
-/* RIAL SPb: agreed order 17095 of 02.11.2026. Legacy tariff retained for cart migration only. */
+/* RIAL SPb: general 4 mm list dated 14.10.2026; earlier agreement retained for cart migration. */
 (function(root){
 'use strict';
 function rectangular(shape){return shape==='rect'||shape==='double';}
@@ -47,7 +47,7 @@ function legacyLookup(shape,material,width,height,edge,height2,options){
 // RIAL order 17095, 02.11.2026: material by bounding area, +50% on
 // shaped material only, rounded roubles; edge metres rounded up, 80/250 RUB.
 // This agreed quote overrides the general PDF's 270 RUB CNC base rate.
-function lookup(shape,material,width,height,edge,height2,options){
+function agreedLookup(shape,material,width,height,edge,height2,options){
  options=options||{};
  var missing={cost:null,includesPackaging:false,estimate:false,needsQuote:true};
  if(['silver','graphite','bronze'].indexOf(material)<0||['grind','polish','curved-grind','curved-polish'].indexOf(edge)<0)return missing;
@@ -75,7 +75,48 @@ function lookup(shape,material,width,height,edge,height2,options){
  var agreedWave=shape==='curved'&&material==='silver'&&((w===900&&totalH===800)||(w===800&&totalH===900));
  return {cost:materialCost+shapeCost+edgeCost,materialCost:materialCost,shapeCost:shapeCost,edgeCost:edgeCost,
   packagingCost:0,includesPackaging:false,estimate:shape==='curved'&&!agreedWave,needsQuote:false,pricingMode:'rial',
-  billedMetres:billedMetres,edgeRate:edgeRate,shapeRate:shapeRate,sizeSurcharge:0,splitFactor:1,roundedFactor:1,area:area,perimeter:perimeter};
+  billedMetres:billedMetres,edgeRate:edgeRate,shapeRate:shapeRate,sizeSurcharge:0,splitFactor:1,roundedFactor:1,area:area,perimeter:perimeter,maxSide:Math.max.apply(null,[w].concat(parts)),minSide:Math.min.apply(null,[w].concat(parts))};
+}
+
+// General RIAL price list dated 14.10.2026, 4 mm only.
+var materials={
+ silver:{label:'Серебро, 4 мм',rate:1568,sheet:1073,w:3210,h:2550},
+ crystal:{label:'Осветлённое Crystalvision, 4 мм',rate:3100,sheet:2015,w:3210,h:2550},
+ bronze:{label:'Бронза, 4 мм',rate:2800,sheet:1820,w:3210,h:2530},
+ graphite:{label:'Графит, 4 мм',rate:2800,sheet:1820,w:3210,h:2530},
+ antique:{label:'Состаренное, 4 мм',rate:9460,sheet:7310,w:3300,h:2140},
+ satinSilver:{label:'Сатинат серебро, 4 мм',rate:3750,sheet:1950,w:3210,h:2550},
+ satinBronze:{label:'Сатинат бронза, 4 мм',rate:3750,sheet:1950,w:3210,h:2550},
+ satinGraphite:{label:'Сатинат графит, 4 мм',rate:4000,sheet:2080,w:3210,h:2550},
+ decorative:{label:'Декоративное зеркало, 4 мм',rate:4320,sheet:3600,w:2550,h:1605}
+};
+function lookup(shape,material,width,height,edge,height2,options){
+ options=options||{};
+ var missing={cost:null,includesPackaging:false,estimate:false,needsQuote:true};
+ var stock=materials[material],w=Number(width),h=shape==='circle'?w:Number(height),h2=Number(height2||0);
+ if(!stock||!Number.isFinite(w)||!Number.isFinite(h)||!(w>0&&h>0))return missing;
+ if(['rect','double','arch','rounded','circle','oval','capsule','semicircle','semidouble','curved'].indexOf(shape)<0||['grind','polish','curved-grind','curved-polish'].indexOf(edge)<0)return missing;
+ if(/double/.test(shape)&&(!Number.isFinite(h2)||h2<=0))return missing;
+ var parts=shape==='double'?[h,h2]:shape==='semidouble'?[h,h2]:[h];
+ if(parts.some(function(ph){return !((w<=stock.w&&ph<=stock.h)||(ph<=stock.w&&w<=stock.h));}))return missing;
+ var area=0,perimeter=0,materialCost=0,shapeCost=0,edgeCost=0,billedMetres=0;
+ var figured=!rectangular(shape),shapeRate=figured?0.5:0;
+ // CNC is the default for shaped mirrors; ordinary curved processing remains selectable.
+ var cnc=options.machine==='cnc'||(options.machine!=='standard'&&figured);
+ var edgeRate=(cnc?270:80)*(figured?1.5:1);
+ parts.forEach(function(ph){
+  var a=w*ph/1e6,per=2*(w+ph)/1000,raw=Math.max(a,0.2)*stock.rate;
+  area+=a;perimeter+=per;materialCost+=raw;shapeCost+=raw*shapeRate;
+  var metres=Math.ceil(per-1e-9);billedMetres+=metres;edgeCost+=metres*edgeRate;
+ });
+ if(shape==='curved'&&options.category==='quoted'){
+  var quoted=Number(options.cost);if(!Number.isFinite(quoted)||quoted<=0)return missing;
+  materialCost=quoted;shapeCost=0;edgeCost=0;shapeRate=0;
+ }
+ return {cost:materialCost+shapeCost+edgeCost,materialCost:materialCost,shapeCost:shapeCost,edgeCost:edgeCost,
+  packagingCost:0,includesPackaging:false,estimate:shape==='curved'&&options.category!=='quoted',needsQuote:false,
+  pricingMode:shape==='curved'&&options.category==='quoted'?'quoted':'rial-list',billedMetres:billedMetres,edgeRate:edgeRate,
+  shapeRate:shapeRate,sizeSurcharge:0,splitFactor:1,roundedFactor:1,area:area,perimeter:perimeter,maxSide:Math.max.apply(null,[w].concat(parts)),minSide:Math.min.apply(null,[w].concat(parts))};
 }
 
 function markup(light,shape){return light?1.5:1;}
@@ -192,7 +233,7 @@ function refreshRialCalculation(data){
  if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.supplierTariffVersion===1)return data;
  var m=data.mirror,options={category:m.supplierCategory,cost:m.supplierCost};
  var previous=legacyLookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,options);
- var quote=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,options);
+ var quote=agreedLookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,options);
  if(previous.needsQuote||quote.needsQuote)return data;
  var margin=markup(m.light,m.shape),delta=(quote.cost-previous.cost)*(1+margin),generic=data.rows.some(function(r){return r.key==='mirror';});
  var rows=data.rows.map(function(row){
@@ -208,12 +249,33 @@ function refreshRialCalculation(data){
  });
  return Object.assign({},data,{rows:rows,total:data.total+delta,mirror:Object.assign({},m,{supplierTariffVersion:1,estimate:quote.estimate})});
 }
-function refreshCleanCalculation(data){
+function refreshAgreementCalculation(data){
  if(data&&data.mirror&&data.mirror.supplierTariffVersion===1)return data;
  return refreshRialCalculation(refreshProfileCalculation(refreshEVACalculation(data)));
 }
 
+function refreshCleanCalculation(data){
+ if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.supplierTariffVersion===2)return data;
+ data=refreshAgreementCalculation(data);
+ var m=data.mirror,old=agreedLookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost});
+ var q=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost});
+ if(old.needsQuote||q.needsQuote)return data;
+ var factor=1+markup(m.light,m.shape),delta=(q.cost-old.cost)*factor;
 
-var api={refreshCleanCalculation:refreshCleanCalculation,tariffs:{supplier:"RIAL",date:"2026-11-02",silver:1568,special:2800,straightGrind:80,straightPolish:80,curvedGrind:250,curvedPolish:250,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
+ var rows=data.rows.map(function(row){
+  var r=Object.assign({},row);
+  if(r.key==='mirror')r.sale+=delta;
+  else if(r.name==='Зеркальная заготовка'){r.sale=r.cost=q.materialCost;r.note='RIAL, прайс 14.10.2026';}
+  else if(r.name==='Обработка кромки'){r.sale=r.cost=q.edgeCost;r.note=q.billedMetres+' м × '+q.edgeRate+' ₽/м';}
+  else if(r.name==='Фигурная форма: 50% только к материалу')r.sale=r.cost=q.shapeCost;
+  else if(r.name==='Наценка на зеркало и обработку'){r.sale=q.cost*(factor-1);r.cost=0;}
+
+  return r;
+ });
+ return Object.assign({},data,{rows:rows,total:data.total+delta,mirror:Object.assign({},m,{supplierTariffVersion:2})});
+}
+
+
+var api={materials:materials,agreedLookup:agreedLookup,refreshCleanCalculation:refreshCleanCalculation,tariffs:{supplier:"RIAL",date:"2026-11-02",silver:1568,special:2800,straightGrind:80,straightPolish:80,curvedGrind:120,curvedPolish:120,cnc:270,curvedCnc:405,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);

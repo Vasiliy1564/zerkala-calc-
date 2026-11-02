@@ -55,6 +55,7 @@ function edit(index){
  [['install',m.install],['delivery',m.delivery],['film',m.film],['heat',m.heat],['alu-frame',m.aluFrame],['led-profile',m.ledProfile]].forEach(function(pair){var el=form.querySelector('input[name="option"][value="'+pair[0]+'"]');if(el)el.checked=!!pair[1];});
  if($('delivery-region'))$('delivery-region').value=m.region;
  if($('supplier-category'))$('supplier-category').value=m.supplierCategory==='quoted'?'quoted':'rial';if($('supplier-cost'))$('supplier-cost').value=m.supplierCost||'';
+ window.MirrorCalcOptions.restore(m.mirrorOptions);
  $('height').dispatchEvent(new Event('input',{bubbles:true}));
  $('order-quantity').innerHTML=quantityOptions(item.qty);$('order-quantity').value=item.qty;window.calculateMirrorInPlace();
  editing=index;$('order-add').textContent='Сохранить изменения';cancel.hidden=false;form.scrollIntoView({behavior:'smooth',block:'start'});
@@ -73,4 +74,5 @@ window.getMirrorOrderText=function(){return window.MirrorOrderView.quote(items,c
 $('order-send').onclick=function(){var text=window.getMirrorOrderText();if(text)window.open('https://max.ru/u/f9LHodD0cOJCsHfbfog1RuUGjeMCEw_wI5D3w-uzWYe4wj6KqPXR9YOSHA8?text='+encodeURIComponent(text),'_blank','noopener');};
 try{var saved=JSON.parse(localStorage.getItem(key)||'[]');if(Array.isArray(saved))items=saved.filter(function(item){return item&&Number.isInteger(item.qty)&&item.qty>0&&item.qty<=999&&item.data&&item.data.mirror&&Array.isArray(item.data.rows)&&Number.isFinite(item.data.total);});}catch(e){items=[];}resetEdit();render();
 })();
+
 

@@ -988,7 +988,8 @@
 
     var h2 = window.MirrorSize.read(document.getElementById('height2')) || 0;
 
-    var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.edge, h2,{category:state.supplierCategory,cost:state.supplierCost});
+    var mirrorOptions = window.MirrorCalcOptions.read();
+    var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.edge, h2,{category:state.supplierCategory,cost:state.supplierCost,machine:mirrorOptions.machine});
     if (supplierQuote.needsQuote) {
       requestQuote(state.shape==='curved'?'Стоимость сложного контура — после расчёта производителя.':'Для этой формы, материала или обработки стоимость согласуем по эскизу и прайсу поставщика.'); return;
     }
@@ -997,7 +998,8 @@
     area = supplierQuote.area;
     ledPer = supplierQuote.perimeter;
     var markedBase = supplierQuote.cost * (1 + window.MirrorSupplierPricing.markup(state.light, state.shape));
-    var price = markedBase;
+    var facetPurchase=window.MirrorCalcOptions.facetCost(mirrorOptions,supplierQuote);
+    var price = markedBase + facetPurchase*(1+window.MirrorSupplierPricing.markup(state.light,state.shape));
     if (state.light) price += Math.ceil(ledPer / PRICE.ledRollLen) * PRICE.ledRoll + PRICE.block + PRICE.switch + ledPer * 119;
 
     /* Бронеплёнка: 500 ₽/м² по площади прямоугольника */
@@ -1026,7 +1028,7 @@
       price += framePurchase + frameDelivery;
     }
 
-    // RIAL's +50% applies only to shaped material; edge processing is separate.
+    // General RIAL list: shaped material and processing each carry their own 50% surcharge.
 
 
     var sizeText = '';
@@ -1053,10 +1055,10 @@
         {key:'purchase-trip',sale:orderTrip,cost:orderTrip},
         {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
         {key:'installation',sale:orderInstall,cost:null,expense:'install'}
-      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:1,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:1,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
+      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:2,mirrorOptions:mirrorOptions,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:1,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
         size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),material:state.material,
-        materialLabel:({silver:'Серебро, 4 мм',graphite:'Графит, 4 мм',bronze:'Бронза, 4 мм'}[state.material]),
-        edge:state.edge,edgeLabel:EDGE_LABELS[state.edge],light:state.light,ctrl:state.ctrl,clr:state.clr,
+        materialLabel:window.MirrorSupplierPricing.materials[state.material].label+(state.material==='decorative'?' · '+mirrorOptions.decor:''),
+        edge:state.edge,edgeLabel:window.MirrorCalcOptions.edgeLabel(EDGE_LABELS[state.edge],mirrorOptions,supplierQuote),light:state.light,ctrl:state.ctrl,clr:state.clr,
         film:state.film,heat:state.heat,ledProfile:state.ledProfile,faceFrame:state.faceFrame,
         install:state.install,delivery:state.delivery,region:deliveryRegion(),estimate:supplierQuote.estimate
       }});
@@ -1074,7 +1076,7 @@
       return '<div class="row"><span>' + label + '</span><i class="dash"></i><span>' + value + '</span></div>';
     }
 
-    var materialLabels = {silver:'Серебро, 4 мм', graphite:'Графит, 4 мм', bronze:'Бронза, 4 мм'};
+    var materialLabels={};Object.keys(window.MirrorSupplierPricing.materials).forEach(function(k){materialLabels[k]=window.MirrorSupplierPricing.materials[k].label;});if(state.material==='decorative')materialLabels[state.material]+=' · '+mirrorOptions.decor;
     var inc = row('Полотно', materialLabels[state.material]);
     if (state.light) {
       inc += row('Подсветка', 'LED COB, ' + CLR_LABELS[state.clr] + ' свет');
@@ -1082,7 +1084,7 @@
     } else {
       inc += row('Подсветка', 'нет');
     }
-    inc += row('Кромка', EDGE_LABELS[state.edge]);
+    inc += row('Кромка',window.MirrorCalcOptions.edgeLabel(EDGE_LABELS[state.edge],mirrorOptions,supplierQuote));
     if (state.install) {
       inc += row('Установка', state.film ? 'на крепёж, с бронеплёнкой' : 'на крепёж');
     }
@@ -1099,7 +1101,7 @@
     if (supplierQuote.estimate) inc += '<p class="figure-price-note">Точная стоимость после согласования контура и заготовки. Установка и доставка — по выбранным условиям.</p>';
     document.getElementById('r-inc').innerHTML = inc;
 
-    var details = [materialLabels[state.material]];
+    var details = [materialLabels[state.material]];if(Number(mirrorOptions.facet))details.push('фацет '+mirrorOptions.facet+' мм');
     if (state.light) {
       details.push('с LED-подсветкой (' + CLR_LABELS[state.clr] + ', управление: ' + CTRL_LABELS[state.ctrl] + ')');
     } else {
@@ -1223,4 +1225,5 @@
     updateProfileAvailability();
   }
 })();
+
 
