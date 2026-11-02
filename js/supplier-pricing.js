@@ -254,8 +254,27 @@ function refreshAgreementCalculation(data){
  return refreshRialCalculation(refreshProfileCalculation(refreshEVACalculation(data)));
 }
 
+// Equipment is selected internally; normalize earlier customer choices once.
+function refreshAutomaticProcessing(data){
+ var m=data&&data.mirror;if(!m||!Array.isArray(data.rows))return data;
+ var options=m.mirrorOptions||{},oldMethod=options.machine||'auto';
+ var cleanLabel=String(m.edgeLabel||'').replace(/\s*\(ЧПУ\)/g,'');
+ if(oldMethod==='auto'&&cleanLabel===m.edgeLabel)return data;
+ var oldQuote=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost,machine:oldMethod});
+ var quote=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost,machine:'auto'});
+ if(oldQuote.needsQuote||quote.needsQuote)return data;
+ var diff=quote.cost-oldQuote.cost,factor=1+markup(m.light,m.shape),delta=diff*factor;
+ var rows=data.rows.map(function(row){var r=Object.assign({},row);
+  if(r.key==='mirror')r.sale+=delta;
+  else if(r.name==='Обработка кромки'){r.sale+=diff;if(r.cost!==null)r.cost+=diff;}
+  else if(r.name==='Наценка на зеркало и обработку')r.sale+=diff*(factor-1);
+  return r;
+ });
+ return Object.assign({},data,{rows:rows,total:data.total+delta,mirror:Object.assign({},m,{edgeLabel:cleanLabel,mirrorOptions:Object.assign({},options,{machine:'auto'})})});
+}
 function refreshCleanCalculation(data){
- if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.supplierTariffVersion===2)return data;
+ if(!data||!data.mirror||!Array.isArray(data.rows))return data;
+ if(data.mirror.supplierTariffVersion===2)return refreshAutomaticProcessing(data);
  data=refreshAgreementCalculation(data);
  var m=data.mirror,old=agreedLookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost});
  var q=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost});
