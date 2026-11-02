@@ -18,6 +18,7 @@ function entries(items,t){
 }
 function params(item){
  var m=item.data.mirror,lines=[m.name+' — '+item.qty+' шт.','Размеры: '+window.MirrorSize.dimensions(m.size)+'.','Полотно: '+m.materialLabel+'.','Кромка: '+m.edgeLabel+'.','Подсветка: '+(m.light?'да':'нет')+'.'];
+ if(m.mirrorOptions&&window.MirrorCalcOptions.sandLabel(m.mirrorOptions))lines.push('Пескоструйная обработка: '+window.MirrorCalcOptions.sandLabel(m.mirrorOptions)+'.');
  if(m.light)lines.push('Цвет света: '+({warm:'тёплый',neutral:'нейтральный',cold:'холодный'}[m.clr]||m.clr)+'.','Управление: '+({wave:'взмах рукой',touch:'сенсор',remote:'пульт',smart:'Wi-Fi'}[m.ctrl]||m.ctrl)+'.');
  lines.push('Установка: '+(m.install?'да':'нет')+'.','Бронеплёнка: '+(m.film?'да':'нет')+'.','Подогрев: '+(m.heat?'да':'нет')+'.');
  if(m.aluFrame)lines.push('Каркас из алюминиевого уголка: да.');
@@ -39,3 +40,4 @@ function quote(items,t,title){
 }
 window.MirrorOrderView={entries:entries,quote:quote,itemText:itemText,money:money};
 })();
+

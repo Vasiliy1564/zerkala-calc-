@@ -942,6 +942,7 @@
     var h = window.MirrorSize.read(hEl) || 0;
 
     function requestQuote(message) {
+      if(window.onPersonalCalculation)window.onPersonalCalculation({rows:[],total:0});
       document.getElementById('r-size').textContent = window.MirrorSize.cm(h) + ' × ' + window.MirrorSize.cm(w) + ' см · ' + SHAPE_NAMES[state.shape];
       document.getElementById('r-sum').textContent = 'Индивидуальный расчёт';
       document.getElementById('r-inc').textContent = message;
@@ -998,8 +999,10 @@
     area = supplierQuote.area;
     ledPer = supplierQuote.perimeter;
     var markedBase = supplierQuote.cost * (1 + window.MirrorSupplierPricing.markup(state.light, state.shape));
-    var facetPurchase=window.MirrorCalcOptions.facetCost(mirrorOptions,supplierQuote);
-    var price = markedBase + facetPurchase*(1+window.MirrorSupplierPricing.markup(state.light,state.shape));
+    var facetPurchase,sandPurchase;
+    try{facetPurchase=window.MirrorCalcOptions.facetCost(mirrorOptions,supplierQuote);sandPurchase=window.MirrorCalcOptions.sandCost(mirrorOptions,supplierQuote);}
+    catch(error){requestQuote(error.message);return;}
+    var price = markedBase + (facetPurchase+sandPurchase)*(1+window.MirrorSupplierPricing.markup(state.light,state.shape));
     if (state.light) price += Math.ceil(ledPer / PRICE.ledRollLen) * PRICE.ledRoll + PRICE.block + PRICE.switch + ledPer * 119;
 
     /* Бронеплёнка: 500 ₽/м² по площади прямоугольника */
@@ -1078,6 +1081,7 @@
 
     var materialLabels={};Object.keys(window.MirrorSupplierPricing.materials).forEach(function(k){materialLabels[k]=window.MirrorSupplierPricing.materials[k].label;});if(state.material==='decorative')materialLabels[state.material]+=' · '+mirrorOptions.decor;
     var inc = row('Полотно', materialLabels[state.material]);
+    var sandDescription=window.MirrorCalcOptions.sandLabel(mirrorOptions);if(sandDescription)inc+=row('Пескоструйная обработка',sandDescription);
     if (state.light) {
       inc += row('Подсветка', 'LED COB, ' + CLR_LABELS[state.clr] + ' свет');
       inc += row('Управление', CTRL_LABELS[state.ctrl]);
@@ -1101,7 +1105,7 @@
     if (supplierQuote.estimate) inc += '<p class="figure-price-note">Точная стоимость после согласования контура и заготовки. Установка и доставка — по выбранным условиям.</p>';
     document.getElementById('r-inc').innerHTML = inc;
 
-    var details = [materialLabels[state.material]];if(Number(mirrorOptions.facet))details.push('фацет '+mirrorOptions.facet+' мм');
+    var details = [materialLabels[state.material]];if(window.MirrorCalcOptions.sandLabel(mirrorOptions))details.push(window.MirrorCalcOptions.sandLabel(mirrorOptions));if(Number(mirrorOptions.facet))details.push('фацет '+mirrorOptions.facet+' мм');
     if (state.light) {
       details.push('с LED-подсветкой (' + CLR_LABELS[state.clr] + ', управление: ' + CTRL_LABELS[state.ctrl] + ')');
     } else {
