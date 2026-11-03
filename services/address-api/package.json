@@ -1,0 +1,1 @@
+{"name":"zerkalo-address-api","private":true,"type":"module","engines":{"node":"24.x"},"scripts":{"test":"node --test test.mjs"}}
