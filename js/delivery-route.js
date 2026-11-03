@@ -15,8 +15,8 @@ function describe(){
  if(shape&&shape.value==='circle')h=w;
  if(shape&&/double/.test(shape.value))h+=v.read(document.getElementById('height2'));
  var engine=window.MirrorOrderPricing,base=engine.deliveryBase(requested,installed),total=engine.deliveryPrice(Math.max(w,h),route?route.km:null,requested,installed),extra=Math.max(0,total-base);
- if(!route)return base?'включена; укажите адрес для уточнения':'укажите адрес — не включена в итог';
- return base?(extra?'включена; доплата '+extra.toLocaleString('ru-RU')+' ₽':'включена в стоимость'):total.toLocaleString('ru-RU')+' ₽';
+ if(!route)return 'укажите адрес';
+ return (base?extra:total).toLocaleString('ru-RU')+' ₽';
 }
 function updatePrice(){if(route)status.textContent='Доставка: '+describe();}
 function emit(){updatePrice();window.dispatchEvent(new Event('mirror-delivery-change'));}
