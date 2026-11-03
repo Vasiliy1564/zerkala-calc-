@@ -22,6 +22,21 @@ assert(!d.getElementById('request-review').hidden);assert(d.getElementById('requ
 assert(d.getElementById('request-text').value.includes('<b>Фото стены</b>'));assert(!d.getElementById('request-review').querySelector('b'));
 assert.equal(form.querySelector('button[type=submit]').disabled,false);
 d.getElementById('quick-name').dispatchEvent(new w.Event('input',{bubbles:true}));assert(d.getElementById('request-review').hidden);
+const contact=d.getElementById('quick-phone');
+for(const value of ['+7','12345','+7 (900) 123-45']) {
+  contact.value=value;contact.dispatchEvent(new w.Event('input',{bubbles:true}));
+  form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+  assert(d.getElementById('request-review').hidden,'Incomplete phone must not prepare a request');
+  assert(!contact.checkValidity());
+}
+for(const value of ['@test_check','test_user','https://t.me/test_check','https://max.ru/u/test-check','+7 (900) 000-00-00','+44 20 7946 0958']) {
+  contact.value=value;contact.dispatchEvent(new w.Event('input',{bubbles:true}));
+  assert.equal(contact.value,value,'Contact must remain exactly as entered');
+  form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+  assert(!d.getElementById('request-review').hidden);
+  assert(d.getElementById('request-text').value.includes('Контакт: '+value));
+}
+assert.equal(opened,0,'Contact validation must never send a request');
 const photos=d.getElementById('request-photos');
 Object.defineProperty(photos,'files',{configurable:true,value:[new w.File(['bad'],'x.svg',{type:'image/svg+xml'})]});photos.dispatchEvent(new w.Event('change'));
 assert(d.getElementById('request-status').textContent.includes('Выберите до 5 фото'));assert.equal(d.querySelectorAll('#request-preview img').length,0);
