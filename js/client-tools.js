@@ -65,6 +65,19 @@
     '<div id="request-quote-kind" hidden><label for="request-quote-select">Какой расчёт приложить</label><select id="request-quote-select"><option value="single">Выбранное зеркало</option><option value="order">Весь заказ из корзины</option></select></div>';
   message.closest('.field').after(extra);
   ['quick-name', 'quick-phone', 'quick-city', 'quick-message'].forEach(function (id) { byId(id).maxLength = id === 'quick-message' ? 2000 : 120; });
+  var contact = byId('quick-phone');
+  function validateContact() {
+    var value = contact.value.trim();
+    var phone = /^[+\d][\d\s()+-]*$/.test(value) && value.replace(/\D/g, '').length >= 10 && value.replace(/\D/g, '').length <= 15;
+    var handle = /^@?[\p{L}][\p{L}\p{N}_.-]{2,63}$/u.test(value);
+    var link = false;
+    try {
+      var url = new URL(value);
+      link = url.protocol === 'https:' && ['t.me', 'telegram.me', 'max.ru', 'wa.me', 'vk.me'].indexOf(url.hostname) !== -1 && url.pathname.length > 1 && !url.username && !url.password;
+    } catch (error) {}
+    contact.setCustomValidity(!value || phone || handle || link ? '' : 'Укажите полный телефон (10–15 цифр), ник мессенджера или ссылку на профиль.');
+  }
+  contact.addEventListener('input', validateContact);
   var submit = form.querySelector('button[type="submit"]'); submit.textContent = 'Подготовить заявку';
   var review = document.createElement('section'); review.id = 'request-review'; review.hidden = true; review.className = 'request-review';
   review.innerHTML = '<h4>Проверьте заявку</h4><textarea id="request-text" readonly aria-label="Текст заявки для отправки" rows="10"></textarea><p class="client-tools-note">Заявка ещё не отправлена. Выберите способ передачи ниже.</p><div class="request-actions"><button type="button" class="button" id="request-share">Поделиться заявкой и фото</button><button type="button" class="button button--light" id="request-copy-max">Скопировать текст и открыть MAX</button><button type="button" class="button button--light" id="request-archive">Скачать заявку с фото</button></div>';
@@ -90,6 +103,7 @@
   byId('request-quote-select').addEventListener('change', invalidate);
   form.addEventListener('submit', function (event) {
     event.preventDefault(); event.stopImmediatePropagation();
+    validateContact();
     if (!form.reportValidity()) return;
     var selectedQuote = '';
     if (byId('request-with-quote').checked) {
