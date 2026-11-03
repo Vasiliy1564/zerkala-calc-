@@ -10,32 +10,58 @@
 
 
  var activePosition=null;
+ function releasePosition(){activePosition=null;document.documentElement.classList.remove('calc-position-hold');}
  function beginPosition(anchor){
-  if(activePosition)return activePosition;
-  var hold={anchor:anchor,top:anchor.getBoundingClientRect().top};
+  if(activePosition&&activePosition.anchor===anchor)return activePosition;
+  var hold={anchor:anchor,top:anchor.getBoundingClientRect().top,x:window.scrollX,y:window.scrollY,service:anchor.matches('#carry-option,#deliveryOpt,#installOpt,#quick-install')};
   document.documentElement.classList.add('calc-position-hold');activePosition=hold;return hold;
  }
  function restorePosition(hold){
   if(activePosition!==hold||!hold.anchor.isConnected)return;
-  var delta=hold.anchor.getBoundingClientRect().top-hold.top;
-  if(Math.abs(delta)>0.5)window.scrollTo({top:window.scrollY+delta,left:window.scrollX,behavior:'instant'});
+  var top=hold.service?hold.y:window.scrollY+hold.anchor.getBoundingClientRect().top-hold.top;
+  if(Math.abs(window.scrollY-top)>0.5)window.scrollTo({top:top,left:hold.x,behavior:'instant'});
+ }
+ function revealService(panel){
+  if(!panel||panel.hidden)return;
+  var viewport=window.visualViewport,top=(viewport?viewport.offsetTop:0)+96;
+  var delta=Math.max(0,panel.getBoundingClientRect().top-top);
+  if(delta>2)window.scrollTo({top:window.scrollY+delta,left:window.scrollX,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
  }
  function settlePosition(hold){
   restorePosition(hold);
   requestAnimationFrame(function(){restorePosition(hold);requestAnimationFrame(function(){
-   restorePosition(hold);if(activePosition===hold){activePosition=null;document.documentElement.classList.remove('calc-position-hold');}
+   restorePosition(hold);if(!hold.service&&activePosition===hold)releasePosition();
   });});
+  if(hold.service){
+   // Mobile focus/scroll anchoring can run after the checkbox change event.
+   [80,180].forEach(function(delay){setTimeout(function(){restorePosition(hold);},delay);});
+   setTimeout(function(){if(activePosition!==hold)return;restorePosition(hold);releasePosition();revealService(hold.reveal);},280);
+  }
  }
  form.addEventListener('pointerdown',function(e){
+  releasePosition();
   var quickButton=e.target.closest('[data-quick-light],#quick-install');
   var label=e.target.closest('label');
   if(quickButton)beginPosition(quickButton);
-  else if(label&&label.querySelector('input[name="light"],input[name="option"][value="delivery"],input[name="carry-enabled"]'))beginPosition(label);
+  else if(label&&label.querySelector('input[type="radio"]:not(:disabled),input[type="checkbox"]:not(:disabled)'))beginPosition(label);
+ },true);
+ form.addEventListener('keydown',function(e){
+  if(e.key===' '&&e.target.matches('#carry-enabled,input[name="option"][value="delivery"],input[name="option"][value="install"]'))beginPosition(e.target.closest('label'));
+  else if(e.key==='Tab'||e.key==='PageDown'||e.key==='PageUp'||e.key.indexOf('Arrow')===0)releasePosition();
+ },true);
+ // Respect deliberate scrolling and new interactions while a correction is pending.
+ window.addEventListener('wheel',releasePosition,{passive:true});
+ window.addEventListener('touchmove',releasePosition,{passive:true});
+ document.addEventListener('pointerdown',function(e){if(!form.contains(e.target))releasePosition();},true);
+ form.addEventListener('change',function(e){
+  if(e.target.matches('input[type="radio"],input[type="checkbox"],select'))beginPosition(e.target.closest('label')||e.target);
  },true);
  form.addEventListener('change',function(e){
-  if(e.target.name==='light'||((e.target.name==='option'&&e.target.value==='delivery')||e.target.name==='carry-enabled'))beginPosition(e.target.closest('label')||e.target);
- },true);
- form.addEventListener('change',function(e){if((e.target.name==='light'||((e.target.name==='option'&&e.target.value==='delivery')||e.target.name==='carry-enabled'))&&activePosition)settlePosition(activePosition);});
+  if(!activePosition)return;
+  if(e.target.checked&&e.target.matches('#carry-enabled,input[name="option"][value="delivery"],input[name="option"][value="install"]'))activePosition.reveal=document.getElementById(e.target.id==='carry-enabled'?'carry-fields':'delivery-address-panel');
+  settlePosition(activePosition);
+ });
+ form.addEventListener('click',function(){if(activePosition)settlePosition(activePosition);});
 
  // The same controls and pricing path as the main light selector; no copy of rates.
  var quick=document.createElement('section');quick.id='quick-light';quick.className='quick-light';

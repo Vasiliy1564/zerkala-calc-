@@ -4,14 +4,24 @@
 var origin='Мурино, улица Шувалова, 16/9',point=[30.4290869,60.0565448],route=null,revision=0,busy=false,lastSearch=0;
 var form=document.getElementById('quote-form'),option=document.querySelector('input[name="option"][value="delivery"]');
 var panel=document.createElement('div');panel.id='delivery-address-panel';panel.className='delivery-address-panel';
-panel.innerHTML='<label for="delivery-address">Адрес доставки</label><input id="delivery-address" type="text" autocomplete="street-address" placeholder="Город, улица, дом"><button type="button" class="button" id="delivery-search">Рассчитать доставку</button><div id="delivery-candidates"></div><p id="delivery-route-status" role="status" aria-live="polite"></p><small class="delivery-attribution">© OpenStreetMap</small>';
-document.getElementById('deliveryOpt').after(panel);
+panel.innerHTML='<label for="delivery-address">Укажите адрес доставки</label><input id="delivery-address" type="text" autocomplete="street-address" placeholder="Город, улица, дом"><button type="button" class="button" id="delivery-search">Рассчитать доставку</button><div id="delivery-candidates"></div><p id="delivery-route-status" role="status" aria-live="polite"></p><small class="delivery-attribution">© OpenStreetMap</small>';
+// Keep expanding details outside the option grid so its buttons never reflow.
+var group=document.getElementById('deliveryOpt').closest('.options'),details=document.createElement('div');details.id='mirror-service-details';group.after(details);details.appendChild(panel);
 var input=document.getElementById('delivery-address'),status=document.getElementById('delivery-route-status'),results=document.getElementById('delivery-candidates'),button=document.getElementById('delivery-search');
-function priceText(mm){return route?Math.round(route.km*(mm<=1800?30:mm<=2000?45:55)).toLocaleString('ru-RU')+' ₽':'';}
-function updatePrice(){if(!route)return;var v=window.MirrorSize,shape=form.querySelector('input[name=shape]:checked'),w=v?v.read(document.getElementById('width')):0,h=v?v.read(document.getElementById('height')):0;if(shape&&shape.value==='circle')h=w;if(shape&&/double/.test(shape.value))h+=v.read(document.getElementById('height2'));status.textContent='Доставка: '+priceText(Math.max(w,h));}
+function describe(){
+ var installed=form.querySelector('input[name=option][value=install]').checked,requested=option.checked||installed;
+ if(!requested)return 'не включена';
+ var v=window.MirrorSize,shape=form.querySelector('input[name=shape]:checked'),w=v?v.read(document.getElementById('width')):0,h=v?v.read(document.getElementById('height')):0;
+ if(shape&&shape.value==='circle')h=w;
+ if(shape&&/double/.test(shape.value))h+=v.read(document.getElementById('height2'));
+ var engine=window.MirrorOrderPricing,base=engine.deliveryBase(requested,installed),total=engine.deliveryPrice(Math.max(w,h),route?route.km:null,requested,installed),extra=Math.max(0,total-base);
+ if(!route)return base?'включена; укажите адрес для уточнения':'укажите адрес — не включена в итог';
+ return base?(extra?'включена; доплата '+extra.toLocaleString('ru-RU')+' ₽':'включена в стоимость'):total.toLocaleString('ru-RU')+' ₽';
+}
+function updatePrice(){if(route)status.textContent='Доставка: '+describe();}
 function emit(){updatePrice();window.dispatchEvent(new Event('mirror-delivery-change'));}
 function visibility(){panel.hidden=!option.checked;}
-window.MirrorDelivery={getRoute:function(){return route;},updateVisibility:function(){visibility();updatePrice();}};
+window.MirrorDelivery={describe:describe,getRoute:function(){return route;},updateVisibility:function(){visibility();updatePrice();}};
 visibility();option.addEventListener('change',visibility);
 function reset(){revision++;route=null;busy=false;button.disabled=false;results.replaceChildren();status.textContent='';emit();}
 input.addEventListener('input',reset);
@@ -30,7 +40,7 @@ async function choose(f,token){
   route={origin:origin,address:address(f),km:Math.round(metres/100)/10};input.value=route.address;
   updatePrice();
   emit();
- }catch(e){if(token===revision){route=null;status.textContent='Не удалось построить маршрут. Проверьте адрес и повторите. Доставка не включена в итог.';emit();}}
+ }catch(e){if(token===revision){route=null;status.textContent='Не удалось построить маршрут. Проверьте адрес и повторите. Укажите адрес для уточнения стоимости.';emit();}}
  finally{if(token===revision){busy=false;button.disabled=false;}}
 }
 button.addEventListener('click',async function(){
@@ -41,10 +51,10 @@ button.addEventListener('click',async function(){
   var data=await json('https://photon.komoot.io/api/?q='+encodeURIComponent(query)+'&limit=6&lat='+point[1]+'&lon='+point[0]+'&bbox=29,59,32,61');
   if(token!==revision)return;
   var seen={};var matches=(data.features||[]).filter(function(f){var p=f.properties||{},c=f.geometry&&f.geometry.coordinates,key=address(f);if(!c||!p.housenumber||!p.street||c[0]<29||c[0]>32||c[1]<59||c[1]>61||seen[key])return false;seen[key]=true;return true;});
-  if(!matches.length){status.textContent='Дом не найден. Уточните город, улицу и номер дома. Доставка не включена.';return;}
+  if(!matches.length){status.textContent='Дом не найден. Уточните город, улицу и номер дома. Укажите адрес для уточнения стоимости.';return;}
   status.textContent='Выберите адрес:';
   matches.forEach(function(f){var item=document.createElement('button');item.type='button';item.className='delivery-candidate';item.textContent=address(f);item.onclick=function(){if(token!==revision)return;busy=true;button.disabled=true;choose(f,token);};results.appendChild(item);});
- }catch(e){if(token===revision)status.textContent='Поиск адреса недоступен. Повторите позже. Доставка не включена в итог.';}
+ }catch(e){if(token===revision)status.textContent='Поиск адреса недоступен. Повторите позже. Укажите адрес для уточнения стоимости.';}
  finally{if(token===revision){busy=false;button.disabled=false;}}
 });
 })();

@@ -327,24 +327,15 @@
   }
   function clientDeliveryPrice() {
     var r=window.MirrorDelivery&&window.MirrorDelivery.getRoute();
-    return window.MirrorOrderPricing.deliveryPrice(mirrorDeliverySides().longer,r?r.km:null,state.delivery);
+    return window.MirrorOrderPricing.deliveryPrice(mirrorDeliverySides().longer,r?r.km:null,state.delivery,state.install);
   }
-  function deliveryDescription() {
-    if(!state.delivery)return 'не включена';
-    var r=window.MirrorDelivery&&window.MirrorDelivery.getRoute();
-    return r?clientDeliveryPrice().toLocaleString('ru-RU')+' ₽':'укажите адрес — не включена в итог';
-  }
+  function deliveryDescription() {return window.MirrorDelivery?window.MirrorDelivery.describe():'укажите адрес';}
 
   function updateDeliveryAvailability() {
-    var cb = $('input[name="option"][value="delivery"]');
-    var field = document.getElementById('deliveryRegionField');
-    if (cb) cb.disabled = false;
-    var installed=$('input[name="option"][value="install"]');
-    if (field) field.hidden = true;
-    var option = document.querySelector('#delivery-region option[value="murino"]');
-    if (option) option.textContent = 'Мурино';
-    var label = document.querySelector('#deliveryOpt span');
-    if (label) label.textContent = 'Доставка по адресу';
+    var cb=$('input[name="option"][value="delivery"]'),install=$('input[name="option"][value="install"]');
+    if(cb){if(install&&install.checked)cb.checked=true;cb.disabled=!!(install&&install.checked);}
+    var label=$('#deliveryOpt span');if(label)label.textContent='Доставка по адресу';
+    var field=document.getElementById('deliveryRegionField');if(field)field.hidden=true;
     if(window.MirrorDelivery)window.MirrorDelivery.updateVisibility();
   }
 
