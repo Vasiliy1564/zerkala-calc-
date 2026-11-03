@@ -4,33 +4,68 @@
 <script id="page-entry-position">
 (function () {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-  if (location.hash === '#calculator' || location.hash === '#quote-form') {
-    history.replaceState(history.state, '', location.pathname + location.search);
-  }
+  // The Android app intentionally opens the calculator with this parameter.
+  var calculatorEntry = new URLSearchParams(location.search).get('calculator') === '1';
+  if (location.hash) history.replaceState(history.state, '', location.pathname + location.search);
   var userNavigated = false;
+  var timers = [];
+  function stopEntryCorrection() {
+    userNavigated = true;
+    timers.forEach(clearTimeout);
+    timers = [];
+    document.documentElement.classList.remove('page-entry-top');
+  }
   function startAtTop() {
-    if (new URLSearchParams(location.search).get("calculator") === "1") {
-      var target = document.getElementById("quote-form");
-      if (target) target.scrollIntoView({behavior:"instant",block:"start"});
+    if (userNavigated) return;
+    if (calculatorEntry) {
+      var target = document.getElementById('quote-form');
+      if (target) target.scrollIntoView({behavior:'instant',block:'start'});
       return;
     }
-    if (!userNavigated && (!location.hash || location.hash === '#top')) {
-      window.scrollTo({top:0,left:0,behavior:'instant'});
-    }
+    window.scrollTo({top:0,left:0,behavior:'instant'});
   }
+  function settleEntry() {
+    if (userNavigated) return;
+    timers.forEach(clearTimeout);
+    timers = [];
+    document.documentElement.classList.add('page-entry-top');
+    startAtTop();
+    requestAnimationFrame(function () {
+      startAtTop();
+      requestAnimationFrame(startAtTop);
+    });
+    // Some mobile browsers restore the old position after pageshow.
+    [0,150,500,1200].forEach(function (delay) {
+      timers.push(setTimeout(startAtTop,delay));
+    });
+    timers.push(setTimeout(function () {
+      document.documentElement.classList.remove('page-entry-top');
+      timers = [];
+    },1400));
+  }
+  ['pointerdown','touchstart','wheel','keydown'].forEach(function (name) {
+    window.addEventListener(name,stopEntryCorrection,{capture:true,passive:true});
+  });
   document.addEventListener('click', function (event) {
     var link = event.target.closest('a[href="#quote-form"], a[href="#calculator"]');
     if (!link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     var form = document.getElementById('quote-form');
     if (!form) return;
     event.preventDefault();
-    userNavigated = true;
+    stopEntryCorrection();
     form.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
   });
-  window.addEventListener('pageshow', startAtTop);
-  window.addEventListener('pagehide', function () { userNavigated = false; });
+  document.addEventListener('DOMContentLoaded',settleEntry);
+  window.addEventListener('load',settleEntry);
+  window.addEventListener('pageshow',settleEntry);
+  window.addEventListener('pagehide',function () {
+    stopEntryCorrection();
+    userNavigated = false;
+  });
+  settleEntry();
 })();
 </script>
+<style id="page-entry-anchor">html.page-entry-top,html.page-entry-top body{overflow-anchor:none!important;scroll-behavior:auto!important}</style>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <meta name="description" content="Зеркало с подсветкой на заказ по вашим размерам в Санкт-Петербурге и Мурино. Для ванной, прихожей и в полный рост. Онлайн-расчёт цены, доставка и установка. Зеркала без подсветки также доступны.">
