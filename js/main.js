@@ -332,7 +332,7 @@
   function deliveryDescription() {
     if(!state.delivery)return 'не включена';
     var r=window.MirrorDelivery&&window.MirrorDelivery.getRoute();
-    return r?r.km.toLocaleString('ru-RU')+' км · '+clientDeliveryPrice().toLocaleString('ru-RU')+' ₽':'укажите адрес — не включена в итог';
+    return r?clientDeliveryPrice().toLocaleString('ru-RU')+' ₽':'укажите адрес — не включена в итог';
   }
 
   function updateDeliveryAvailability() {
@@ -1211,7 +1211,7 @@
     r.addEventListener('change', function () {
       readState();
       var res = document.getElementById('calc-result');
-      if (res && res.classList.contains('show')) calc();
+      if (res && res.classList.contains('show')) calc(false);
     });
   });
   $all('.stepper-btn').forEach(function (b) {

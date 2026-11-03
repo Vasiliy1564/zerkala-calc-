@@ -9,7 +9,7 @@ function breakdown(t){
  return {mirror:t.total-installation-delivery,installation:installation,delivery:delivery,total:t.total};
 }
 function safe(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function deliveryText(t){return !t.deliveryRequested?'Доставка не включена.':t.deliveryPending?'Доставка: укажите адрес, не включена в итог.':'Доставка: '+t.deliveryOrigin+' → '+t.deliveryAddress+' · '+t.deliveryKm.toLocaleString('ru-RU')+' км × '+t.deliveryRate+' ₽/км = '+money(t.delivery)+'.';}
+function deliveryText(t){return !t.deliveryRequested?'Доставка не включена.':t.deliveryPending?'Доставка: укажите адрес, не включена в итог.':'Адрес доставки: '+t.deliveryAddress+'. Доставка: '+money(t.delivery)+'.';}
 function priceRows(t){
  var p=breakdown(t);
  return '<div class="row"><span>Стоимость '+(t.count===1?'зеркала':'зеркал')+'</span><i class="dash"></i><span>'+money(p.mirror)+'</span></div>'+
