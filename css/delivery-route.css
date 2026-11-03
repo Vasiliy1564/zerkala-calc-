@@ -9,3 +9,5 @@
 .delivery-address-panel button:disabled{opacity:.6;cursor:wait}
 #r-price-breakdown .row{display:flex;justify-content:space-between;gap:16px;padding:8px 0}
 #r-price-breakdown .row span:last-child{text-align:right}
+
+#quote-form #delivery-address-panel #delivery-address{position:static!important;opacity:1!important;visibility:visible!important;display:block!important;width:100%!important;height:auto!important;min-height:48px!important;inset:auto!important;transform:none!important;margin:8px 0!important;pointer-events:auto!important}
