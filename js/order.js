@@ -15,14 +15,18 @@ var addRow=document.createElement('div');addRow.className='order-add-row';addRow
 var cancel=document.createElement('button');cancel.type='button';cancel.id='order-cancel';cancel.className='button button--light';cancel.textContent='Отменить изменение';cancel.hidden=true;addRow.appendChild(cancel);
 var view=document.createElement('button');view.type='button';view.id='order-view';view.className='button button--light';view.hidden=true;addRow.appendChild(view);view.onclick=function(){box.scrollIntoView({behavior:'smooth',block:'start'});};
 var countLabel=document.createElement('div');countLabel.id='r-quantity';countLabel.className='calc-result-size';$('r-size').after(countLabel);
+var selectedPrices=document.createElement('div');selectedPrices.id='r-price-breakdown';selectedPrices.className='calc-included';selectedPrices.hidden=true;$('r-sum').after(selectedPrices);
 function quantity(){var q=Number($('order-quantity').value);return Number.isInteger(q)&&q>=1&&q<=10?q:null;}
 window.updateSelectedMirrorTotal=function(){
- var qty=quantity();if(!qty){$('r-sum').textContent='—';$('r-quantity').textContent='';return;}if(!current)return;
- var total=window.MirrorOrderPricing.calculate([{qty:qty,data:current}],{}).total;
+ var qty=quantity();if(!qty){$('r-sum').textContent='—';$('r-quantity').textContent='';selectedPrices.hidden=true;return;}if(!current){selectedPrices.hidden=true;return;}
+ var totals=window.MirrorOrderPricing.calculate([{qty:qty,data:current}],{}),total=totals.total;
  $('r-sum').textContent=money(total);$('r-quantity').textContent='Количество: '+qty+' шт.';
+ document.querySelector('.calc-result-label').textContent=current.mirror.estimate?'Ориентировочная стоимость':'Итоговая стоимость';
+ selectedPrices.innerHTML=window.MirrorOrderView.priceRows(totals);selectedPrices.hidden=false;
  var m=current.mirror,lines=['Здравствуйте! Хочу заказать '+m.name.toLowerCase()+(m.light?' с подсветкой':'')+'.','Размеры: '+window.MirrorSize.dimensions(m.size)+'.','Количество: '+qty+' шт.','Полотно: '+m.materialLabel+'.','Кромка: '+m.edgeLabel+'.'];
  if(m.light)lines.push('Цвет света: '+({warm:'тёплый',neutral:'нейтральный',cold:'холодный'}[m.clr]||m.clr)+'.','Управление: '+({wave:'взмах рукой',touch:'сенсор',remote:'пульт',smart:'Wi-Fi'}[m.ctrl]||m.ctrl)+'.');if(m.ledProfile)lines.push('Светодиодная лента в профиле: да.');
- if(m.install)lines.push('Установка: включена.');if(m.film)lines.push('Бронеплёнка: да.');if(m.heat)lines.push('Подогрев: да.');if(m.faceFrame!=='none')lines.push('Рама: '+({black:'чёрная',white:'белая',gold:'золотая'}[m.faceFrame]||m.faceFrame)+'.');
+ var prices=window.MirrorOrderView.breakdown(totals);
+ lines.push('Стоимость '+(qty===1?'зеркала':'зеркал')+': '+money(prices.mirror)+'.','Установка'+(totals.discount?' (со скидкой '+totals.discountRate+'%)':'')+': '+(m.install?money(prices.installation):'не выбрана')+'.');if(prices.delivery)lines.push('Доставка: '+money(prices.delivery)+'.');if(m.film)lines.push('Бронеплёнка: да.');if(m.heat)lines.push('Подогрев: да.');if(m.faceFrame!=='none')lines.push('Рама: '+({black:'чёрная',white:'белая',gold:'золотая'}[m.faceFrame]||m.faceFrame)+'.');
  lines.push('Доставка: '+((m.delivery||m.install)?m.region==='murino'?'включена в итоговую стоимость':'по согласованию, не включена в итоговую стоимость':'не включена')+'.','',(m.estimate?'Ориентировочная стоимость: ':'Итоговая стоимость: ')+money(total)+'.');
  if(m.estimate)lines.push('Точная стоимость после согласования контура.');
  var base=$('r-cta').href.split('?')[0];$('r-cta').href=base+'?text='+encodeURIComponent(lines.join('\n'));
@@ -39,12 +43,12 @@ function render(){
  $('order-items').innerHTML=entries.map(function(entry,i){var item=entry.item,m=item.data.mirror,needsQuote=m.shape==='curved'&&m.supplierCategory==='quoted'&&!(Number(m.supplierCost)>0);return '<article class="order-item"><div class="order-item-heading"><strong>'+safe(m.name)+'</strong><strong class="order-item-price">'+safe(needsQuote?'По запросу':money(entry.display))+'</strong></div><p>'+safe(window.MirrorSize.dimensions(m.size))+' · '+safe(m.materialLabel)+'<br>'+safe(m.light?'С подсветкой':'Без подсветки')+' · '+safe(m.edgeLabel)+(m.install?' · С установкой':'')+'</p><div class="order-item-toolbar"><label><span class="order-sr-only">Количество</span><select aria-label="Количество: '+safe(m.name)+'" data-quantity="'+i+'">'+quantityOptions(item.qty)+'</select></label><div class="order-item-actions"><button type="button" data-edit="'+i+'">Изменить</button><button type="button" data-remove="'+i+'">Удалить</button></div></div></article>';}).join('');
  if(items.length){var t=calculate();$('order-send').disabled=t.mixedRegions||t.needsQuote;
  var note=t.needsQuote?'Стоимость сложной формы нужно согласовать с производителем.':t.mixedRegions?'Для одного заказа укажите одинаковый регион доставки у всех зеркал.':t.externalDelivery?'Доставка по адресу согласуется отдельно и не включена в итоговую стоимость.':'';
- $('order-summary').innerHTML=(note?'<p class="account-note">'+safe(note)+'</p>':'')+'<div class="order-final"><span>Итого · '+t.count+' шт.</span><strong id="order-total" role="button" tabindex="0" data-copy-order title="Скопировать подробный расчёт заказа" aria-label="Скопировать подробный расчёт заказа">'+(t.needsQuote?'Уточните цену сложной формы':t.mixedRegions?'Уточните регион доставки':money(t.total))+'</strong></div>'+(items.some(function(item){return item.data.mirror.estimate;})?'<p class="account-note">Стоимость фигурного контура уточняется после согласования.</p>':'');
+ $('order-summary').innerHTML=(note?'<p class="account-note">'+safe(note)+'</p>':'')+(!t.needsQuote&&!t.mixedRegions?'<div class="calc-included">'+window.MirrorOrderView.priceRows(t)+'</div>':'')+'<div class="order-final"><span>Итого · '+t.count+' шт.</span><strong id="order-total" role="button" tabindex="0" data-copy-order title="Скопировать подробный расчёт заказа" aria-label="Скопировать подробный расчёт заказа">'+(t.needsQuote?'Уточните цену сложной формы':t.mixedRegions?'Уточните регион доставки':money(t.total))+'</strong></div>'+(items.some(function(item){return item.data.mirror.estimate;})?'<p class="account-note">Стоимость фигурного контура уточняется после согласования.</p>':'');
  var copyButton=$('copy-order');if(copyButton)copyButton.disabled=!!(t.mixedRegions||t.needsQuote);
 
  }else $('order-summary').innerHTML='';save();
 }
-window.onPersonalCalculation=function(data){current=data&&data.mirror?JSON.parse(JSON.stringify(data)):null;};
+window.onPersonalCalculation=function(data){current=data&&data.mirror?JSON.parse(JSON.stringify(data)):null;if(!current){selectedPrices.hidden=true;selectedPrices.innerHTML='';}};
 window.getMirrorSelectionText=function(){var qty=quantity();if(!current||!qty)return '';var selected=[{qty:qty,data:current}];return window.MirrorOrderView.quote(selected,window.MirrorOrderPricing.calculate(selected,{}),'Расчёт выбранного зеркала');};
 function resetEdit(){editing=-1;$('order-add').textContent='Добавить в корзину';cancel.hidden=true;}
 function edit(index){
@@ -74,5 +78,6 @@ window.getMirrorOrderText=function(){return window.MirrorOrderView.quote(items,c
 $('order-send').onclick=function(){var text=window.getMirrorOrderText();if(text)window.open('https://max.ru/u/f9LHodD0cOJCsHfbfog1RuUGjeMCEw_wI5D3w-uzWYe4wj6KqPXR9YOSHA8?text='+encodeURIComponent(text),'_blank','noopener');};
 try{var saved=JSON.parse(localStorage.getItem(key)||'[]');if(Array.isArray(saved))items=saved.filter(function(item){return item&&Number.isInteger(item.qty)&&item.qty>0&&item.qty<=999&&item.data&&item.data.mirror&&Array.isArray(item.data.rows)&&Number.isFinite(item.data.total);});}catch(e){items=[];}resetEdit();render();
 })();
+
 
 

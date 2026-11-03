@@ -5,6 +5,13 @@
  function write(el,mm){if(el)el.value=cm(mm);}
  function dimensions(text){return String(text).replace(/(\d+(?:\.\d+)?(?:\s*[+×=]\s*\d+(?:\.\d+)?)*)(\s*)мм/g,function(_,nums,space){return nums.replace(/\d+(?:\.\d+)?/g,function(n){return cm(n);})+space+'см';});}
  function sizeField(el){return el&&el.matches&&el.matches('#width,#height,#height2');}
+ // Android's keyboard Next action may focus a field with the caret at zero.
+ // Set it at the end after native focus handling, without changing the value.
+ document.addEventListener('focusin',function(e){
+  var el=e.target;if(!sizeField(el))return;
+  function end(){if(document.activeElement===el)el.setSelectionRange(el.value.length,el.value.length);}
+  end();requestAnimationFrame(end);
+ },true);
  function clean(text){var separator=false;return String(text).replace(/[^0-9.,]/g,'').replace(/[.,]/g,function(){if(separator)return '';separator=true;return ',';}).replace(/(,\d)\d+/g,'$1');}
  document.addEventListener('beforeinput',function(e){
   if(!sizeField(e.target)||e.isComposing||!e.data||!e.inputType.startsWith('insert'))return;
@@ -17,3 +24,4 @@
  document.addEventListener('compositionend',function(e){if(sizeField(e.target)){normalize(e.target);e.target.dispatchEvent(new Event('input',{bubbles:true}));}},true);
  window.MirrorSize={read:read,write:write,cm:cm,dimensions:dimensions};
 })();
+
