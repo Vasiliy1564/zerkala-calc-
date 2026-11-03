@@ -1,4 +1,4 @@
-const allowed = new Set(['https://zerkalo-pro-spb.ru', 'https://www.zerkalo-pro-spb.ru', 'https://zerkalo-pro.ru', 'https://www.zerkalo-pro.ru', 'null']);
+const allowed = new Set(['https://zerkalo-pro-spb.ru', 'https://www.zerkalo-pro-spb.ru', 'https://zerkalo-pro.ru', 'https://www.zerkalo-pro.ru', 'null', 'https://appassets.androidplatform.net']);
 const centres = {spb: '30.4290869,60.0565448', stav: '41.9110926,45.0011119'};
 function reply(data, status, origin) {
   const headers = {'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'no-store', 'Vary':'Origin'};
