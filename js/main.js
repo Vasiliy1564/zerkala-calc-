@@ -1069,7 +1069,7 @@
         {key:'purchase-trip',sale:orderTrip,cost:orderTrip},
         {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
         {key:'installation',sale:orderInstall,cost:null,expense:'install'}
-      ],mirror:{shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:2,mirrorOptions:mirrorOptions,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:1,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
+      ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:2,mirrorOptions:mirrorOptions,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:1,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
         size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),material:state.material,
         materialLabel:window.MirrorSupplierPricing.materials[state.material].label+(state.material==='decorative'?' · '+mirrorOptions.decor:''),
         edge:state.edge,edgeLabel:window.MirrorCalcOptions.edgeLabel(EDGE_LABELS[state.edge],mirrorOptions,supplierQuote),light:state.light,ctrl:state.ctrl,clr:state.clr,

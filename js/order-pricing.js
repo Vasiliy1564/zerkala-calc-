@@ -8,6 +8,16 @@ function deliveryRate(mm){return mm<=1800?30:mm<=2000?45:55;}
 function route(){return root.MirrorDelivery?root.MirrorDelivery.getRoute():null;}
 function deliveryPrice(mm,km,requested){return requested&&Number.isFinite(km)&&km>=0?Math.round(km*deliveryRate(mm)):0;}
 
+function carryPrice(mm,options){
+ var o=options||{};if(!o.enabled)return {requested:false,amount:0,pending:false};
+ var floor=Number(o.floor),band=mm<=1800?0:mm<=2000?1:2;
+ if(!Number.isInteger(floor)||floor<1||floor>999||['lift','stairs'].indexOf(o.method)<0)return {requested:true,amount:0,pending:true,invalid:true};
+ if(floor===1)return {requested:true,amount:0,pending:false};
+ if(o.method==='lift')return {requested:true,amount:[300,450,600][band],pending:false};
+ if(floor>20)return {requested:true,amount:0,pending:true};
+ return {requested:true,amount:floor<=10?(floor-1)*[150,200,300][band]:floor<=15?[2000,3000,4500][band]:[3000,4000,6000][band],pending:false};
+}
+
 function refreshServices(data){
  if(root.MirrorSupplierPricing)data=root.MirrorSupplierPricing.refreshCleanCalculation(data);
  if(!data||!data.mirror||!Array.isArray(data.rows))return data;
@@ -17,10 +27,12 @@ function refreshServices(data){
  var area=w*h/1000000,installation=m.install?(m.light?2500:2000)+Math.max(0,area-1)*700:0;
  var trip=tripPrice(Math.max(w,h)),r=route();
  var delivery=deliveryPrice(Math.max(w,h),r?r.km:null,m.delivery);
- var total=data.total,hasTrip=false,hasDelivery=false;
+ var carry=carryPrice(maxSide(m),m.carry);
+ var total=data.total,hasTrip=false,hasDelivery=false,hasCarry=false;
  var rows=data.rows.map(function(row){
   var sale=row.sale,cost=row.cost;
   if(row.key==='installation')sale=installation;
+  if(row.key==='carry'){sale=carry.amount;hasCarry=true;}
   if(row.key==='purchase-trip'){sale=trip;cost=trip;hasTrip=true;}
   if(row.key==='customer-delivery'){sale=delivery;hasDelivery=true;}
   total+=sale-row.sale;
@@ -28,16 +40,17 @@ function refreshServices(data){
  });
  if(!hasTrip){rows.push({key:'purchase-trip',name:'Поездка с зеркалами',sale:trip,cost:trip});total+=trip;}
  if(!hasDelivery&&delivery){rows.push({key:'customer-delivery',name:'Доставка клиенту',sale:delivery,cost:null,expense:'delivery'});total+=delivery;}
+ if(!hasCarry&&carry.requested){rows.push({key:'carry',name:'Подъём до квартиры',sale:carry.amount,cost:null,expense:'carry'});total+=carry.amount;}
  return Object.assign({},data,{rows:rows,total:total});
 }
 function calculate(items,settings){
  settings=settings||{};
- var goods=0,trip=0,delivery=0,install=0,count=0,installedCount=0,needsQuote=false,regions={},known=0,missing={},longest=0,requested=false;
+ var goods=0,trip=0,delivery=0,install=0,count=0,installedCount=0,needsQuote=false,regions={},known=0,missing={},longest=0,requested=false,carry=0,carryRequested=false,carryPending=false;
  items.forEach(function(item){
   var qty=Math.floor(bounded(item.qty,1,999,1)),data=refreshServices(item.data);
   if(!data||!data.mirror||!Number.isFinite(data.total))throw Error('Некорректная позиция заказа');
   count+=qty;goods+=data.total*qty;
-  var mirror=data.mirror;
+  var mirror=data.mirror,carrying=carryPrice(maxSide(mirror),mirror.carry);carryRequested=carryRequested||carrying.requested;carryPending=carryPending||carrying.pending;
   if(mirror.install)installedCount+=qty;
   if(mirror.shape==='curved'&&mirror.supplierCategory==='quoted'&&!(Number(mirror.supplierCost)>0))needsQuote=true;
   longest=Math.max(longest,maxSide(mirror));if(mirror.delivery)requested=true;
@@ -45,6 +58,7 @@ function calculate(items,settings){
    if(row.key==='purchase-trip'){goods-=row.sale*qty;trip=Math.max(trip,row.sale);return;}
    if(row.key==='customer-delivery'){goods-=row.sale*qty;return;}
    if(row.key==='installation')install+=row.sale*qty;
+   if(row.key==='carry')carry+=row.sale*qty;
    if(row.cost===null)missing[row.expense||row.name]=true;else known+=row.cost*qty;
   });
  });
@@ -62,7 +76,7 @@ function calculate(items,settings){
   if(expenses[key]!==''&&expenses[key]!==null&&expenses[key]!==undefined){known+=bounded(expenses[key],0,100000000,0);delete missing[key];}
  });
  known+=bounded(settings.other||0,0,100000000,0);
- return {count:count,installedCount:installedCount,needsQuote:needsQuote,total:total,goods:goods,trip:trip,delivery:delivery,installation:install,discount:discount,discountRate:discountRate,installationAfterDiscount:install-discount,known:known,tax:tax,profit:total-known-tax,missing:Object.keys(missing),mixedRegions:false,externalDelivery:requested&&!r,deliveryPending:requested&&!r,deliveryRequested:requested,deliveryRate:deliveryRate(longest),deliveryKm:r?r.km:null,deliveryAddress:r?r.address:'',deliveryOrigin:r?r.origin:'Мурино, улица Шувалова, 16/9'};
+ return {carry:carry,carryRequested:carryRequested,carryPending:carryPending,count:count,installedCount:installedCount,needsQuote:needsQuote,total:total,goods:goods,trip:trip,delivery:delivery,installation:install,discount:discount,discountRate:discountRate,installationAfterDiscount:install-discount,known:known,tax:tax,profit:total-known-tax,missing:Object.keys(missing),mixedRegions:false,externalDelivery:requested&&!r,deliveryPending:requested&&!r,deliveryRequested:requested,deliveryRate:deliveryRate(longest),deliveryKm:r?r.km:null,deliveryAddress:r?r.address:'',deliveryOrigin:r?r.origin:'Мурино, улица Шувалова, 16/9'};
 }
 function selection(data,quantity){
  var qty=Math.floor(bounded(quantity,1,999,1));data=refreshServices(data);
@@ -76,6 +90,6 @@ function selection(data,quantity){
  if(totals.discount)rows.push({key:'installation-discount',name:'Скидка 20% на установку',sale:-totals.discount,cost:0,note:'При установке от трёх зеркал'});
  return {rows:rows,total:rows.reduce(function(sum,row){return sum+row.sale;},0),mirror:data.mirror,quantity:qty};
 }
-var api={maxSide:maxSide,tripPrice:tripPrice,deliveryRate:deliveryRate,deliveryPrice:deliveryPrice,refreshServices:refreshServices,calculate:calculate,selection:selection};if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorOrderPricing=api;
+var api={carryPrice:carryPrice,maxSide:maxSide,tripPrice:tripPrice,deliveryRate:deliveryRate,deliveryPrice:deliveryPrice,refreshServices:refreshServices,calculate:calculate,selection:selection};if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorOrderPricing=api;
 })(typeof window==='object'?window:globalThis);
 

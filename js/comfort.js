@@ -30,12 +30,12 @@
   var quickButton=e.target.closest('[data-quick-light],#quick-install');
   var label=e.target.closest('label');
   if(quickButton)beginPosition(quickButton);
-  else if(label&&label.querySelector('input[name="light"],input[name="option"][value="delivery"]'))beginPosition(label);
+  else if(label&&label.querySelector('input[name="light"],input[name="option"][value="delivery"],input[name="carry-enabled"]'))beginPosition(label);
  },true);
  form.addEventListener('change',function(e){
-  if(e.target.name==='light'||(e.target.name==='option'&&e.target.value==='delivery'))beginPosition(e.target.closest('label')||e.target);
+  if(e.target.name==='light'||((e.target.name==='option'&&e.target.value==='delivery')||e.target.name==='carry-enabled'))beginPosition(e.target.closest('label')||e.target);
  },true);
- form.addEventListener('change',function(e){if((e.target.name==='light'||(e.target.name==='option'&&e.target.value==='delivery'))&&activePosition)settlePosition(activePosition);});
+ form.addEventListener('change',function(e){if((e.target.name==='light'||((e.target.name==='option'&&e.target.value==='delivery')||e.target.name==='carry-enabled'))&&activePosition)settlePosition(activePosition);});
 
  // The same controls and pricing path as the main light selector; no copy of rates.
  var quick=document.createElement('section');quick.id='quick-light';quick.className='quick-light';
