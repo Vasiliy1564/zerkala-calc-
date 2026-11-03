@@ -1,0 +1,11 @@
+#deliveryRegionField{display:none!important}
+.delivery-address-panel{grid-column:1/-1;width:100%;box-sizing:border-box;padding:16px;border:1px solid #ad859f;border-radius:14px;margin:12px 0;line-height:1.5}
+.delivery-address-panel[hidden],#r-price-breakdown[hidden]{display:none!important}
+.delivery-address-panel label,.delivery-address-panel small{display:block;margin:10px 0}
+.delivery-address-panel input{display:block;width:100%;box-sizing:border-box;font:inherit;padding:14px;min-height:48px;border:1px solid #a296a2;border-radius:10px;background:transparent;color:inherit}
+.delivery-address-panel .button{margin-top:12px;width:100%;min-height:48px}
+.delivery-candidate{display:block;width:100%;box-sizing:border-box;text-align:left;padding:12px;margin:8px 0;border:1px solid #a296a2;border-radius:10px;color:inherit;background:transparent;font:inherit;cursor:pointer}
+.delivery-address-panel small{font-size:12px;opacity:.8}
+.delivery-address-panel button:disabled{opacity:.6;cursor:wait}
+#r-price-breakdown .row{display:flex;justify-content:space-between;gap:16px;padding:8px 0}
+#r-price-breakdown .row span:last-child{text-align:right}

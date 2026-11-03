@@ -121,7 +121,7 @@ function lookup(shape,material,width,height,edge,height2,options){
 
 function markup(light,shape){return light?1.5:1;}
 function purchasingTrip(width,height){
- return Math.max(Number(width),Number(height))<=2000?350:700;
+ var mm=Math.max(Number(width),Number(height));return mm<=1800?300:mm<=2000?450:750;
 }
 function reinforcement(shape,width,height,height2){
  var w=Number(width),h=shape==='circle'?w:Number(height);
@@ -298,3 +298,4 @@ function refreshCleanCalculation(data){
 var api={materials:materials,agreedLookup:agreedLookup,refreshCleanCalculation:refreshCleanCalculation,tariffs:{supplier:"RIAL",date:"2026-11-02",silver:1568,special:2800,straightGrind:80,straightPolish:80,curvedGrind:120,curvedPolish:120,cnc:270,curvedCnc:405,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);
+

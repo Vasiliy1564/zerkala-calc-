@@ -27,12 +27,13 @@ window.updateSelectedMirrorTotal=function(){
  if(m.light)lines.push('Цвет света: '+({warm:'тёплый',neutral:'нейтральный',cold:'холодный'}[m.clr]||m.clr)+'.','Управление: '+({wave:'взмах рукой',touch:'сенсор',remote:'пульт',smart:'Wi-Fi'}[m.ctrl]||m.ctrl)+'.');if(m.ledProfile)lines.push('Светодиодная лента в профиле: да.');
  var prices=window.MirrorOrderView.breakdown(totals);
  lines.push('Стоимость '+(qty===1?'зеркала':'зеркал')+': '+money(prices.mirror)+'.','Установка'+(totals.discount?' (со скидкой '+totals.discountRate+'%)':'')+': '+(m.install?money(prices.installation):'не выбрана')+'.');if(prices.delivery)lines.push('Доставка: '+money(prices.delivery)+'.');if(m.film)lines.push('Бронеплёнка: да.');if(m.heat)lines.push('Подогрев: да.');if(m.faceFrame!=='none')lines.push('Рама: '+({black:'чёрная',white:'белая',gold:'золотая'}[m.faceFrame]||m.faceFrame)+'.');
- lines.push('Доставка: '+((m.delivery||m.install)?m.region==='murino'?'включена в итоговую стоимость':'по согласованию, не включена в итоговую стоимость':'не включена')+'.','',(m.estimate?'Ориентировочная стоимость: ':'Итоговая стоимость: ')+money(total)+'.');
+ lines.push(window.MirrorOrderView.deliveryText(totals),'',(m.estimate?'Ориентировочная стоимость: ':'Итоговая стоимость: ')+money(total)+'.');
  if(m.estimate)lines.push('Точная стоимость после согласования контура.');
  var base=$('r-cta').href.split('?')[0];$('r-cta').href=base+'?text='+encodeURIComponent(lines.join('\n'));
 };
 $('order-quantity').addEventListener('change',function(){window.calculateMirrorInPlace();});
 
+window.addEventListener('mirror-delivery-change',function(){window.calculateMirrorInPlace();render();});
 function calculate(){return window.MirrorOrderPricing.calculate(items,{});}
 function save(){try{localStorage.setItem(key,JSON.stringify(items));}catch(e){$('order-status').textContent='Заказ рассчитан, но не сохранён на устройстве.';}}
 function render(){
@@ -42,7 +43,7 @@ function render(){
  var totals=calculate(),entries=window.MirrorOrderView.entries(items,totals);
  $('order-items').innerHTML=entries.map(function(entry,i){var item=entry.item,m=item.data.mirror,needsQuote=m.shape==='curved'&&m.supplierCategory==='quoted'&&!(Number(m.supplierCost)>0);return '<article class="order-item"><div class="order-item-heading"><strong>'+safe(m.name)+'</strong><strong class="order-item-price">'+safe(needsQuote?'По запросу':money(entry.display))+'</strong></div><p>'+safe(window.MirrorSize.dimensions(m.size))+' · '+safe(m.materialLabel)+'<br>'+safe(m.light?'С подсветкой':'Без подсветки')+' · '+safe(m.edgeLabel)+(m.install?' · С установкой':'')+'</p><div class="order-item-toolbar"><label><span class="order-sr-only">Количество</span><select aria-label="Количество: '+safe(m.name)+'" data-quantity="'+i+'">'+quantityOptions(item.qty)+'</select></label><div class="order-item-actions"><button type="button" data-edit="'+i+'">Изменить</button><button type="button" data-remove="'+i+'">Удалить</button></div></div></article>';}).join('');
  if(items.length){var t=calculate();$('order-send').disabled=t.mixedRegions||t.needsQuote;
- var note=t.needsQuote?'Стоимость сложной формы нужно согласовать с производителем.':t.mixedRegions?'Для одного заказа укажите одинаковый регион доставки у всех зеркал.':t.externalDelivery?'Доставка по адресу согласуется отдельно и не включена в итоговую стоимость.':'';
+ var note=t.needsQuote?'Стоимость сложной формы нужно согласовать с производителем.':t.mixedRegions?'Для одного заказа укажите одинаковый регион доставки у всех зеркал.':t.deliveryPending?'Укажите адрес доставки: доставка пока не включена в итог.':'';
  $('order-summary').innerHTML=(note?'<p class="account-note">'+safe(note)+'</p>':'')+(!t.needsQuote&&!t.mixedRegions?'<div class="calc-included">'+window.MirrorOrderView.priceRows(t)+'</div>':'')+'<div class="order-final"><span>Итого · '+t.count+' шт.</span><strong id="order-total" role="button" tabindex="0" data-copy-order title="Скопировать подробный расчёт заказа" aria-label="Скопировать подробный расчёт заказа">'+(t.needsQuote?'Уточните цену сложной формы':t.mixedRegions?'Уточните регион доставки':money(t.total))+'</strong></div>'+(items.some(function(item){return item.data.mirror.estimate;})?'<p class="account-note">Стоимость фигурного контура уточняется после согласования.</p>':'');
  var copyButton=$('copy-order');if(copyButton)copyButton.disabled=!!(t.mixedRegions||t.needsQuote);
 

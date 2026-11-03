@@ -325,27 +325,27 @@
     var sides = mirrorDeliverySides();
     return window.MirrorSupplierPricing.purchasingTrip(sides.longer, sides.shorter);
   }
-  function murinoDeliveryPrice() {
-    return state.install ? 500 : 1000;
-  }
   function clientDeliveryPrice() {
-    return (state.delivery || state.install) && deliveryRegion() === 'murino' ? murinoDeliveryPrice() : 0;
+    var r=window.MirrorDelivery&&window.MirrorDelivery.getRoute();
+    return window.MirrorOrderPricing.deliveryPrice(mirrorDeliverySides().longer,r?r.km:null,state.delivery);
   }
   function deliveryDescription() {
-    if (!state.delivery && !state.install) return 'не включена';
-    return deliveryRegion() === 'murino' ? 'по Мурино, включена в итоговую стоимость' :
-      (deliveryRegion() === 'spb' ? 'по Санкт-Петербургу — отдельно, не включена в итог' : 'по адресу — отдельно, не включена в итог');
+    if(!state.delivery)return 'не включена';
+    var r=window.MirrorDelivery&&window.MirrorDelivery.getRoute();
+    return r?r.km.toLocaleString('ru-RU')+' км · '+clientDeliveryPrice().toLocaleString('ru-RU')+' ₽':'укажите адрес — не включена в итог';
   }
+
   function updateDeliveryAvailability() {
     var cb = $('input[name="option"][value="delivery"]');
     var field = document.getElementById('deliveryRegionField');
     if (cb) cb.disabled = false;
     var installed=$('input[name="option"][value="install"]');
-    if (field) field.hidden = !((cb && cb.checked) || (installed && installed.checked));
+    if (field) field.hidden = true;
     var option = document.querySelector('#delivery-region option[value="murino"]');
     if (option) option.textContent = 'Мурино';
     var label = document.querySelector('#deliveryOpt span');
-    if (label) label.textContent = installed && installed.checked ? 'Доставка при установке' : 'Доставка';
+    if (label) label.textContent = 'Доставка по адресу';
+    if(window.MirrorDelivery)window.MirrorDelivery.updateVisibility();
   }
 
   var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'криволинейная шлифовка', 'curved-polish': 'криволинейная полировка' };
@@ -1241,5 +1241,6 @@
     updateProfileAvailability();
   }
 })();
+
 
 
