@@ -26,15 +26,24 @@ visibility();option.addEventListener('change',visibility);
 function reset(){revision++;route=null;busy=false;button.disabled=false;results.replaceChildren();status.textContent='';emit();}
 input.addEventListener('input',reset);
 input.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();button.click();}});
-async function json(url,options){var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},22000);try{var response=await fetch(url,Object.assign({},options,{signal:controller.signal}));if(!response.ok){var error=Error('HTTP '+response.status);error.code='HTTP_'+response.status;throw error;}return await response.json();}finally{clearTimeout(timer);}}
+async function json(url,options,timeout){var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},timeout||22000);try{var response=await fetch(url,Object.assign({},options,{signal:controller.signal}));if(!response.ok){var error=Error('HTTP '+response.status);error.code='HTTP_'+response.status;throw error;}return await response.json();}finally{clearTimeout(timer);}}
 async function searchAddress(query,market,token){
  var key='mirror.2gis.'+market+'.'+query.toLowerCase().replace(/ё/g,'е').trim(),saved;
  try{saved=JSON.parse(localStorage.getItem(key));if(saved&&Date.now()-saved.at<86400000&&Array.isArray(saved.data.features)&&saved.data.features.length)return saved.data;}catch(e){}
  var url='https://zerkalo-address-api.vercel.app/api/geocode?q='+encodeURIComponent(query)+'&market='+market;
- for(var attempt=0;attempt<2;attempt++){
-  try{var data=await json(url,{credentials:'omit'});if(data.features&&data.features.length){try{localStorage.setItem(key,JSON.stringify({at:Date.now(),data:data}));}catch(e){}}return data;}
-  catch(e){if(token!==revision)throw e;if(attempt===1||e.code&&/^HTTP_4/.test(e.code))throw e;status.textContent='Повторяем поиск адреса…';}
+ var failure;
+ try{var data=await json(url,{credentials:'omit'},6000);if(data.features&&data.features.length){try{localStorage.setItem(key,JSON.stringify({at:Date.now(),data:data}));}catch(e){}return data;}}
+ catch(e){failure=e;}
+ if(token!==revision)throw failure||Error('cancelled');
+ if(window.MirrorAddressFallback){
+  status.textContent='Ищем в резервной адресной базе…';
+  try{var local=await window.MirrorAddressFallback.search(query,function(done,total){if(token===revision)status.textContent='Загружаем адресную базу: '+done+' / '+total+'…';});
+   if(local.features.length){try{localStorage.setItem(key,JSON.stringify({at:Date.now(),data:local}));}catch(e){}return local;}
+   if(failure)return local;
+  }catch(e){if(!failure)failure=e;}
  }
+ if(failure)throw failure;
+ return data||{features:[]};
 }
 function address(f){var p=f.properties;if(p.label)return p.label;return [p.city||p.town||p.locality,p.street,p.housenumber].filter(Boolean).join(', ');}
 function showMatches(matches,token){
@@ -63,7 +72,7 @@ button.addEventListener('click',async function(){
   var data=await searchAddress(query,'spb',token);
   if(token!==revision)return;
   var seen={};var matches=(data.features||[]).filter(function(f){var c=f.geometry&&f.geometry.coordinates,key=address(f);if(!c||!Number.isFinite(c[0])||!Number.isFinite(c[1])||!key||seen[key])return false;seen[key]=true;return true;});
-  if(!matches.length){status.textContent='Дом не найден. Уточните город, улицу и номер дома. Укажите адрес для уточнения стоимости.';return;}
+  if(!matches.length){status.textContent=data.limited?'Адрес не найден в резервной базе. Укажите город, улицу и номер дома.':'Дом не найден. Уточните город, улицу и номер дома.';return;}
   showMatches(matches,token);
  }catch(e){if(token===revision)status.textContent='Не удалось связаться с поиском адресов. Повторите поиск. Код: '+(e.code||(e.name==='AbortError'?'TIMEOUT':'NETWORK'))+'.';}
  finally{if(token===revision){busy=false;button.disabled=false;}}
