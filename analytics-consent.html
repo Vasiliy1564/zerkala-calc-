@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Согласие на обработку данных для аналитики — Зеркало Pro</title><meta name="robots" content="noindex,follow"><style>body{margin:0;background:#f5f6f8;color:#20252c;font:17px/1.65 system-ui,sans-serif}main{max-width:860px;margin:32px auto;background:white;padding:32px;border-radius:12px}h1{font-size:clamp(25px,5vw,36px);line-height:1.2}h2{font-size:23px;line-height:1.3;margin-top:32px}a{color:#174eaa}table{border-collapse:collapse;width:100%;font-size:15px}td,th{border:1px solid #ccd1da;padding:10px;vertical-align:top;text-align:left}button{padding:12px 16px;font:inherit;background:white;color:#20252c;border:1px solid #555;border-radius:6px;cursor:pointer}.note{background:#eef3fa;padding:16px;border-radius:8px}.muted{color:#59616b;font-size:14px}nav{display:flex;gap:16px;flex-wrap:wrap} @media(max-width:600px){main{margin:0;padding:20px;border-radius:0}table{font-size:14px}td,th{padding:6px}}</style></head>
+<body><main><nav><a href="/">На сайт</a><a href="/privacy.html">Политика обработки данных</a><a href="/analytics-consent.html">Согласие на аналитику</a></nav>
+<h1>Согласие на обработку данных для аналитики</h1><p class="muted">Сайт: zerkalo-pro-spb.ru. Редакция от 4 ноября 2026 года, версия 2026-11-04.2.</p>
+
+<p class="note"><strong>Это отдельное добровольное согласие на аналитику.</strong> Само открытие этой страницы не даёт согласия. Для согласия нужно нажать «Разрешить аналитику» в настройках сайта. Можно отказаться и продолжить пользоваться сайтом.</p>
+<h2>Кому предоставляется согласие</h2>
+<p>Я, посетитель сайта zerkalo-pro-spb.ru, разрешаю оператору <strong>ИП Трудков Василий Васильевич</strong>, адрес: Ленинградская область, г. Мурино, ул. Шувалова, д. 16/9, кв. 736, email: <a href="mailto:ingring4@gmail.com">ingring4@gmail.com</a>, обрабатывать указанные ниже данные с помощью Яндекс Метрики для анализа посещаемости и улучшения сайта.</p>
+<h2>Данные и действия</h2>
+<p>Согласие распространяется на IP-адрес, идентификаторы cookie и браузера, технические сведения о браузере, ОС, устройстве и экране, посещённых страницах, времени и длительности визитов, переходах по ссылкам, а также дату и версию данного согласия.</p>
+<p>Разрешены автоматизированные сбор, запись, систематизация, накопление, хранение, уточнение, извлечение, использование, передача сервису Яндекс Метрика для обработки и предоставления статистики оператору, обезличивание, блокирование, удаление и уничтожение данных. Получатель — ООО «ЯНДЕКС», 119021, Россия, г. Москва, ул. Льва Толстого, д.16; <a href="https://yandex.ru/legal/metrica_termsofuse/ru/">условия сервиса</a>.</p>
+<p>Вебвизор и запись полей форм отключены. Согласие не распространяется на рекламные рассылки, публикацию персональных данных и содержание заявки. Оно не требуется для работы калькулятора и не объединено с отправкой заявки.</p>
+<h2>Срок, выбор и отзыв</h2>
+<p>Согласие на новый сбор аналитики действует 180 дней с момента выбора, до его отзыва либо до смены версии документа — в зависимости от того, что наступит раньше. Оно учитывается отдельно для сайта zerkalo-pro-spb.ru и этого браузера. После истечения срока или изменения версии потребуется новый выбор. Ранее собранные сведения обрабатываются до достижения цели либо прекращения основания обработки; требования об их удалении рассматриваются в установленном законом порядке.</p>
+<p>Отозвать согласие можно через «Настройки аналитики» → «Отозвать согласие», кнопкой ниже либо обращением на ingring4@gmail.com или по почтовому адресу оператора. Отзыв не влияет на законность обработки, осуществлённой до его получения. Если используются другие устройства и браузеры, измените выбор также на них.</p>
+<p>Нажимая «Разрешить аналитику», я подтверждаю, что ознакомился с этим отдельным текстом и <a href="/privacy.html">политикой обработки данных</a> и принимаю решение свободно и однозначно.</p>
+<h2>Как отключить аналитику</h2>
+<p>На любой странице сайта откройте «Настройки аналитики» и нажмите «Отозвать согласие». Также можно отключить её здесь:</p>
+<button type="button" id="revoke-analytics">Отозвать согласие на аналитику</button><p id="revoke-result" role="status"></p>
+<p><a href="mailto:ingring4@gmail.com">ingring4@gmail.com</a> — обращения по вопросам персональных данных.</p>
+</main><script>
+document.getElementById('revoke-analytics').addEventListener('click',function(){
+  try{localStorage.setItem('zerkalo-analytics-consent',JSON.stringify({choice:'rejected',version:'2026-11-04.2',at:Date.now()}));
+    document.getElementById('revoke-result').textContent='Согласие отозвано для этого браузера и этого сайта. При следующем открытии сайта аналитика не запустится. Другие открытые вкладки этого сайта обновят состояние автоматически.';
+  }catch(e){document.getElementById('revoke-result').textContent='Браузер не разрешил сохранить выбор. Напишите на ingring4@gmail.com для отзыва согласия.';}
+});
+</script></body></html>
