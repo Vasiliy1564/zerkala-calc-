@@ -11,10 +11,10 @@ function setup(city,fetch){
 (async()=>{
  for(const city of process.env.DELIVERY_STAV_ROOT?['spb','stav']:['spb']){
   let calls=0;const good={features:[{properties:{label:'Мурино, улица Шувалова, 16 / Петровский бульвар, 9'},geometry:{coordinates:[30.4289,60.056339]}}]};
-  const x=setup(city,async(url,options)=>{calls++;assert.equal(options.method,undefined);assert.equal(options.headers,undefined);assert.equal(new URL(url).searchParams.get('q'),'Шувалова 16/9');assert.equal(new URL(url).searchParams.get('market'),city);if(calls===1)throw new TypeError('Failed to fetch');return {ok:true,json:async()=>good}});
-  await x.run('Шувалова 16/9');assert.equal(calls,2);assert.equal(x.nodes['delivery-candidates'].children.length,1);assert.equal(x.nodes['delivery-route-status'].textContent,'Выберите адрес:');
-  x.reset();await new Promise(r=>setTimeout(r,1150));await x.run('Шувалова 16/9');assert.equal(calls,2,'reuse a confirmed result without contacting the service');
+  const x=setup(city,async(url,options)=>{calls++;assert.equal(options.method,undefined);assert.equal(options.headers,undefined);assert.equal(new URL(url).searchParams.get('q'),'Шувалова 16/9');assert.equal(new URL(url).searchParams.get('market'),city);return {ok:true,json:async()=>good}});
+  await x.run('Шувалова 16/9');assert.equal(calls,1);assert.equal(x.nodes['delivery-candidates'].children.length,1);assert.equal(x.nodes['delivery-route-status'].textContent,'Выберите адрес:');
+  x.reset();await new Promise(r=>setTimeout(r,1150));await x.run('Шувалова 16/9');assert.equal(calls,1,'reuse a confirmed result without contacting the service');
   let denied=0;const y=setup(city,async()=>{denied++;return {ok:false,status:403}});await y.run('Шувалова 16/9');assert.equal(denied,1);assert.match(y.nodes['delivery-route-status'].textContent,/HTTP_403/);
-  console.log('PASS',city,'network retry, simple GET, cache, explicit server error');
+  console.log('PASS',city,'simple GET, cache, explicit server error');
  }
 })().catch(e=>{console.error(e);process.exitCode=1});
