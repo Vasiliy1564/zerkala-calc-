@@ -9,21 +9,28 @@ export async function OPTIONS(request) {
   const origin=request.headers.get('origin');
   if (!allowed.has(origin)) return reply({error:'origin_not_allowed'},403,origin);
   const response=reply(null,204,origin);
-  response.headers.set('Access-Control-Allow-Methods','POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Methods','GET, POST, OPTIONS');
   response.headers.set('Access-Control-Allow-Headers','Content-Type');
   response.headers.set('Access-Control-Max-Age','3600');
   return response;
 }
+export async function GET(request) {
+  const url = new URL(request.url);
+  return search(request, url.searchParams.get('q') || '', url.searchParams.get('market'));
+}
 export async function POST(request) {
+  let body;
+  try { body=await request.json(); } catch { return reply({error:'invalid_request'},400,request.headers.get('origin')); }
+  return search(request, typeof body?.query === 'string' ? body.query.trim() : '', body?.market);
+}
+async function search(request, query, market) {
   const origin=request.headers.get('origin');
   if (origin && !allowed.has(origin)) return reply({error:'origin_not_allowed'},403,origin);
-  let body;
-  try { body=await request.json(); } catch { return reply({error:'invalid_request'},400,origin); }
-  const query=typeof body?.query === 'string' ? body.query.trim() : '';
-  if(query.length<4 || query.length>300 || !Object.hasOwn(centres,body?.market)) return reply({error:'invalid_query'},400,origin);
+  query=query.trim();
+  if(query.length<4 || query.length>300 || !Object.hasOwn(centres,market)) return reply({error:'invalid_query'},400,origin);
   if(!process.env.TWOGIS_API_KEY) return reply({error:'not_configured'},503,origin);
   const url=new URL('https://catalog.api.2gis.com/3.0/items/geocode');
-  url.search=new URLSearchParams({q:query,type:'building',location:centres[body.market],fields:'items.point,items.address',key:process.env.TWOGIS_API_KEY}).toString();
+  url.search=new URLSearchParams({q:query,type:'building',location:centres[market],fields:'items.point,items.address',key:process.env.TWOGIS_API_KEY}).toString();
   try {
     const upstream=await fetch(url,{signal:AbortSignal.timeout(18000)});
     const data=await upstream.json();
