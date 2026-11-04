@@ -3,7 +3,7 @@
   var script = document.currentScript;
   if (!script || window.ZerkaloAnalyticsConsent) return;
   var cfg = script.dataset;
-  var version = cfg.version || '2026-11-04';
+  var version = cfg.version || '2026-11-04.2';
   var key = 'zerkalo-analytics-consent';
   var days = 180;
   var loaded = false;
@@ -46,8 +46,8 @@
       }
     } catch (_) {}
   }
-  function start() {
-    if (!ready || loaded) return;
+  function start(record) {
+    if (!ready || loaded || !record || record.choice !== 'accepted') return;
     loaded = true;
     // Forms, addresses and contact details must never be recorded.
     document.querySelectorAll('form, input, textarea, [contenteditable]').forEach(function (el) {
@@ -64,7 +64,8 @@
       accurateTrackBounce: true,
       // Keep free-form query parameters and fragments out of analytics URLs.
       url: location.origin + location.pathname,
-      referrer: ''
+      referrer: '',
+      params: {analytics_consent: {version: version, accepted_at: new Date(record.at).toISOString()}}
     });
   }
   function reject() {
@@ -106,9 +107,9 @@
       });
       panel.appendChild(links);
       panel.appendChild(button('Разрешить аналитику', function () {
-        write('accepted'); start(); panel.remove(); panel = null;
+        var record = write('accepted'); start(record); panel.remove(); panel = null;
       }));
-      panel.appendChild(button('Отказаться / отозвать согласие', reject));
+      panel.appendChild(button(loaded ? 'Отозвать согласие' : 'Отказаться', reject));
     } else {
       panel.appendChild(button('Закрыть', function () { panel.remove(); panel = null; }));
     }
@@ -124,7 +125,7 @@
     var record = read();
     if (!ready || !record || record.choice !== 'accepted') clearCookies();
     if (!ready) return;
-    if (record && record.choice === 'accepted') start();
+    if (record && record.choice === 'accepted') start(record);
     else if (!record) open();
   }
   window.ZerkaloAnalyticsConsent = {open: open};
