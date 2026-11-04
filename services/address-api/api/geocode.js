@@ -1,13 +1,17 @@
-const allowed = new Set(['https://zerkalo-pro-spb.ru', 'https://www.zerkalo-pro-spb.ru', 'https://zerkalo-pro.ru', 'https://www.zerkalo-pro.ru', 'null', 'https://appassets.androidplatform.net']);
+const websiteHosts = new Set(['zerkalo-pro-spb.ru','www.zerkalo-pro-spb.ru','zerkalo-pro.ru','www.zerkalo-pro.ru']);
+function originAllowed(origin){
+ if(origin==='null'||origin==='https://appassets.androidplatform.net')return true;
+ try{const url=new URL(origin);return url.origin===origin && ['http:','https:'].includes(url.protocol) && !url.port && websiteHosts.has(url.hostname.replace(/\.$/,''));}catch{return false;}
+}
 const centres = {spb: '30.4290869,60.0565448', stav: '41.9110926,45.0011119'};
 function reply(data, status, origin) {
   const headers = {'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'no-store', 'Vary':'Origin'};
-  if (origin && allowed.has(origin)) headers['Access-Control-Allow-Origin'] = origin;
+  if (origin && originAllowed(origin)) headers['Access-Control-Allow-Origin'] = origin;
   return new Response(data === null ? null : JSON.stringify(data), {status, headers});
 }
 export async function OPTIONS(request) {
   const origin=request.headers.get('origin');
-  if (!allowed.has(origin)) return reply({error:'origin_not_allowed'},403,origin);
+  if (!originAllowed(origin)) return reply({error:'origin_not_allowed'},403,origin);
   const response=reply(null,204,origin);
   response.headers.set('Access-Control-Allow-Methods','GET, POST, OPTIONS');
   response.headers.set('Access-Control-Allow-Headers','Content-Type');
@@ -25,7 +29,7 @@ export async function POST(request) {
 }
 async function search(request, query, market) {
   const origin=request.headers.get('origin');
-  if (origin && !allowed.has(origin)) return reply({error:'origin_not_allowed'},403,origin);
+  if (origin && !originAllowed(origin)) return reply({error:'origin_not_allowed'},403,origin);
   query=query.trim();
   if(query.length<4 || query.length>300 || !Object.hasOwn(centres,market)) return reply({error:'invalid_query'},400,origin);
   if(!process.env.TWOGIS_API_KEY) return reply({error:'not_configured'},503,origin);
