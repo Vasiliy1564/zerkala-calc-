@@ -30,16 +30,22 @@ function page(config = {}, saved = null) {
   }};
 }
 const enabled = {enabled:'true',counter:'123',operatorName:'Test operator',operatorAddress:'Test address',operatorContact:'test@example.test',policyUrl:'/policy',consentUrl:'/consent'};
-const accepted = {choice:'accepted',version:'2026-11-04',at:Date.now()};
+const accepted = {choice:'accepted',version:'2026-11-04.2',at:Date.now()};
 let p = page(enabled);
 assert.equal(p.network.length,0,'no analytics before consent');
-p.click('Отказаться / отозвать согласие');
+p.click('Отказаться');
 assert.equal(p.network.length,0,'refusal sends nothing');
 p = page(enabled);
 p.click('Разрешить аналитику');
 assert.equal(p.network.length,1,'explicit acceptance loads one script');
+const init = p.window.ym.a[0];
+assert.equal(init[1], 'init');
+assert.equal(init[2].webvisor, false, 'Webvisor remains disabled after consent');
+assert.equal(init[2].clickmap, false, 'clickmap remains disabled');
+assert.equal(init[2].params.analytics_consent.version, '2026-11-04.2');
+assert.ok(init[2].params.analytics_consent.accepted_at, 'consent metadata is attached to the first visit');
 p.window.ZerkaloAnalyticsConsent.open();
-p.click('Отказаться / отозвать согласие');
+p.click('Отозвать согласие');
 assert.equal(p.location.reloads,1,'revocation stops runtime with reload');
 assert.equal(JSON.parse(p.storage.get('zerkalo-analytics-consent')).choice,'rejected');
 p = page({...enabled,enabled:'false'},accepted);
