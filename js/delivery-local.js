@@ -24,7 +24,7 @@ async function load(progress){
  })().catch(function(error){loading=null;throw error;});
  return loading;
 }
-window.MirrorAddressFallback={search:async function(query,progress){
+window.MirrorAddressFallback={preload:function(){return load().then(function(){return true;}).catch(function(){return false;});},search:async function(query,progress){
  var parsed=split(query);if(!parsed||!parsed.tokens.length)return {features:[],source:'offline-osm',limited:true};
  var data=await load(progress),matches=[],seen=new Set();
  for(var row of data.numbers.get(parsed.number)||[]){
