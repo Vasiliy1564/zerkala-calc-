@@ -20,10 +20,12 @@ function describe(){
 }
 function updatePrice(){if(route)status.textContent='Доставка: '+describe();}
 function emit(){updatePrice();window.dispatchEvent(new Event('mirror-delivery-change'));}
-function visibility(){panel.hidden=!option.checked;}
+function warmAddresses(){if(window.MirrorAddressFallback&&window.MirrorAddressFallback.preload)window.MirrorAddressFallback.preload();}
+function visibility(){panel.hidden=!option.checked;if(option.checked)warmAddresses();}
 window.MirrorDelivery={describe:describe,getRoute:function(){return route;},updateVisibility:function(){visibility();updatePrice();}};
 visibility();option.addEventListener('change',visibility);
 function reset(){revision++;route=null;busy=false;button.disabled=false;results.replaceChildren();status.textContent='';emit();}
+input.addEventListener('focus',warmAddresses);
 input.addEventListener('input',reset);
 input.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();button.click();}});
 async function json(url,options,timeout){var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},timeout||22000);try{var response=await fetch(url,Object.assign({},options,{signal:controller.signal}));if(!response.ok){var error=Error('HTTP '+response.status);error.code='HTTP_'+response.status;throw error;}return await response.json();}finally{clearTimeout(timer);}}
@@ -31,19 +33,19 @@ async function searchAddress(query,market,token){
  var key='mirror.2gis.'+market+'.'+query.toLowerCase().replace(/ё/g,'е').trim(),saved;
  try{saved=JSON.parse(localStorage.getItem(key));if(saved&&Date.now()-saved.at<86400000&&Array.isArray(saved.data.features)&&saved.data.features.length)return saved.data;}catch(e){}
  var url='https://zerkalo-address-api.vercel.app/api/geocode?q='+encodeURIComponent(query)+'&market='+market;
- var failure;
- try{var data=await json(url,{credentials:'omit'},6000);if(data.features&&data.features.length){try{localStorage.setItem(key,JSON.stringify({at:Date.now(),data:data}));}catch(e){}return data;}}
- catch(e){failure=e;}
- if(token!==revision)throw failure||Error('cancelled');
- if(window.MirrorAddressFallback){
-  status.textContent='Ищем в резервной адресной базе…';
-  try{var local=await window.MirrorAddressFallback.search(query,function(done,total){if(token===revision)status.textContent='Загружаем адресную базу: '+done+' / '+total+'…';});
-   if(local.features.length){try{localStorage.setItem(key,JSON.stringify({at:Date.now(),data:local}));}catch(e){}return local;}
-   if(failure)return local;
-  }catch(e){if(!failure)failure=e;}
- }
- if(failure)throw failure;
- return data||{features:[]};
+ var finished=false;
+ function remember(data){if(data.features&&data.features.length){try{localStorage.setItem(key,JSON.stringify({at:Date.now(),data:data}));}catch(e){}}return data;}
+ var remote=json(url,{credentials:'omit'},6000).then(remember);
+ var jobs=[remote];
+ if(window.MirrorAddressFallback)jobs.push(window.MirrorAddressFallback.search(query,function(done,total){if(!finished&&token===revision)status.textContent='Загружаем адресную базу: '+done+' / '+total+'…';}).then(remember));
+ // Both sources start together; an empty answer must not hide a valid slower answer.
+ try{return await Promise.any(jobs.map(function(job){return job.then(function(data){if(data.features&&data.features.length)return data;throw {data:data};});}));}
+ catch(group){
+  var errors=group.errors||[group],empty=errors.find(function(e){return e&&e.data;});
+  if(empty)return empty.data;
+  throw errors.find(function(e){return e&&e.code;})||errors[0]||Error('Search failed');
+ }finally{finished=true;}
+
 }
 function address(f){var p=f.properties;if(p.label)return p.label;return [p.city||p.town||p.locality,p.street,p.housenumber].filter(Boolean).join(', ');}
 function showMatches(matches,token){
@@ -54,11 +56,14 @@ async function choose(f,token){
  var destination=f.geometry.coordinates;results.replaceChildren();status.textContent='Считаем доставку…';
  try{
   var path=point.join(',')+';'+destination.join(',');
-  var data=await json('https://router.project-osrm.org/route/v1/driving/'+path+'?overview=false&alternatives=false&steps=false');
+  var routeKey='mirror.road.v1.'+path,cached;
+  try{cached=JSON.parse(localStorage.getItem(routeKey));}catch(e){}
+  var data=cached&&Date.now()-cached.at<86400000&&cached.data?cached.data:await json('https://router.project-osrm.org/route/v1/driving/'+path+'?overview=false&alternatives=false&steps=false');
   if(token!==revision)return;
   if(data.code!=='Ok'||!data.routes||!data.routes.length||!Number.isFinite(data.routes[0].distance))throw Error('No route');
   var metres=data.routes[0].distance;
   if(metres<0||metres>500000)throw Error('Out of area');
+  try{localStorage.setItem(routeKey,JSON.stringify({at:Date.now(),data:data}));}catch(e){}
   route={origin:origin,address:address(f),km:Math.round(metres/100)/10};input.value=route.address;
   updatePrice();
   emit();
