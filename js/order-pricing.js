@@ -6,8 +6,8 @@ function maxSide(m){var w=Number(m.width)||0,h=m.shape==='circle'?w:Number(m.hei
 function tripPrice(mm){return mm<=1800?300:mm<=2000?450:750;}
 function deliveryRate(mm){return mm<=1800?30:mm<=2000?45:55;}
 function route(){return root.MirrorDelivery?root.MirrorDelivery.getRoute():null;}
-function deliveryBase(requested,installed){return requested?(installed?500:0):0;}
-function deliveryPrice(mm,km,requested,installed){var base=deliveryBase(requested,installed);return !requested?0:!Number.isFinite(km)||km<0?base:Math.round((installed?base+Math.max(0,km-5)*deliveryRate(mm):km*deliveryRate(mm)));}
+function deliveryBase(){return 0;}
+function deliveryPrice(mm,km,requested){return !requested||!Number.isFinite(km)||km<0?0:Math.round(km*deliveryRate(mm));}
 
 function carryPrice(mm,options){
  var o=options||{};if(!o.enabled)return {requested:false,amount:0,pending:false};
