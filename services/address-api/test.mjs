@@ -25,3 +25,12 @@ test('GET search accepts browser and Android origins without a POST preflight', 
   assert.equal((await GET(new Request('https://api.example/api/geocode?q=abcdef&market=__proto__'))).status,400);
  }finally{globalThis.fetch=original;delete process.env.TWOGIS_API_KEY;}
 });
+
+test('allow legitimate HTTP and trailing-dot website origins, reject lookalike domains', async()=>{
+ for(const origin of ['http://zerkalo-pro-spb.ru','https://zerkalo-pro-spb.ru.','https://www.zerkalo-pro.ru.']){
+  const r=await OPTIONS(new Request('https://api.example/api/geocode',{method:'OPTIONS',headers:{origin}}));assert.equal(r.status,204);assert.equal(r.headers.get('Access-Control-Allow-Origin'),origin);
+ }
+ for(const origin of ['https://zerkalo-pro-spb.ru.evil.example','https://evilzerkalo-pro-spb.ru','https://zerkalo-pro-spb.ru:8080','file://']){
+  assert.equal((await OPTIONS(new Request('https://api.example/api/geocode',{method:'OPTIONS',headers:{origin}}))).status,403);
+ }
+});
