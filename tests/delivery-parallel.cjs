@@ -12,6 +12,6 @@ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../js/delivery-route.js'
  assert(remoteStarted);assert.equal(nodes['delivery-candidates'].children.length,1);assert.equal(nodes['delivery-route-status'].textContent,'Выберите адрес:');
  release({ok:true,json:async()=>({features:[]})});await new Promise(setImmediate);
  assert.equal(nodes['delivery-route-status'].textContent,'Выберите адрес:','late provider response must not replace selected candidates');
- const engine=window.MirrorOrderPricing;assert.equal(engine.deliveryPrice(1800,11.2,true,false),336);assert.equal(engine.deliveryPrice(1800,11.2,true,true),686);assert.equal(engine.deliveryBase(true,true),500);
- console.log('PASS: immediate local answer despite stalled provider; no late UI overwrite; delivery pricing matches 336 / (500 + 186)');
+ const engine=window.MirrorOrderPricing;assert.equal(engine.deliveryPrice(1800,11.2,true,false),336);assert.equal(engine.deliveryPrice(1800,11.2,true,true),336);assert.equal(engine.deliveryBase(true,true),0);
+ console.log('PASS: immediate local answer despite stalled provider; no late UI overwrite; delivery pricing matches 336 with and without installation');
 })().catch(e=>{if(release)release({ok:true,json:async()=>({features:[]})});console.error(e);process.exitCode=1});
