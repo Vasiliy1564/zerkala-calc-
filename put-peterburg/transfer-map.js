@@ -9,7 +9,19 @@ function transferContext(step){
  if(!pattern||!stop||stop.id!==step.point?.id||stop.pickup===false)return null;
  const next=BUS.get(ride.stops[1]);
  const nearby=TRANSIT.busStops.filter(s=>s.id!==stop.id&&s.transport!=='rail'&&distance(stop,s)<140&&norm(s.name)===norm(stop.name));
- return {station,ride,pattern,stop,next,nearby,service:transportName(ride.transport||pattern.transport||'bus')+' № '+pattern.ref,direction:ride.direction||pattern.to};
+ return {boarding:true,station,ride,pattern,stop,next,nearby,service:transportName(ride.transport||pattern.transport||'bus')+' № '+pattern.ref,direction:ride.direction||pattern.to};
+}
+function walkingMapContext(step){
+ const from=step.stationFrom||step.from,station=METRO.get(from?.metroId||from?.id),entry=METRO.get(step.point?.metroId||step.point?.id);
+ return {boarding:false,station,entry,stop:step.point,nearby:[],title:entry?'Пешком ко входу в метро':BUS.has(from?.id)?'Остановка → конечный адрес':station?'Выход метро → адрес':'Пешком до места назначения'};
+}
+function destinationReceipt(ctx,step,container){
+ const box=node('section',undefined,'boardingReceipt walkDestinationReceipt');box.dataset.lat=String(ctx.stop.lat);box.dataset.lon=String(ctx.stop.lon);
+ box.append(node('div','КУДА ИДТИ','eyebrow'),node('h3',ctx.stop.name));
+ const from=step.stationFrom||step.from;
+ box.append(node('p',(BUS.has(from?.id)?'Выйдите на остановке: «':'Начало участка: «')+from.name+'».','walkingOriginLabel'));
+ box.append(node('p',ctx.entry?'Метка М — вход в метро из доступной базы.':'Метка Б — выбранная точка адреса. Подъезд или вход в здание проверяйте на месте.','hint'));
+ const position=node('p','Нажмите «Где я», чтобы увидеть себя на карте.','transferPosition');position.setAttribute('role','status');box.append(position);container.append(box);return box;
 }
 function transferGps(){
  if(!transferFix)return null;
@@ -27,20 +39,20 @@ function transferReceipt(ctx,container){
 function updateTransferLocation(){
  const fix=transferGps();
  for(const el of document.querySelectorAll('.boardingReceipt')){
-  const stop=BUS.get(el.dataset.stopId),p=el.querySelector('.transferPosition');if(!stop||!p)continue;
+  const isDestination=el.classList.contains('walkDestinationReceipt'),stop=isDestination?{lat:Number(el.dataset.lat),lon:Number(el.dataset.lon)}:BUS.get(el.dataset.stopId),p=el.querySelector('.transferPosition');if(!stop||!p)continue;
   if(!fix){p.textContent=transferFix?'Свежей точной позиции нет. Нажмите «Где я» на улице.':'Нажмите «Где я», чтобы увидеть своё место на карте.';p.classList.remove('nearStop');continue;}
-  const d=distance(fix,stop),opposite=TRANSIT.busStops.some(s=>s.id!==stop.id&&norm(s.name)===norm(stop.name)&&distance(s,stop)<140&&distance(fix,s)<=d+fix.accuracy);
+  const d=distance(fix,stop),opposite=!isDestination&&TRANSIT.busStops.some(s=>s.id!==stop.id&&norm(s.name)===norm(stop.name)&&distance(s,stop)<140&&distance(fix,s)<=d+fix.accuracy);
   const near=d+fix.accuracy<=35&&!opposite;
-  p.textContent=(near?'Вы рядом с нужной точкой посадки. ':'До точки посадки ≈ '+walkingMeters(d)+' по прямой. ')+(opposite?'GPS не различает соседние остановки. ':'')+'Точность ±'+Math.round(fix.accuracy)+' м. Сверьте направление.';p.classList.toggle('nearStop',near);
+  p.textContent=(near?(isDestination?'Вы рядом с выбранной точкой адреса. ':'Вы рядом с нужной точкой посадки. '):(isDestination?'До выбранной точки ≈ ':'До точки посадки ≈ ')+walkingMeters(d)+' по прямой. ')+(opposite?'GPS не различает соседние остановки. ':'')+'Точность ±'+Math.round(fix.accuracy)+' м. '+(isDestination?'Проверьте вход на месте.':'Сверьте направление.');p.classList.toggle('nearStop',near);
  }
  transferMapView?.updateFix(fix);
 }
 function makeTransferMap(ctx,state){
- const section=node('section',undefined,'transferMapSection'),toolbar=node('div',undefined,'transferMapToolbar');toolbar.append(node('strong','Выход → ваша остановка'),node('span','Север ↑'));
- const frame=node('div',undefined,'transferMap'),ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 360 300');svg.setAttribute('role','img');svg.setAttribute('aria-label','Карта выхода метро и остановки '+ctx.stop.name+' для '+ctx.service+' в сторону '+ctx.direction);frame.append(svg);
+ const section=node('section',undefined,'transferMapSection'),toolbar=node('div',undefined,'transferMapToolbar');toolbar.append(node('strong',ctx.boarding?'Выход → ваша остановка':ctx.title),node('span','Север ↑'));
+ const frame=node('div',undefined,'transferMap'),ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 360 300');svg.setAttribute('role','img');svg.setAttribute('aria-label',ctx.boarding?'Карта выхода метро и остановки '+ctx.stop.name+' для '+ctx.service+' в сторону '+ctx.direction:'Карта пешего пути до '+ctx.stop.name);frame.append(svg);
  const caption=node('p','Загружаем карту улиц…','transferMapStatus');caption.setAttribute('role','status');
- const route=state?.state==='ready'?state.route:null,origin=state?.a||ctx.stop,exit=state?.exit;
- const base=[origin,ctx.stop,...(route?.coordinates||[]).map(p=>({lon:p[0],lat:p[1]}))];
+ const route=state?.state==='ready'?state.route:null,origin=state?.a||ctx.stop,target=state?.b||ctx.stop,exit=state?.exit;
+ const base=[origin,target,...(route?.coordinates||[]).map(p=>({lon:p[0],lat:p[1]}))];
  const world=(p,z)=>{const n=256*2**z,s=Math.sin(p.lat*Math.PI/180);return [n*(p.lon+180)/360,n*(.5-Math.log((1+s)/(1-s))/(4*Math.PI))]};
  const unworld=(p,z)=>{const n=256*2**z;return {lon:p[0]/n*360-180,lat:Math.atan(Math.sinh(Math.PI*(1-2*p[1]/n)))*180/Math.PI}};
  let zoom=17,center,fix=transferGps(),layers={};
@@ -51,9 +63,9 @@ function makeTransferMap(ctx,state){
  function drawFix(){if(!layers.gps)return;layers.gps.replaceChildren();if(!fix)return;const [x,y]=project(fix),mpp=156543.03392*Math.cos(fix.lat*Math.PI/180)/2**zoom;const radius=Math.min(200,fix.accuracy/mpp);element(layers.gps,'circle',{cx:x,cy:y,r:radius,fill:'#2573eb','fill-opacity':.1,stroke:'#2573eb','stroke-opacity':.3});mark(fix,'Я','#1764ce',12,layers.gps);}
  function paint(){
   svg.replaceChildren();layers={tiles:element(svg,'g'),route:element(svg,'g'),marks:element(svg,'g'),gps:element(svg,'g')};const c=world(center,zoom),left=c[0]-180,top=c[1]-150;let loaded=0,failed=0,total=0;const generation=layers.tiles;
-  const status=()=>{if(generation!==layers.tiles)return;caption.textContent=loaded?'Карта улиц · М — выход, С — сесть, Я — ваше место. Перетаскивайте карту; масштаб — кнопками.':failed===total?'Карта улиц недоступна. Показана только схема точек'+(route?' и рассчитанного пути':'')+'. Откройте 2ГИС для проверки переходов.':'Загружаем карту улиц…';};
+  const status=()=>{if(generation!==layers.tiles)return;caption.textContent=loaded?(ctx.boarding?'Карта 2ГИС · М — выход, С — сесть, Я — ваше место.':'Карта 2ГИС · А — начало, '+(state?.entry?'М — вход метро':'Б — цель')+', Я — ваше место.')+' Перетаскивайте карту; масштаб — кнопками.':failed===total?'Карта улиц недоступна. Показана только схема точек'+(route?' и рассчитанного пути':'')+'. Откройте 2ГИС для проверки переходов.':'Загружаем карту улиц…';};
   for(let x=Math.floor(left/256);x<=Math.floor((left+360)/256);x++)for(let y=Math.floor(top/256);y<=Math.floor((top+300)/256);y++){
-   total++;const tile=element(layers.tiles,'image',{x:x*256-left,y:y*256-top,width:256,height:256,href:'https://tile.openstreetmap.org/'+zoom+'/'+x+'/'+y+'.png'});tile.addEventListener('load',()=>{loaded++;status()});tile.addEventListener('error',()=>{failed++;status()});
+   total++;const tile=element(layers.tiles,'image',{x:x*256-left,y:y*256-top,width:256,height:256,href:PUT_MAP_API+'?z='+zoom+'&x='+x+'&y='+y});tile.addEventListener('load',()=>{loaded++;status()});tile.addEventListener('error',()=>{failed++;status()});
   }
   if(route)element(layers.route,'path',{d:route.coordinates.map((p,i)=>(i?'L':'M')+project({lon:p[0],lat:p[1]}).join(' ')).join(' '),stroke:'#fff','stroke-width':9,fill:'none','stroke-linejoin':'round'});
   if(route)element(layers.route,'path',{d:route.coordinates.map((p,i)=>(i?'L':'M')+project({lon:p[0],lat:p[1]}).join(' ')).join(' '),stroke:'#175ed0','stroke-width':5,fill:'none','stroke-linejoin':'round'});
@@ -62,27 +74,27 @@ function makeTransferMap(ctx,state){
   if(route?.steps[walkingIndex]?.location&&walkingIndex>0){const xy=route.steps[walkingIndex].location;mark({lon:xy[0],lat:xy[1]},String(walkingIndex+1),'#a56512',11);}
   if(ctx.next){const a=project(ctx.stop),b=project(ctx.next),d=Math.hypot(b[0]-a[0],b[1]-a[1]);if(d>1){const v=[(b[0]-a[0])/d,(b[1]-a[1])/d],tip=[a[0]+v[0]*52,a[1]+v[1]*52],end=[tip[0]-v[0]*10,tip[1]-v[1]*10];element(layers.route,'path',{d:'M'+a.join(' ')+'L'+tip.join(' ')+'M'+[end[0]-v[1]*6,end[1]+v[0]*6].join(' ')+'L'+tip.join(' ')+'L'+[end[0]+v[1]*6,end[1]-v[0]*6].join(' '),stroke:'#c33223','stroke-width':4,fill:'none'});}}
   if(state){mark(origin,exit?'М':ctx.station&&!stepOriginIsGps(state)?'?':'А',exit?'#bf3528':'#655b4c');}
-  mark(ctx.stop,'С','#c33223',17);drawFix();
+  mark(target,ctx.boarding?'С':state?.entry?'М':'Б',ctx.boarding?'#c33223':'#246d47',17);drawFix();
  }
  function stepOriginIsGps(s){return s.a?.name==='Моё место на улице'}
  const controls=node('div',undefined,'transferMapControls');
  function button(label,aria,fn){const b=node('button',label);b.type='button';b.setAttribute('aria-label',aria);b.onclick=fn;controls.append(b);}
  button('+','Увеличить карту',()=>{zoom=Math.min(19,zoom+1);paint()});button('−','Уменьшить карту',()=>{zoom=Math.max(12,zoom-1);paint()});button('Весь путь','Показать весь пеший путь',()=>{fit();paint()});button('Где я','Показать моё место',()=>{const p=transferGps();if(p){center=p;zoom=18;paint()}else if(typeof Phone!=='undefined'){Phone.locate();say('Определяем ваше место на улице.')}});
  let drag=null;svg.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,center:world(center,zoom)};svg.setPointerCapture?.(e.pointerId)});svg.addEventListener('pointermove',e=>{if(!drag)return;const scale=360/(svg.getBoundingClientRect().width||360);center=unworld([drag.center[0]-(e.clientX-drag.x)*scale,drag.center[1]-(e.clientY-drag.y)*scale],zoom);layers.tiles.setAttribute('opacity','.6');});svg.addEventListener('pointerup',()=>{if(drag){drag=null;paint()}});svg.addEventListener('pointercancel',()=>{drag=null;paint()});
- const attribution=node('a','© OpenStreetMap');attribution.href='https://www.openstreetmap.org/copyright';attribution.className='transferAttribution';frame.append(attribution);section.append(toolbar,frame,controls,caption);
- const legend=node('p','Красная стрелка — направление к следующей остановке по базе рейса; изгибы дороги она не показывает. Серые точки — соседние одноимённые остановки; фиолетовые — другие выходы метро.','hint');section.append(legend);
+ const attribution=node('a','© 2ГИС');attribution.href='https://2gis.ru/';attribution.className='transferAttribution';frame.append(attribution);section.append(toolbar,frame,controls,caption);
+ const legend=node('p','Красная стрелка — направление к следующей остановке по базе рейса; изгибы дороги она не показывает. Серые точки — соседние одноимённые остановки; фиолетовые — другие выходы метро.','hint');if(ctx.boarding)section.append(legend);else section.append(node('p','Линия показывает рассчитанный пеший путь. Повороты — под картой.','hint'));
  if(state&&!exit&&ctx.station&&origin.name!=='Моё место на улице')section.append(node('p','? — координата станции, дверь выхода пока не подтверждена. На улице нажмите «Где я» и «Путь от моего места».','routeCaution'));
  fit();paint();transferMapView={updateFix(p){fix=p;drawFix()}};return section;
 }
 const transferWalkingPanel=walkingPanel;
 walkingPanel=function(guide,step){
- const ctx=transferContext(step);if(!ctx){transferWalkingPanel(guide,step);return;}
- const state=requestWalking(step),wrap=node('div',undefined,'transferGuide');transferReceipt(ctx,wrap);
+ const ctx=transferContext(step)||walkingMapContext(step);
+ const state=requestWalking(step),wrap=node('div',undefined,'transferGuide');if(ctx.boarding)transferReceipt(ctx,wrap);else destinationReceipt(ctx,step,wrap);
  if(state.exit)wrap.append(node('p','Выйдите из метро: '+(state.exit.ref?'выход № '+state.exit.ref:'дверь выхода')+' · «'+(ctx.station?.name||step.from.name)+'».','exitInstruction'));
  wrap.append(makeTransferMap(ctx,state));guide.append(wrap);transferWalkingPanel(guide,step);
  guide.querySelector('.walkingScheme')?.remove();
  const intro=guide.querySelector('.walkIntro');if(intro&&state.exit)for(const p of intro.querySelectorAll('p'))p.textContent=p.textContent.replace('Точка А на схеме.','М — выбранный выход на карте.');
- const external=guide.querySelector('.navigationButton');if(external)external.textContent='Вести к этой остановке в 2ГИС';
+ const external=guide.querySelector('.navigationButton');if(external)external.textContent=ctx.boarding?'Вести к этой остановке в 2ГИС':'Вести до этого места в 2ГИС';
  updateTransferLocation();
 };
 const transferDrawGuidance=drawGuidance;
@@ -104,4 +116,4 @@ guidanceSteps=function(p){return transferGuidanceSteps(p).map(s=>{const station=
 const transferWalkingEndpoints=walkingEndpoints;
 walkingEndpoints=function(step){const result=transferWalkingEndpoints(step),station=METRO.get(step.from?.metroId||step.from?.id);if(!station||!step.exitChoice)return result;const exit=(WALKING_ENTRANCES[station.name]||[]).find(e=>e.osmId===step.exitChoice&&e.entrance!=='entrance'&&e.entrance!=='no'&&!['no','private'].includes(e.access));return exit?{...result,a:exit,exit}:result};
 const walkingPanelWithMap=walkingPanel;
-walkingPanel=function(guide,step){walkingPanelWithMap(guide,step);const ctx=transferContext(step);if(!ctx?.station||step.from.name==='Моё место на улице')return;const exits=(WALKING_ENTRANCES[ctx.station.name]||[]).filter(e=>e.entrance!=='entrance'&&e.entrance!=='no'&&!['no','private'].includes(e.access));if(!exits.length)return;const section=node('details',undefined,'transferExitChoices');section.append(node('summary','Выход метро на карте · '+exits.length+' '+(exits.length===1?'точка':'точки')),node('p','Координаты выходов из OpenStreetMap. Список может быть неполным; открытие дверей сейчас не проверено. По умолчанию выбрана ближайшая к остановке точка по прямой.','hint'));const state=requestWalking(step);for(const exit of exits){const row=node('div',undefined,'exitChoiceRow'),b=node('button',(exit.ref?'Выход № '+exit.ref:'Выход без номера')+' · '+exit.lat.toFixed(5)+', '+exit.lon.toFixed(5),'secondaryWide');const house=nearestHouse(exit,90);if(house)b.append(node('small','Ориентир рядом: '+house.address));b.setAttribute('aria-pressed',String(state.exit?.osmId===exit.osmId));b.onclick=()=>{guidancePlan.exitChoices={...guidancePlan.exitChoices,[ctx.station.id]:exit.osmId};delete guidancePlan.walkOrigins?.[guidanceIndex];walkingIndex=0;walkingActiveKey='';rememberJourney();drawGuidance()};const link=node('a','Источник точки');link.href=exit.source||'https://www.openstreetmap.org/node/'+exit.osmId;row.append(b,link);section.append(row)}const before=guide.querySelector('.walkIntro');guide.insertBefore(section,before||null)};
+walkingPanel=function(guide,step){walkingPanelWithMap(guide,step);const ctx=transferContext(step)||walkingMapContext(step);if(!ctx?.station||step.from.name==='Моё место на улице')return;const exits=(WALKING_ENTRANCES[ctx.station.name]||[]).filter(e=>e.entrance!=='entrance'&&e.entrance!=='no'&&!['no','private'].includes(e.access));if(!exits.length)return;const section=node('details',undefined,'transferExitChoices');section.append(node('summary','Выход метро на карте · '+exits.length+' '+(exits.length===1?'точка':'точки')),node('p','Координаты выходов из OpenStreetMap. Список может быть неполным; открытие дверей сейчас не проверено. По умолчанию выбрана ближайшая к остановке точка по прямой.','hint'));const state=requestWalking(step);for(const exit of exits){const row=node('div',undefined,'exitChoiceRow'),b=node('button',(exit.ref?'Выход № '+exit.ref:'Выход без номера')+' · '+exit.lat.toFixed(5)+', '+exit.lon.toFixed(5),'secondaryWide');const house=nearestHouse(exit,90);if(house)b.append(node('small','Ориентир рядом: '+house.address));b.setAttribute('aria-pressed',String(state.exit?.osmId===exit.osmId));b.onclick=()=>{guidancePlan.exitChoices={...guidancePlan.exitChoices,[ctx.station.id]:exit.osmId};delete guidancePlan.walkOrigins?.[guidanceIndex];walkingIndex=0;walkingActiveKey='';rememberJourney();drawGuidance()};const link=node('a','Источник точки');link.href=exit.source||'https://www.openstreetmap.org/node/'+exit.osmId;row.append(b,link);section.append(row)}const before=guide.querySelector('.walkIntro');guide.insertBefore(section,before||null)};
