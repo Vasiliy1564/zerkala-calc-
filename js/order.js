@@ -77,7 +77,7 @@ $('order-items').addEventListener('change',function(e){if(!e.target.matches('[da
 $('order-calculate').onclick=function(){render();$('order-summary').scrollIntoView({behavior:'smooth',block:'center'});};
 $('order-clear').onclick=function(){if(window.confirm('Очистить все зеркала в заказе?')){items=[];resetEdit();render();$('order-status').textContent='Заказ очищен.';}};
 window.getMirrorOrderText=function(){return window.MirrorOrderView.quote(items,calculate(),'Заказ зеркал');};
-$('order-send').onclick=function(){var text=window.getMirrorOrderText();if(text)window.open('https://max.ru/u/f9LHodD0cOJCsHfbfog1RuUGjeMCEw_wI5D3w-uzWYe4wj6KqPXR9YOSHA8?text='+encodeURIComponent(text),'_blank','noopener');};
+$('order-send').onclick=function(){var text=window.getMirrorOrderText();if(text)window.open('https://max.ru/id262308371005_bot?text='+encodeURIComponent(text),'_blank','noopener');};
 try{var saved=JSON.parse(localStorage.getItem(key)||'[]');if(Array.isArray(saved))items=saved.filter(function(item){return item&&Number.isInteger(item.qty)&&item.qty>0&&item.qty<=999&&item.data&&item.data.mirror&&Array.isArray(item.data.rows)&&Number.isFinite(item.data.total);});}catch(e){items=[];}resetEdit();render();
 })();
 

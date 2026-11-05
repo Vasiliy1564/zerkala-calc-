@@ -853,7 +853,7 @@ html{scroll-padding-bottom:100px}body{padding-bottom:100px!important}.action-bar
       </div>
       <div class="contact-meta">
         <div><span>Позвоните нам</span><a href="tel:+79340298528">+7 (934) 029-85-28</a><a href="tel:+79268677809">+7 (926) 867-78-09</a></div>
-        <div><span>Оформить заказ онлайн</span><a href="https://max.ru/u/f9LHodD0cOJCsHfbfog1RuUGjeMCEw_wI5D3w-uzWYe4wj6KqPXR9YOSHA8" target="_blank" rel="noopener">MAX · заявка</a></div>
+        <div><span>Оформить заказ онлайн</span><a href="https://max.ru/id262308371005_bot" target="_blank" rel="noopener">MAX · заявка</a></div>
         <div><span>Наше объявление на Авито</span><a href="https://www.avito.ru/murino/mebel_i_interer/zerkalo_s_podsvetkoy_na_zakaz_7687240760" target="_blank" rel="noopener">Зеркало LED · сенсор, пульт, взмах</a></div>
         <div><span>География выезда</span><a href="#faq">Мурино · Бугры · Новое Девяткино · Санкт-Петербург</a></div>
       </div>
@@ -861,7 +861,7 @@ html{scroll-padding-bottom:100px}body{padding-bottom:100px!important}.action-bar
     <div class="footer">
       <div class="container">
         <span>© <span id="year"></span> ЗЕРКАЛА ПРО. Зеркала на заказ.</span>
-        <span><a href="#top">Политика конфиденциальности</a> · <a href="https://max.ru/u/f9LHodD0cOJCsHfbfog1RuUGjeMCEw_wI5D3w-uzWYe4wj6KqPXR9YOSHA8" target="_blank" rel="noopener">MAX · заявка онлайн</a></span>
+        <span><a href="#top">Политика конфиденциальности</a> · <a href="https://max.ru/id262308371005_bot" target="_blank" rel="noopener">MAX · заявка онлайн</a></span>
       </div>
     </div>
   </footer>
@@ -955,7 +955,7 @@ $('order-items').addEventListener('change',function(e){if(!e.target.matches('[da
 $('order-calculate').onclick=function(){render();$('order-summary').scrollIntoView({behavior:'smooth',block:'center'});};
 $('order-clear').onclick=function(){if(window.confirm('Очистить все зеркала в заказе?')){items=[];resetEdit();render();$('order-status').textContent='Заказ очищен.';}};
 window.getMirrorOrderText=function(){return window.MirrorOrderView.quote(items,calculate(),'Заказ зеркал');};
-$('order-send').onclick=function(){var text=window.getMirrorOrderText();if(text)window.open('https://max.ru/u/f9LHodD0cOJCsHfbfog1RuUGjeMCEw_wI5D3w-uzWYe4wj6KqPXR9YOSHA8?text='+encodeURIComponent(text),'_blank','noopener');};
+$('order-send').onclick=function(){var text=window.getMirrorOrderText();if(text)window.open('https://max.ru/id262308371005_bot?text='+encodeURIComponent(text),'_blank','noopener');};
 try{var saved=JSON.parse(localStorage.getItem(key)||'[]');if(Array.isArray(saved))items=saved.filter(function(item){return item&&Number.isInteger(item.qty)&&item.qty>0&&item.qty<=999&&item.data&&item.data.mirror&&Array.isArray(item.data.rows)&&Number.isFinite(item.data.total);});}catch(e){items=[];}resetEdit();render();
 })();
 
