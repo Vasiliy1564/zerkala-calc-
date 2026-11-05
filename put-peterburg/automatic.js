@@ -28,12 +28,12 @@ function addConnectorPlans(from,to,save){
     const gateway=BUS.get(gatewayId),near=nearest(gateway,TRANSIT.metro.filter(s=>!s.closed),450,1)[0];
     if(!near)continue;
     try{
-     const m=metroPlan({...station,metroId:station.id},{...near.s,metroId:near.s.id});
-     const metro=reverse?metroPlan({...near.s,metroId:near.s.id},{...station,metroId:station.id}):m;
+     const m=metroPlan({...station,metroId:station.id},{...near.s,metroId:near.s.id},'time');
+     const metro=reverse?metroPlan({...near.s,metroId:near.s.id},{...station,metroId:station.id},'time'):m;
      const ride={type:'ride',route:r.id,transport:r.transport||'bus',from:r.stops[i],to:r.stops[j],stops:r.stops.slice(i,j+1)};
      const walk={type:'walk',from:reverse?gateway.id:near.s.id,stopTo:reverse?near.s.id:gateway.id,meters:near.d,pointFrom:reverse?gateway:near.s,pointTo:reverse?near.s:gateway,unverified:true};
      const p=routeMetrics({mode:'all',start:reverse?placeId:metro.start,end:reverse?metro.end:placeId,access:reverse?ends.get(placeId):distance(from,station),egress:reverse?distance(to,station):ends.get(placeId),legs:reverse?[ride,walk,...metro.legs]:[...metro.legs,walk,ride]});
-     if(!best||p.metrics.walk<best.metrics.walk||p.metrics.walk===best.metrics.walk&&p.metrics.stops<best.metrics.stops)best=p;
+     if(!best||planTimeScore(p)<planTimeScore(best)||planTimeScore(p)===planTimeScore(best)&&p.metrics.walk<best.metrics.walk)best=p;
     }catch(e){}
    }
    if(best)save(best);
@@ -41,24 +41,42 @@ function addConnectorPlans(from,to,save){
  }
 }
 function smartRouteOptions(rawFrom,rawTo,preference='all'){
- const from=autoPoint(rawFrom,true),to=autoPoint(rawTo,false),out=[],seen=new Set();
- const save=p=>{if(!p)return;routeMetrics(p);if(p.metrics.walk>3500)return;const key=routeKey(p);if(!seen.has(key)){seen.add(key);out.push(p)}};
+ const from=autoPoint(rawFrom,true),to=autoPoint(rawTo,false),out=[],seen=new Map();
+ // Profiles can reach the same stops via different metro transfers. Keep the
+ // better complete journey, rather than whichever profile happened to run first.
+ const save=p=>{if(!p)return;routeMetrics(p);if(p.metrics.walk>3500)return;const key=routeKey(p),index=seen.get(key);if(index===undefined){seen.set(key,out.length);out.push(p)}else{const previous=out[index];if(planTimeScore(p)<planTimeScore(previous)||planTimeScore(p)===planTimeScore(previous)&&p.metrics.walk<previous.metrics.walk)out[index]=p}};
  try{const p=simpleMetroPlan(from,to);if(p.access<=1000&&p.egress<=1000)save(p)}catch(e){}
+ // Enumerate nearby metro endpoints instead of locking only the nearest station.
+ for(const a of (from.metroId?[{s:METRO.get(from.metroId),d:0}]:nearest(from,TRANSIT.metro.filter(s=>!s.closed),1600,4)))for(const b of (to.metroId?[{s:METRO.get(to.metroId),d:0}]:nearest(to,TRANSIT.metro.filter(s=>!s.closed),1600,4))){for(const profile of ['time','transfers'])try{const p=metroPlan({...a.s,metroId:a.s.id},{...b.s,metroId:b.s.id},profile);p.access=a.d;p.egress=b.d;save(p)}catch(e){}}
  directPlans(from,to,AUTO_KINDS).forEach(save);
  for(const profile of ['time','transfers','walk','stops']){try{save(advancedPlan(from,to,AUTO_KINDS,true,profile))}catch(e){}}
  addConnectorPlans(from,to,save);
  if(preference==='metro'&&distance(from,to)>100)for(const maxWalk of [700,Infinity]){let found=null;for(const profile of ['time','transfers']){try{found=advancedPlan(from,to,AUTO_KINDS,true,profile,new Set(),'metro',maxWalk)}catch(e){}if(found)break}if(found){save(found);break}}
 
  const hasPreference=p=>p.legs.some(l=>l.type==='ride'&&(l.transport|| (l.line?'metro':'bus'))===preference);
- const compare=(a,b)=>(a.metrics.time.min+a.metrics.time.max)-(b.metrics.time.min+b.metrics.time.max)||a.metrics.transfers-b.metrics.transfers||a.metrics.walk-b.metrics.walk||Number(hasPreference(b))-Number(hasPreference(a));
+ // Generalized ranking discourages extra changes and surface boardings.
+ // Penalties are selection weights, not timetable or waiting-time predictions.
+ const rank=p=>planTimeScore(p)+p.legs.filter(l=>l.type==='ride'&&!l.line).length*10;
+ const compare=(a,b)=>rank(a)-rank(b)||a.metrics.transfers-b.metrics.transfers||a.metrics.walk-b.metrics.walk||Number(hasPreference(b))-Number(hasPreference(a));
  // Metro is the core of this mode; buses remain available at both ends.
  const metroPlans=out.filter(p=>hasPreference(p));
  const assisted=preference==='metro'&&metroPlans.some(p=>p.access<=700&&p.egress<=700);
  out.sort((a,b)=>(preference==='metro'?Number(hasPreference(b))-Number(hasPreference(a)):0)||(assisted?Number(b.access<=700&&b.egress<=700)-Number(a.access<=700&&a.egress<=700):0)||compare(a,b));
- return out.slice(0,6);
+ // First retain distinct services (101 and 101Э are different services).
+ // Several boarding/alighting variants of one service must not fill every slot.
+ const serviceKey=p=>p.legs.filter(l=>l.type==='ride').map(l=>l.line?'metro:'+l.line:(l.transport||'bus')+':'+patternById.get(l.route).ref).join('|');
+ const selected=[],services=new Set();
+ for(const p of out){const key=serviceKey(p);if(services.has(key))continue;services.add(key);selected.push(p);if(selected.length===6)break}
+ if(selected.length<6)for(const p of out){if(!selected.includes(p))selected.push(p);if(selected.length===6)break}
+ // Preserve a metro-only alternative even when many surface variants rank ahead.
+ const underground=out.find(p=>p.legs.some(l=>l.type==='ride'&&l.line)&&p.legs.every(l=>l.type!=='ride'||l.line));
+ if(underground&&!selected.includes(underground))selected[selected.length-1]=underground;
+ const fewer=out.filter(p=>p.legs.some(l=>l.type==='ride'&&l.line)&&p.legs.every(l=>l.type!=='ride'||l.line)).sort((a,b)=>a.metrics.transfers-b.metrics.transfers||compare(a,b))[0];if(fewer&&!selected.includes(fewer))selected[selected.length-1]=fewer;
+ return selected;
 }
 
-function shortRoute(p){return p.legs.filter(l=>l.type==='ride').map(l=>l.line?'Метро '+l.line:transportName(l.transport)+' '+patternById.get(l.route).ref).join(' → ')}
+function arrivalLabel(p){const leg=p.legs.filter(l=>l.type==='ride').at(-1);return leg?'Выйти: «'+planTable(leg).get(leg.to).name+'»':'Пешком до места назначения'}
+function shortRoute(p){return p.legs.filter(l=>l.type==='ride').map(l=>l.line?'Метро '+l.line:transportName(l.transport)+' '+patternById.get(l.route).ref).join(' → ')||'Пешком'}
 function metroTransferSummary(p){
  const metro=p.legs.filter(l=>l.type==='ride'&&l.line);
  if(!metro.length)return '';
@@ -75,7 +93,7 @@ function showSmartOptions(options){
   for(const [i,p] of options.entries()){
    if(i===current)continue;
    const b=node('button',undefined,'routeChoice');b.setAttribute('aria-pressed','false');
-   b.append(node('strong',shortRoute(p)),node('small','≈ '+timeRange(p.metrics.time)+' · '+transferCountText(p.metrics.transfers)));
+   b.append(coloredRoute(p,'strong'),node('small','≈ '+timeRange(p.metrics.time)+' · '+transferCountText(p.metrics.transfers)),node('small','Пешком суммарно: около '+p.metrics.walk+' м по прямой'),node('small',arrivalLabel(p)));
    b.onclick=()=>{more.open=false;renderPlan(p);alternatives(i);say('Маршрут выбран.');$('results').scrollIntoView({behavior:'smooth',block:'start'})};more.append(b);
   }
   choices.append(more);
@@ -95,10 +113,10 @@ function guidanceSteps(p){
  const steps=[],rides=p.legs.filter(l=>l.type==='ride');
  const first=rides[0];if(!first)return steps;
  const firstStop=planTable(first).get(first.from);
- if(p.access>=35)steps.push({title:'Дойдите до места посадки',text:firstStop.name+'. Около '+Math.round(p.access)+' м по прямой; путь по улицам может быть длиннее.',point:firstStop,from:points.from,kind:'pedestrian',done:'Я на месте посадки'});
+ if(p.access>=35)steps.push({title:'Дойдите до места посадки',text:firstStop.name+'. Около '+Math.round(p.access)+' м по прямой; путь по улицам может быть длиннее.',point:firstStop,from:points.from,nextRide:first,kind:'pedestrian',done:'Я на месте посадки'});
  for(let i=0;i<p.legs.length;i++){
   const leg=p.legs[i],next=p.legs.slice(i+1).find(l=>l.type==='ride');
-  if(leg.type==='transfer'){steps.push({title:'Пересадка в метро',text:leg.instruction||('По указателям перейдите со станции «'+METRO.get(leg.from).name+'» на «'+METRO.get(leg.to).name+'», линия № '+METRO.get(leg.to).line+'.'),point:METRO.get(leg.to),done:'Я перешёл на нужную линию'});continue}
+  if(leg.type==='transfer'){steps.push({title:'Пересадка в метро',text:leg.instruction||('По указателям перейдите со станции «'+METRO.get(leg.from).name+'» на «'+METRO.get(leg.to).name+'», линия № '+METRO.get(leg.to).line+'.'),point:METRO.get(leg.to),line:METRO.get(leg.to).line,fromLine:METRO.get(leg.from).line,done:'Я перешёл на нужную линию'});continue}
   if(leg.type==='walk'){
    const a=leg.pointFrom||BUS.get(leg.from)||METRO.get(leg.from),b=leg.pointTo||BUS.get(leg.stopTo)||METRO.get(leg.stopTo);if(!a||!b)continue;
    steps.push({title:METRO.has(a.id)?'Выйдите из метро к остановке':METRO.has(b.id)?'Пройдите к метро':'Перейдите на следующую остановку',text:(METRO.has(a.id)?stationExitHint(a,next)+' ':'')+a.name+' → '+b.name+'. Около '+Math.round(leg.meters)+' м по прямой. Пешеходный путь проверьте на карте.',point:b,from:a,nextRide:next,kind:'pedestrian',done:'Я у места пересадки'});continue;
@@ -108,8 +126,8 @@ function guidanceSteps(p){
   const service=leg.line?'метро, линия № '+leg.line+' · '+LINES.get(leg.line).name:transportName(leg.transport)+(leg.transport==='rail'?'':' № '+r.ref);
   const direction=leg.line?metroDirection(leg).terminus:leg.direction||r?.to;
   const boarding=leg.boardPlatform?' Зал «'+leg.boardPlatform.station+'-'+leg.boardPlatform.hall+'».':'';
-  steps.push({title:'Сядьте: '+service,text:(leg.line?'Станция посадки: «':'Остановка посадки: «')+a.name+'».'+boarding+'\nВ сторону конечной '+(leg.line?'станции':'остановки')+' «'+direction+'».\nЕхать '+(leg.stops.length-1)+' остановок.\n'+(leg.line?'Выйти на станции: «':'Выйти на остановке: «')+b.name+'».',point:a,done:'Я сел — что дальше?'});
-  steps.push({title:'Выходите: «'+b.name+'»',text:'Ехать '+(leg.stops.length-1)+' остановок. '+(next?'Здесь выйдите и следуйте следующему шагу пересадки.':'Здесь выйдите — дальше к месту назначения.'),point:b,leg,done:'Я вышел'});
+  steps.push({title:'Сядьте: '+service,text:(leg.line?'Станция посадки: «':'Остановка посадки: «')+a.name+'».'+boarding+'\nВ сторону конечной '+(leg.line?'станции':'остановки')+' «'+direction+'».\nЕхать '+(leg.stops.length-1)+' остановок.\n'+(leg.line?'Выйти на станции: «':'Выйти на остановке: «')+b.name+'».',point:a,line:leg.line,boardingRide:leg,done:'Я сел — что дальше?'});
+  steps.push({title:'Выходите: «'+b.name+'»',text:'Ехать '+(leg.stops.length-1)+' остановок. '+(next?'Здесь выйдите и следуйте следующему шагу пересадки.':'Здесь выйдите — дальше к месту назначения.'),point:b,leg,line:leg.line,done:'Я вышел'});
  }
  steps.push({title:'Дойдите до места назначения',text:points.to.name+(p.egress>=35?'. Около '+Math.round(p.egress)+' м по прямой.':'. Вы у места назначения.'),point:points.to,from:planTable(rides.at(-1)).get(rides.at(-1).to),kind:'pedestrian',done:'Завершить поездку'});
  return steps;

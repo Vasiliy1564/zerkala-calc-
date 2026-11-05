@@ -1,5 +1,7 @@
 /* Indexed lookup across the entire regional snapshot. No house/entrance inference. */
 let regionalIndex=null;
+const PLACE_CATEGORIES={zoo:['зоопарк'],museum:['музей'],park:['парк'],aquarium:['океанариум','аквариум'],theatre:['театр'],cinema:['кинотеатр'],mall:['торговый центр','трц'],hospital:['больница'],clinic:['клиника','поликлиника'],pharmacy:['аптека'],restaurant:['ресторан'],cafe:['кафе'],hotel:['отель','гостиница'],supermarket:['супермаркет'],school:['школа'],kindergarten:['детский сад'],university:['университет'],library:['библиотека'],stadium:['стадион'],airport:['аэропорт'],beach:['пляж'],railway_station:['вокзал'],ferry_terminal:['причал','паром'],marina:['пристань'],viewpoint:['смотровая площадка']};
+function placeSearchTokens(p){return addressWords([p.name,...(p.aliases||[]),p.locality,p.street,p.house,...(PLACE_CATEGORIES[p.category]||[])].join(' ')).split(' ').filter(Boolean)}
 function regionalSearchIndex(){
  if(regionalIndex)return regionalIndex;
  if(typeof REGION_SEARCH_INDEX!=='undefined'&&typeof PLACE_DATA!=='undefined'){const r=REGION_SEARCH_INDEX;regionalIndex={labels:r.labels.map((l,i)=>({...l,city:HOUSE_DATA.labels[i][0],street:HOUSE_DATA.labels[i][1]})),houseNumbers:new Map(Object.entries(r.houseNumbers)),prefix:new Map(Object.entries(r.prefix)),places:r.places.map((p,i)=>Object.assign(PLACE_DATA.places[i],p)),localityKeys:r.localityKeys,houseKeys:r.houseKeys};return regionalIndex}
@@ -8,18 +10,26 @@ function regionalSearchIndex(){
  const add=(key,type,id)=>{const k=type+':'+key;if(!prefix.has(k))prefix.set(k,[]);prefix.get(k).push(id)};
  labels.forEach((l,i)=>{for(const t of new Set(l.tokens)){if(t.length>=2)add(t.slice(0,3),'label',i)}for(const t of addressWords(l.city).split(' ')){if(t)localities.add(t)}});
  HOUSE_DATA.houses.forEach((h,i)=>{const hn=canonicalHouse(h[3]),base=houseBase(hn);for(const key of new Set([hn,base])){if(!houseNumbers.has(key))houseNumbers.set(key,[]);houseNumbers.get(key).push(i)}});
- const places=(typeof PLACE_DATA==='undefined'?[]:PLACE_DATA.places).map(p=>({...p,searchNames:[p.name,...(p.aliases||[])].map(addressWords),tokens:addressWords([p.name,...(p.aliases||[]),p.locality,p.street,p.house].join(' ')).split(' ').filter(Boolean)}));
+ const places=(typeof PLACE_DATA==='undefined'?[]:PLACE_DATA.places).map(p=>({...p,searchNames:[p.name,...(p.aliases||[])].map(addressWords),tokens:placeSearchTokens(p)}));
  places.forEach((p,i)=>{for(const t of new Set(p.tokens)){if(t.length>=2)add(t.slice(0,3),'place',i)}});
  regionalIndex={labels,houseNumbers,localities,prefix,places,localityKeys:[...new Set(labels.flatMap(l=>l.city.split(',').filter(x=>!streetType(x)).map(addressWords)).filter(x=>x.length>=4))].sort((a,b)=>b.length-a.length)};return regionalIndex;
 }
 function stripKnownLocality(tokens){const q=tokens.join(' ');for(const k of regionalSearchIndex().localityKeys){if(q.startsWith(k+' ')&&q.length-k.length>3)return q.slice(k.length+1).split(' ');if(q.endsWith(' '+k)&&q.length-k.length>3)return q.slice(0,-k.length-1).split(' ')}return tokens}
 function candidateIndices(tokens,type,allCount){const idx=regionalSearchIndex(),lists=tokens.filter(t=>t.length>=3).map(t=>idx.prefix.get(type+':'+t.slice(0,3))||[]);if(!lists.length)return Array.from({length:allCount},(_,i)=>i);return lists.reduce((a,b)=>a.length<=b.length?a:b)}
+// An unqualified number may have several explicitly recorded letters/corpora.
+// Offer their full addresses for selection; never invent a point for the whole property.
+function houseFamily(s){return canonicalHouse(s).match(/^(\d+)(?=[а-яa-z]|$)/u)?.[1]||''}
+function houseFamilyRows(house){
+ if(!/^\d+$/.test(house))return [];
+ const idx=regionalSearchIndex();if(!idx.houseFamilies){idx.houseFamilies=new Map();HOUSE_DATA.houses.forEach((h,i)=>{const key=houseFamily(h[3]);if(!key)return;if(!idx.houseFamilies.has(key))idx.houseFamilies.set(key,[]);idx.houseFamilies.get(key).push(i)})}
+ return idx.houseFamilies.get(house)||[];
+}
 function localAddressMatches(query,limit=20){const seen=new Set();for(const part of [streetParts(query),...knownAddressParts(query)]){const key=part.text+'|'+part.house;if(seen.has(key))continue;seen.add(key);const results=localAddressPartMatches(query,part,limit);if(results.length)return results}return []}
 function localAddressPartMatches(query,part,limit){
  if(!part.house)return [];const house=canonicalHouse(part.house),base=houseBase(house);
  const tokens=addressWords(part.text).split(' ').filter(Boolean);if(!tokens.length)return [];
  const queryType=streetType(part.text.split(',').at(-1)),idx=regionalSearchIndex(),requestedSpb=/(?:^|\s)(?:санкт петербург|спб)(?:\s|$)/.test(norm(query)),rows=idx.houseNumbers.get(house)||idx.houseNumbers.get(base)||[],results=[],seen=new Set();
- for(const i of rows){const h=HOUSE_DATA.houses[i],label=idx.labels[h[2]],hn=idx.houseKeys?idx.houseKeys[i]:canonicalHouse(h[3]);if(queryType&&queryType!==label.type)continue;if(hn!==house&&!(house===base&&(hn.startsWith(base+'к')||hn.startsWith(base+'с'))))continue;
+ for(const i of new Set([...rows,...houseFamilyRows(house)])){const h=HOUSE_DATA.houses[i],label=idx.labels[h[2]],hn=idx.houseKeys?idx.houseKeys[i]:canonicalHouse(h[3]);if(queryType&&queryType!==label.type)continue;if(hn!==house&&!(house===base&&(hn.startsWith(base+'к')||hn.startsWith(base+'с')))&&!(/^\d+$/.test(house)&&houseFamily(hn)===house))continue;
   if(!tokens.every(t=>label.tokens.includes(t)))continue;
   if(requestedSpb&&label.cityKey&&!label.cityKey.includes('санкт петербург'))continue;
   // "Садовая" is not "Малая Садовая" or "2-я Садовая" unless the full street name was supplied.
@@ -33,14 +43,23 @@ function localAddressPartMatches(query,part,limit){
 function localPlaceMatches(query,limit=20){
  const q=addressWords(query);if(q.length<2)return [];const tokens=q.split(' '),idx=regionalSearchIndex(),out=[];
  for(const i of candidateIndices(tokens,'place',idx.places.length)){const p=idx.places[i];if(!tokens.every(t=>p.tokens.some(k=>k.startsWith(t))))continue;
-  const score=p.searchNames.includes(q)?0:p.searchNames.some(n=>n.startsWith(q))?1:2;
+  const score=p.searchNames.includes(q)?0:p.searchNames.some(n=>n.startsWith(q))?1:p.searchNames.some(n=>tokens.every(t=>n.split(' ').some(w=>w.startsWith(t))))?1.5:2;
   out.push({...p,name:[p.name,p.locality,p.street,p.house].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', '),score});
  }
- out.sort((a,b)=>a.score-b.score||Number(b.kind==='settlement')-Number(a.kind==='settlement')||a.name.length-b.name.length);const seen=new Set();return out.filter(p=>{const k=p.osmId;if(seen.has(k))return false;seen.add(k);return true}).slice(0,limit);
+ if(!out.length&&!streetParts(query).house&&tokens.every(t=>t.length>=4))out.push(...fuzzyPlaceMatches(tokens,idx));
+ const categoryMatch=p=>(PLACE_CATEGORIES[p.category]||[]).some(n=>addressWords(n)===q||(tokens.length===1&&q.length>=4&&metroEditDistance(addressWords(n),q)<=1));
+ out.sort((a,b)=>a.score-b.score||Number(categoryMatch(b))-Number(categoryMatch(a))||Number(b.kind==='settlement')-Number(a.kind==='settlement')||a.name.length-b.name.length);const seen=new Set();return out.filter(p=>{const k=p.osmId;if(seen.has(k))return false;seen.add(k);return true}).slice(0,limit);
 }
+function fuzzyPlaceMatches(tokens,idx){
+ if(!idx.words){idx.words=new Map();idx.places.forEach((p,i)=>{for(const word of new Set(p.tokens)){if(word.length<4)continue;if(!idx.words.has(word))idx.words.set(word,[]);idx.words.get(word).push(i)}})}
+ const lists=tokens.map(t=>{const ids=new Set();for(const [word,rows] of idx.words){const max=t.length>=8?2:1;if(Math.abs(word.length-t.length)>max)continue;const d=metroEditDistance(t,word);if(d<=max&&d/Math.max(word.length,t.length)<=.25)for(const i of rows)ids.add(i)}return ids});
+ if(lists.some(s=>!s.size))return [];const smallest=lists.reduce((a,b)=>a.size<=b.size?a:b),out=[];
+ for(const i of smallest){if(!lists.every(s=>s.has(i)))continue;const p=idx.places[i];out.push({...p,name:[p.name,p.locality,p.street,p.house].filter(Boolean).join(', '),score:Math.min(...p.searchNames.map(n=>tokens.every(t=>n.split(' ').some(w=>Math.abs(w.length-t.length)<=(t.length>=8?2:1)&&metroEditDistance(t,w)<=(t.length>=8?2:1)))?(n.split(' ').length===tokens.length?3:3.2):4)),corrected:true})}return out;
+}
+function offerNamedPlaces(f){const items=localPlaceMatches($(f).value.trim());if(!items.length)return false;const box=$(f+'List');box.replaceChildren();appendPiers(f,items);const online=node('button','Искать другие места через интернет');online.onclick=()=>searchPlace(f,true,true);box.append(online);$('go').disabled=false;say(items.some(p=>p.corrected)?'Возможно, в названии опечатка. Выберите нужное место из списка.':'Выберите нужное место из списка — затем построим маршрут.');return true}
 function coordinatePoint(query){const m=String(query).trim().match(/^([+-]?\d{1,2}\.\d+)\s*[,;\s]\s*([+-]?\d{1,3}\.\d+)$/);if(!m)return null;const lat=Number(m[1]),lon=Number(m[2]);if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return null;return {name:lat+', '+lon,lat,lon,kind:'address',source:'coordinates'}}
 function appendLocalAddresses(f,items){const box=$(f+'List');for(const p of items){const b=node('button');const duplicate=items.some(x=>x!==p&&norm(x.name)===norm(p.name));b.append(node('strong',p.name),node('small',p.locality?'Дом из встроенной базы'+(duplicate?' · '+p.lat.toFixed(4)+', '+p.lon.toFixed(4):' · выбрать'):'Дом · населённый пункт не указан · '+p.lat.toFixed(4)+', '+p.lon.toFixed(4)));b.onclick=()=>pick(f,p);box.append(b)}}
-function offerLocalAddress(f){const items=localAddressMatches($(f).value.trim());if(!items.length)return false;const exact=items.filter(p=>p.exactHouse);if(exact.length===1){pick(f,exact[0]);return true}const box=$(f+'List');box.replaceChildren();appendLocalAddresses(f,exact.length?exact:items);const online=node('button','Искать адрес через интернет');online.onclick=()=>searchPlace(f,true,true);box.append(online);$('go').disabled=false;say('Выберите населённый пункт, дом и корпус из списка.');return true}
+function offerLocalAddress(f){const items=localAddressMatches($(f).value.trim());if(!items.length)return false;const exact=items.filter(p=>p.exactHouse);if(exact.length===1){pick(f,exact[0]);return true}const box=$(f+'List');box.replaceChildren();appendLocalAddresses(f,exact.length?exact:items);const online=node('button','Искать адрес через интернет');online.onclick=()=>searchPlace(f,true,true);box.append(online);$('go').disabled=false;say('Выберите нужное здание: населённый пункт, дом, корпус или литеру из списка.');return true}
 
 /* Pier names, addresses and map markers from the primary water-tour catalogue.
  * https://boattour.ru/ru/piers — retrieved 2026-10-30. Missing/zero and out-of-region coordinates excluded.
@@ -55,7 +74,30 @@ function pierMatches(query,limit=20){
  .filter(p=>{const words=pierWords(p.name).split(' ');return tokens.every(t=>words.some(w=>/\d/u.test(t)?w===t:w.startsWith(t)))})
  .sort((a,b)=>Number(pierWords(b.name.split(' — ')[0])===q)-Number(pierWords(a.name.split(' — ')[0])===q)||a.name.length-b.name.length).slice(0,limit);
 }
-function appendPiers(f,items){const box=$(f+'List');for(const p of items){const b=node('button');b.append(node('strong',p.name),node('small','Причал · точка посадки из каталога водных прогулок · выбрать'));b.onclick=()=>pick(f,{...p,kind:'address'});box.append(b)}}
-function offerPier(f){const q=$(f).value.trim(),items=pierMatches(q);if(!items.length||!isPierQuery(q))return false;$(f+'List').replaceChildren();if(items.length===1){pick(f,{...items[0],kind:'address'});return true}appendPiers(f,items);$('go').disabled=false;say('Выберите причал по названию и адресу.');return true}
+function appendPiers(f,items){const box=$(f+'List');for(const p of items){const b=node('button');b.append(node('strong',p.name),node('small',p.source==='pier-catalog'?'Причал · точка посадки из каталога водных прогулок · выбрать':'Место из встроенной базы · выбрать'));b.append(node('small',locationAddressText(p),'locationAddress'));b.onclick=()=>pick(f,{...p,kind:'address'});box.append(b)}}
+function offerPier(f){const q=$(f).value.trim(),items=localPlaceMatches(q);if(!items.length||!isPierQuery(q))return false;$(f+'List').replaceChildren();if(items.length===1){pick(f,{...items[0],kind:'address'});return true}appendPiers(f,items);$('go').disabled=false;say('Выберите причал по названию и адресу.');return true}
 const originalLocalPlaceMatches=localPlaceMatches;
-localPlaceMatches=function(query,limit=20){const piers=pierMatches(query,limit);if(isPierQuery(query))return piers;const other=originalLocalPlaceMatches(query,limit);return [...piers,...other].slice(0,limit)};
+function isPortPlace(p){return /^(?:port|harbour|ferry_terminal)$/.test(p.category||'')||/(?:морск|речн|пассажирск|грузов)[а-я ]*порт|порт[а-я ]*(?:морск|речн|пассажирск|грузов)/iu.test(p.name||'')}
+function isWaterPlace(p){return p.kind==='pier'||/^(?:pier|marina|ferry_terminal|harbour|port)$/.test(p.category||'')||/(?:^|[\s«"])(?:причал|пирс|пристань|порт)(?:[\s»,]|$)/iu.test(p.name||'')}
+localPlaceMatches=function(query,limit=20){
+ const piers=pierMatches(query,limit),portQuery=/(?:^|\s)порт(?:а|ы|у|ом|ов)?(?=\s|$)/iu.test(query);
+ const other=originalLocalPlaceMatches(query,portQuery?200:limit);
+ if(portQuery)other.sort((a,b)=>Number(isPortPlace(b))-Number(isPortPlace(a)));
+
+ const water=isPierQuery(query)?originalLocalPlaceMatches(pierWords(query),100).filter(isWaterPlace):[];
+ const ordered=isPierQuery(query)?[...piers,...other,...water]:[...other.filter(p=>p.score<2),...piers,...other.filter(p=>p.score>=2),...water];
+ const seen=new Set();return ordered.filter(p=>{const k=p.osmId||p.name;if(seen.has(k))return false;seen.add(k);return true}).slice(0,limit);
+};
+
+// Only explicit same-object addresses are used as a location's own address.
+let locationHouseByOsm=null;
+function locationAddressText(p){
+ if(!p)return '';
+ if(p.address)return 'Адрес: '+p.address;
+ if(p.street&&p.house)return 'Адрес: '+[p.locality,p.street,p.house].filter(Boolean).join(', ');
+ if(p.kind==='address'&&p.house)return 'Адрес: '+p.name;
+ if(!locationHouseByOsm){locationHouseByOsm=new Map(HOUSE_DATA.houses.map(h=>[h[4],h]))}
+ const h=p.osmId&&locationHouseByOsm.get(p.osmId);if(h){const label=HOUSE_DATA.labels[h[2]];return 'Адрес: '+[...label,h[3]].filter(Boolean).join(', ')}
+ const nearby=typeof nearestHouse==='function'?nearestHouse(p,150):null;
+ return 'Точный адрес не указан.'+(nearby?' Ближайший адрес-ориентир: '+nearby.address+' (около '+nearby.distanceMeters+' м).':p.locality?' '+p.locality+'.':'');
+}

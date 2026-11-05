@@ -1,14 +1,19 @@
+function applyMetroLine(el,line){const l=LINES.get(Number(line));if(!l)return el;el.classList.add('metroLine');el.style.setProperty('--metro-line-color',l.color);el.dataset.metroLine=String(line);return el}
+function coloredRoute(p,tag='span'){const el=node(tag,undefined,'coloredRoute');const rides=p.legs.filter(l=>l.type==='ride');rides.forEach((l,i)=>{if(i)el.append(document.createTextNode(' → '));const label=l.line?'Метро '+l.line:transportName(l.transport)+' '+patternById.get(l.route).ref,part=node('span',label);if(l.line)applyMetroLine(part,l.line);el.append(part)});return el}
 /* Journey-first interface. Existing transport/address engines remain the source of truth. */
 // Highlight route decisions without changing the instruction text.
-function routeInstruction(tag,text,className){
+function routeInstruction(tag,text,className,line=null){
  const el=node(tag,undefined,className);let offset=0;
  for(const match of text.matchAll(/«[^»]+»|лини[яи] № \d+|(?:автобус|трамвай|троллейбус)[а-я]* № [\dА-Яа-яЭэ]+/gi)){
-  el.append(document.createTextNode(text.slice(offset,match.index)),node('strong',match[0],'routeKey'));offset=match.index+match[0].length;
+  const mark=node('strong',match[0],'routeKey'),number=match[0].match(/лини[яи] № (\d+)/i);let markLine=number?Number(number[1]):line;
+  if(!markLine&&match[0].startsWith('«')){const name=match[0].slice(1,-1),stations=TRANSIT.metro.filter(s=>s.name===name);if(stations.length===1)markLine=stations[0].line}
+  if(markLine)applyMetroLine(mark,markLine);el.append(document.createTextNode(text.slice(offset,match.index)),mark);offset=match.index+match[0].length;
  }
  el.append(document.createTextNode(text.slice(offset)));return el;
 }
+const JOURNEY_PLANNER_VERSION='0.36';
 let walkingIndex=0,walkingActiveKey='',journeyFinished=false;
-function rememberJourney(){try{if(guidancePlan&&!journeyFinished)localStorage.setItem('put.journey.v24',JSON.stringify({plan:guidancePlan,points,index:guidanceIndex,walkingIndex,time:Date.now()}));}catch(e){}}
+function rememberJourney(){try{if(guidancePlan&&!journeyFinished)localStorage.setItem('put.journey.v24',JSON.stringify({plannerVersion:JOURNEY_PLANNER_VERSION,plan:guidancePlan,points,index:guidanceIndex,walkingIndex,time:Date.now()}));}catch(e){}}
 function forgetJourney(){try{localStorage.removeItem('put.journey.v24')}catch(e){}}
 function changeJourneyStep(n){guidanceIndex=n;walkingIndex=0;walkingActiveKey='';rememberJourney();drawGuidance();$('tripGuide')?.scrollIntoView({behavior:'smooth',block:'start'})}
 const originalClearGuidance=clearGuidance;
@@ -66,7 +71,7 @@ receive=function(type,data){receiveBeforeExperience(type,data);
  }
 };
 const stepsBeforeGps=guidanceSteps;
-guidanceSteps=function(p){return stepsBeforeGps(p).map((s,i)=>p.walkOrigins?.[i]?{...s,from:p.walkOrigins[i],text:'От вашего места до «'+s.point.name+'».'}:s)};
+guidanceSteps=function(p){return stepsBeforeGps(p).map((s,i)=>p.walkOrigins?.[i]?{...s,stationFrom:s.from,from:p.walkOrigins[i],text:'От вашего места до «'+s.point.name+'».'}:s)};
 function completeJourneyStep(){
  const steps=guidanceSteps(guidancePlan);if(guidanceIndex<steps.length-1){changeJourneyStep(guidanceIndex+1);return;}
  journeyFinished=true;forgetJourney();const guide=$('tripGuide');guide.replaceChildren(node('div','ВЫ ПРИШЛИ','eyebrow'),node('h2','Поездка завершена'),node('p',points.to.name));const again=node('button','Построить новый маршрут','primary');again.onclick=()=>{clearRoute();document.querySelector('h1').scrollIntoView({behavior:'smooth'})};guide.append(again);
@@ -76,9 +81,9 @@ drawGuidance=function(){
  const steps=guidanceSteps(guidancePlan),step=steps[guidanceIndex];if(!step)return;
  guide.replaceChildren();const progress=node('div',undefined,'journeyProgress');progress.append(node('span','ШАГ '+(guidanceIndex+1)+' / '+steps.length),node('span',step.kind==='pedestrian'?'ПЕШКОМ':step.leg?'В ПУТИ':'ПОЕЗДКА'));
  const bar=node('div',undefined,'progressTrack'),fill=node('div');fill.style.width=((guidanceIndex+1)/steps.length*100)+'%';bar.append(fill);
- guide.append(progress,bar,node('h2',step.title));
+ const title=node('h2',step.title);if(step.line){applyMetroLine(title,step.line);guide.style.borderTopColor=LINES.get(step.line).color}else guide.style.borderTopColor='';guide.append(progress,bar,title);
  if(step.kind==='pedestrian')walkingPanel(guide,step);else{
-  guide.append(routeInstruction('p',step.text,'currentInstruction'));
+  guide.append(routeInstruction('p',step.text,'currentInstruction',step.line));
   if(step.leg){const stops=node('details',undefined,'stopDetails');stops.append(node('summary','Остановки по пути'),makeJourney(step.leg,planTable(step.leg),step.leg.transport));guide.append(stops)}
   guide.append(mapButton(step.point,'Где находится это место'));
  }
@@ -88,17 +93,17 @@ renderPlan=function(p){
  detailedRender(p);if(!p.legs.some(l=>l.type==='ride')||$('bus667Result'))return;
  guidancePlan=p;guidanceIndex=0;walkingIndex=0;walkingActiveKey='';journeyFinished=false;
  const results=$('results'),technical=node('details',undefined,'card routeDetails');technical.append(node('summary','Остановки, пересадки и данные маршрута'));while(results.firstChild)technical.append(results.firstChild);
- const summary=node('section',undefined,'tripSummary');summary.append(node('div','ВАША ПОЕЗДКА','eyebrow'),node('h2',shortRoute(p)),node('p',points.from.name+' → '+points.to.name,'routeEndpoints'),node('p','≈ '+timeRange(p.metrics.time)+' · '+transferCountText(p.metrics.transfers),'routeEstimate'),node('p','Оценка времени без ожидания и пробок. Пешие участки уточняются отдельно.','hint'));
+ const summary=node('section',undefined,'tripSummary');summary.append(node('div','ВАША ПОЕЗДКА','eyebrow'),coloredRoute(p,'h2'),node('p',points.from.name+' → '+points.to.name,'routeEndpoints'),node('p','Откуда: '+locationAddressText(points.from),'destinationAddress'),node('p','Куда: '+locationAddressText(points.to),'destinationAddress'),node('p','≈ '+timeRange(p.metrics.time)+' · '+transferCountText(p.metrics.transfers),'routeEstimate'),node('p','Пешком всего: около '+Math.round(p.metrics.walk)+' м по прямой. От последней остановки до цели: около '+Math.round(p.egress||0)+' м.','routeWalking'),node('p','Оценка времени без ожидания и пробок. Путь по улицам может быть длиннее.','hint'));
  const guide=node('section',undefined,'card guideCard');guide.id='tripGuide';guide.setAttribute('aria-live','polite');
  const itinerary=node('details',undefined,'card fullItinerary');itinerary.open=true;itinerary.append(node('summary','Весь путь по шагам'));
- const list=node('ol',undefined,'compactItinerary');guidanceSteps(p).forEach((s,i)=>{const li=node('li'),b=node('button');b.append(node('strong',s.title,'routeAction'),routeInstruction('span',s.text,'itineraryInstruction'));b.onclick=()=>{changeJourneyStep(i);document.body.classList.add('travelling')};li.append(b);list.append(li)});itinerary.append(list);
+ const list=node('ol',undefined,'compactItinerary');guidanceSteps(p).forEach((s,i)=>{const li=node('li'),b=node('button');const title=node('strong',s.title,'routeAction');if(s.line)applyMetroLine(title,s.line);b.append(title,routeInstruction('span',s.text,'itineraryInstruction',s.line));b.onclick=()=>{changeJourneyStep(i);document.body.classList.add('travelling')};li.append(b);list.append(li)});itinerary.append(list);
  results.append(summary,itinerary,guide,technical);document.body.classList.add('travelling');$('editJourney').hidden=false;$('editJourney').textContent='Изменить маршрут';drawGuidance();
 };
 // Keep the same input elements and listeners when switching between search and trip.
 const planner=node('section');planner.id='planner';const first=document.querySelector('main>h1'),resultsStart=$('choices');let part=first;while(part&&part!==resultsStart){const next=part.nextSibling;if(part!==$('status'))planner.append(part);part=next;}document.querySelector('header').after(planner);
 const edit=node('button','Изменить маршрут','editJourney');edit.id='editJourney';edit.hidden=true;edit.onclick=()=>{const travelling=document.body.classList.toggle('travelling');edit.textContent=travelling?'Изменить маршрут':'К поездке →';if(!travelling)$('from').scrollIntoView({behavior:'smooth',block:'center'})};document.querySelector('header').append(edit);
 try{const saved=JSON.parse(localStorage.getItem('put.journey.v24')||'null');if(saved&&Date.now()-saved.time<86400000&&saved.points?.from&&saved.points?.to&&Array.isArray(saved.plan?.legs)){
- const resume=node('section',undefined,'card resumeJourney');resume.append(node('strong','Продолжить поездку?'),node('p',saved.points.to.name));const yes=node('button','Продолжить с последнего шага','primary'),no=node('button','Новый маршрут','secondaryWide');yes.onclick=()=>{try{points=saved.points;for(const f of ['from','to'])$(f).value=points[f].name;renderPlan(saved.plan);activePlan=saved.plan;guidanceIndex=Math.max(0,Math.min(saved.index||0,guidanceSteps(saved.plan).length-1));walkingIndex=saved.walkingIndex||0;const restoredStep=guidanceSteps(saved.plan)[guidanceIndex];if(restoredStep?.kind==='pedestrian'){const end=walkingEndpoints(restoredStep);walkingActiveKey=walkingKey(end.a,end.b)}drawGuidance();resume.remove()}catch(e){forgetJourney();resume.remove();clearRoute();say('Сохранённую поездку не удалось восстановить. Постройте маршрут заново.')}};no.onclick=()=>{forgetJourney();resume.remove()};resume.append(yes,no);planner.prepend(resume);
+ const resume=node('section',undefined,'card resumeJourney');resume.append(node('strong','Продолжить поездку?'),node('p',saved.points.to.name));const yes=node('button','Продолжить с последнего шага','primary'),no=node('button','Новый маршрут','secondaryWide');yes.onclick=()=>{try{points=saved.points;for(const f of ['from','to'])$(f).value=points[f].name;if(saved.plannerVersion!==JOURNEY_PLANNER_VERSION){const options=smartRouteOptions(points.from,points.to,mode);if(!options.length)throw Error('No route');showSmartOptions(options);resume.remove();say('Сохранённый маршрут пересчитан после обновления.');return}renderPlan(saved.plan);activePlan=saved.plan;guidanceIndex=Math.max(0,Math.min(saved.index||0,guidanceSteps(saved.plan).length-1));walkingIndex=saved.walkingIndex||0;const restoredStep=guidanceSteps(saved.plan)[guidanceIndex];if(restoredStep?.kind==='pedestrian'){const end=walkingEndpoints(restoredStep);walkingActiveKey=walkingKey(end.a,end.b)}drawGuidance();resume.remove()}catch(e){forgetJourney();resume.remove();clearRoute();say('Сохранённую поездку не удалось восстановить. Постройте маршрут заново.')}};no.onclick=()=>{forgetJourney();resume.remove()};resume.append(yes,no);planner.prepend(resume);
 }}catch(e){forgetJourney()}
 
 const example=document.querySelector('.quickRoute');if(example)document.querySelector('.otherTransport').append(example);

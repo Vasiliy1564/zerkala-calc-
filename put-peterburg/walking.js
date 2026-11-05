@@ -5,7 +5,7 @@ function walkingKey(a,b){return [a.lat,a.lon,b.lat,b.lon].map(n=>Number(n).toFix
 function walkingEntrance(p,toward,entering=false){
  const station=METRO.get(p.metroId||p.id);if(!station)return null;
  const candidates=WALKING_ENTRANCES[station.name]||[];
- return candidates.filter(e=>Number.isFinite(e.lat)&&Number.isFinite(e.lon)&&e.access!=='no'&&e.access!=='private'&&(entering?e.entrance!=='exit':e.entrance!=='entrance')).sort((a,b)=>distance(a,toward)-distance(b,toward))[0]||null;
+ return candidates.filter(e=>Number.isFinite(e.lat)&&Number.isFinite(e.lon)&&e.access!=='no'&&e.access!=='private'&&e.entrance!=='no'&&(entering?e.entrance!=='exit':e.entrance!=='entrance')).sort((a,b)=>distance(a,toward)-distance(b,toward))[0]||null;
 }
 function walkingEndpoints(step){const exit=walkingEntrance(step.from,step.point),entry=walkingEntrance(step.point,step.from,true);return {a:exit||step.from,b:entry||step.point,exit,entry}}
 function walkingMeters(n){return n<1000?Math.round(n)+' м':(n/1000).toFixed(1).replace('.',',')+' км'}
