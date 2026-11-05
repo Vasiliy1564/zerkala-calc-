@@ -30,7 +30,7 @@ function render(){
 }
 const observer=new MutationObserver(()=>{cancelAnimationFrame(changeTimer);changeTimer=requestAnimationFrame(render);});observer.observe(source,{childList:true,subtree:false});
 function focusPreview(key,action){
- pending.set(key,action);if(scrolling)return;scrolling=true;
+ pending.set(key,action);if(scrolling)return;window.dispatchEvent(new Event('mirror-preview-start'));scrolling=true;
  const start=scrollY,top=Math.max(0,Math.min(document.documentElement.scrollHeight-innerHeight,stage.getBoundingClientRect().top+start-18)),delta=top-start,duration=Math.min(680,Math.max(420,Math.abs(delta)*.32));let began=null;
  const old=document.documentElement.style.scrollBehavior;document.documentElement.style.scrollBehavior='auto';
  function clean(){cancelAnimationFrame(frame);scrolling=false;document.documentElement.style.scrollBehavior=old;['wheel','touchstart','keydown'].forEach(type=>removeEventListener(type,cancel,true));}
@@ -57,7 +57,7 @@ $('#heroLight').onclick=function(){const on=this.getAttribute('aria-pressed')!==
 window.addEventListener('mirror-preview-applied',event=>{if(event.detail.id==='stage')setTimeout(()=>ignite(stage,stage.classList.contains('lit')),650);});
 window.addEventListener('resize',render);
 // Preserve all routes to the calculator and show its live preview first.
-document.addEventListener('click',event=>{const link=event.target.closest('a[href="#calculator"],a[href="#quote-form"]');if(!link||event.button!==0)return;event.preventDefault();stage.scrollIntoView({behavior:reduced.matches?'instant':'smooth',block:'start'});},true);
+document.addEventListener('click',event=>{const link=event.target.closest('a[href="#calculator"],a[href="#quote-form"]');if(!link||event.button!==0)return;event.preventDefault();event.stopImmediatePropagation();stage.scrollIntoView({behavior:reduced.matches?'instant':'smooth',block:'start'});},true);
 if('IntersectionObserver'in window){const reveal=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('motion-visible');reveal.unobserve(e.target);}}),{threshold:.08});document.querySelectorAll('.section-head,.product,.project,.avito-review').forEach(el=>reveal.observe(el));}
 render();
 })();

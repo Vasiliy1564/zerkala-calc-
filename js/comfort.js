@@ -11,6 +11,7 @@
 
  var activePosition=null;
  function releasePosition(){activePosition=null;document.documentElement.classList.remove('calc-position-hold');}
+ window.addEventListener('mirror-preview-start',releasePosition);
  function beginPosition(anchor){
   if(activePosition&&activePosition.anchor===anchor)return activePosition;
   var hold={anchor:anchor,top:anchor.getBoundingClientRect().top,x:window.scrollX,y:window.scrollY,service:anchor.matches('#carry-option,#deliveryOpt,#installOpt,#quick-install')};
