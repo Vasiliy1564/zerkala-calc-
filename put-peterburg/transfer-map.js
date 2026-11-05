@@ -86,7 +86,13 @@ walkingPanel=function(guide,step){
  updateTransferLocation();
 };
 const transferDrawGuidance=drawGuidance;
-drawGuidance=function(){transferMapView=null;transferDrawGuidance();const step=guidancePlan&&guidanceSteps(guidancePlan)[guidanceIndex];if(!step?.boardingRide||step.boardingRide.line)return;const ctx=transferContext(step),guide=$('tripGuide');if(!ctx||!guide)return;const wrap=node('div');transferReceipt(ctx,wrap);wrap.append(makeTransferMap(ctx,null));guide.insertBefore(wrap,guide.querySelector('.guideActions'));updateTransferLocation();};
+let transferDrawing=false,transferRedraw=false;
+drawGuidance=function(){
+ if(transferDrawing){transferRedraw=true;return;}
+ transferDrawing=true;
+ try{transferMapView=null;transferDrawGuidance();const step=guidancePlan&&guidanceSteps(guidancePlan)[guidanceIndex];if(!step?.boardingRide||step.boardingRide.line)return;const ctx=transferContext(step),guide=$('tripGuide');if(!ctx||!guide)return;const wrap=node('div');transferReceipt(ctx,wrap);wrap.append(makeTransferMap(ctx,null));guide.insertBefore(wrap,guide.querySelector('.guideActions'));updateTransferLocation();}
+ finally{transferDrawing=false;if(transferRedraw){transferRedraw=false;drawGuidance();}}
+};
 const receiveBeforeTransfer=receive;
 receive=function(type,data){if(type==='gps'&&Number.isFinite(data?.lat)&&Number.isFinite(data?.lon))transferFix={...data,received:Date.now()};receiveBeforeTransfer(type,data);if(type==='gps'||type==='gpsError'||type==='gpsFinished')updateTransferLocation();};
 const transferClearGuidance=clearGuidance;
