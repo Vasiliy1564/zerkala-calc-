@@ -18,10 +18,10 @@ function putMapCreate(key){
  const caption=node('p','Загружаем карту 2ГИС…','transferMapStatus');caption.setAttribute('role','status');
  const zoomDock=node('div',undefined,'transferMapControls mapZoomDock'),actions=node('div',undefined,'mapQuickActions');frame.append(zoomDock);
  const legend=node('p','Двигайте карту пальцем. Раздвиньте два пальца для увеличения.','mapGestureHint');
- const view={key,section,canvas,ctx:null,state:null,map:null,routeLayer:null,pointsLayer:null,gpsLayer:null,routeSignature:null,activeManeuver:0,manualCamera:false,disposed:false,scheduled:false,fix:transferGps(),fitPending:false};
+ const view={key,section,canvas,ctx:null,state:null,map:null,routeLayer:null,pointsLayer:null,gpsLayer:null,routeSignature:null,activeManeuver:0,manualCamera:false,disposed:false,scheduled:false,fix:transferGps(true),fitPending:false};
  function action(parent,label,aria,fn){const b=node('button',label);b.type='button';b.setAttribute('aria-label',aria);b.onclick=fn;parent.append(b);return b}
  const zoomIn=action(zoomDock,'+','Увеличить карту',()=>{view.manualCamera=true;view.map?.zoomIn(1)}),zoomOut=action(zoomDock,'−','Уменьшить карту',()=>{view.manualCamera=true;view.map?.zoomOut(1)});
- const fitButton=action(actions,'Весь путь','Показать весь пеший путь',()=>{view.manualCamera=false;view.fit()}),locate=action(actions,'Где я','Показать моё место',()=>{const p=transferGps();if(p&&view.map){view.manualCamera=true;view.map.setView([p.lat,p.lon],Math.max(17,view.map.getZoom()),{animate:true})}else if(typeof Phone!=='undefined'){Phone.locate();say('Определяем ваше место на улице.')}});
+ const fitButton=action(actions,'Весь путь','Показать весь пеший путь',()=>{view.manualCamera=false;view.fit()}),locate=action(actions,'Где я','Показать моё место',()=>{const p=transferGps(true);if(p&&view.map){view.manualCamera=true;p.accuracy>50?view.map.fitBounds(L.circle([p.lat,p.lon],{radius:p.accuracy}).getBounds(),{padding:[25,25],maxZoom:16,animate:false}):view.map.setView([p.lat,p.lon],Math.max(17,view.map.getZoom()),{animate:true})}else if(typeof Phone!=='undefined'){Phone.locate();say('Определяем ваше место на улице.')}});
  const expand=action(actions,'Развернуть','Развернуть или свернуть карту',()=>{const open=!section.classList.contains('mapExpanded');if(open){putMapCollapse(putMapExpanded);putMapExpanded=view;section.classList.add('mapExpanded');document.documentElement.classList.add('putMapExpanded')}else putMapCollapse(view);expand.textContent=open?'Свернуть':'Развернуть';expand.setAttribute('aria-expanded',String(open));putMapFrame(()=>view.map?.invalidateSize({pan:false}));});view.expandButton=expand;expand.setAttribute('aria-expanded','false');
  const notice=node('p',undefined,'routeCaution');section.append(toolbar,frame,actions,legend,caption,notice);view.legend=legend;
  const ll=p=>[p.lat,p.lon];
@@ -33,7 +33,7 @@ function putMapCreate(key){
  }
  function bounds(){const s=view.state,c=view.ctx,a=s?.a||c.stop,b=s?.b||c.stop,r=s?.state==='ready'?s.route:null;return L.latLngBounds([ll(a),ll(b),...(r?.coordinates||[]).map(p=>[p[1],p[0]])]);}
  view.fit=function(){if(!view.map)return;view.map.invalidateSize({pan:false});view.map.fitBounds(bounds(),{padding:[38,38],maxZoom:18,animate:false});};
- view.updateFix=function(p){view.fix=p;if(!view.gpsLayer)return;view.gpsLayer.clearLayers();if(!p)return;L.circle(ll(p),{radius:p.accuracy,color:'#1764ce',weight:1,fillOpacity:.1,interactive:false}).addTo(view.gpsLayer);marker(p,'Я','#1764ce',12,view.gpsLayer);};
+ view.updateFix=function(p){view.fix=p;if(!view.gpsLayer)return;view.gpsLayer.clearLayers();if(!p)return;const color=p.accuracy>50?'#b87512':'#1764ce';L.circle(ll(p),{radius:p.accuracy,color,weight:1,fillOpacity:.1,interactive:false}).addTo(view.gpsLayer);marker(p,p.accuracy>50?'≈':'Я',color,12,view.gpsLayer);};
  function updateZoom(){if(!view.map)return;zoomIn.disabled=view.map.getZoom()>=20;zoomOut.disabled=view.map.getZoom()<=12;}
  view.update=function(){
   const c=view.ctx,s=view.state,r=s?.state==='ready'?s.route:null;

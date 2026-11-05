@@ -23,10 +23,11 @@ function destinationReceipt(ctx,step,container){
  box.append(node('p',ctx.entry?'Метка М — вход в метро из доступной базы.':'Метка Б — выбранная точка адреса. Подъезд или вход в здание проверяйте на месте.','hint'));
  const position=node('p','Нажмите «Где я», чтобы увидеть себя на карте.','transferPosition');position.setAttribute('role','status');box.append(position);container.append(box);return box;
 }
-function transferGps(){
+function locationProviderLabel(provider){return {gps:'Спутники GPS/ГЛОНАСС',network:'Сеть: Wi-Fi / вышки',fused:'Объединённый источник Android'}[provider]||'Система телефона'}
+function transferGps(displayApproximate=false){
  if(!transferFix)return null;
  const age=(Date.now()-transferFix.received)/1000+(transferFix.ageSeconds||0);
- return !transferFix.cached&&!transferFix.conflict&&age<=12&&Number.isFinite(transferFix.accuracy)&&transferFix.accuracy<=50?{...transferFix,age}:null;
+ return !transferFix.cached&&!transferFix.conflict&&age>=0&&age<=12&&Number.isFinite(transferFix.lat)&&Math.abs(transferFix.lat)<=90&&Number.isFinite(transferFix.lon)&&Math.abs(transferFix.lon)<=180&&Number.isFinite(transferFix.accuracy)&&transferFix.accuracy>0&&transferFix.accuracy<=(displayApproximate?20000:50)?{...transferFix,age}:null;
 }
 function transferReceipt(ctx,container){
  const box=node('section',undefined,'boardingReceipt');box.append(node('div','ВАША ОСТАНОВКА','eyebrow'),node('h3',ctx.service),node('strong','«'+ctx.stop.name+'»'),node('p','В сторону «'+ctx.direction+'»','boardingDirection'));
@@ -37,13 +38,14 @@ function transferReceipt(ctx,container){
  box.dataset.stopId=ctx.stop.id;container.append(box);return box;
 }
 function updateTransferLocation(){
- const fix=transferGps();
+ const fix=transferGps(true);
  for(const el of document.querySelectorAll('.boardingReceipt')){
   const isDestination=el.classList.contains('walkDestinationReceipt'),stop=isDestination?{lat:Number(el.dataset.lat),lon:Number(el.dataset.lon)}:BUS.get(el.dataset.stopId),p=el.querySelector('.transferPosition');if(!stop||!p)continue;
   if(!fix){p.textContent=transferFix?'Свежей точной позиции нет. Нажмите «Где я» на улице.':'Нажмите «Где я», чтобы увидеть своё место на карте.';p.classList.remove('nearStop');continue;}
+  if(fix.accuracy>50){p.textContent='Приблизительное положение · погрешность около '+walkingMeters(fix.accuracy)+'. '+locationProviderLabel(fix.provider)+'. Круг показывает область возможного положения. Точную остановку или вход по этой точке определить нельзя.';p.classList.remove('nearStop');continue;}
   const d=distance(fix,stop),opposite=!isDestination&&TRANSIT.busStops.some(s=>s.id!==stop.id&&norm(s.name)===norm(stop.name)&&distance(s,stop)<140&&distance(fix,s)<=d+fix.accuracy);
   const near=d+fix.accuracy<=35&&!opposite;
-  p.textContent=(near?(isDestination?'Вы рядом с выбранной точкой адреса. ':'Вы рядом с нужной точкой посадки. '):(isDestination?'До выбранной точки ≈ ':'До точки посадки ≈ ')+walkingMeters(d)+' по прямой. ')+(opposite?'GPS не различает соседние остановки. ':'')+'Точность ±'+Math.round(fix.accuracy)+' м. '+(isDestination?'Проверьте вход на месте.':'Сверьте направление.');p.classList.toggle('nearStop',near);
+  p.textContent=(near?(isDestination?'Вы рядом с выбранной точкой адреса. ':'Вы рядом с нужной точкой посадки. '):(isDestination?'До выбранной точки ≈ ':'До точки посадки ≈ ')+walkingMeters(d)+' по прямой. ')+(opposite?'GPS не различает соседние остановки. ':'')+'Точность ±'+Math.round(fix.accuracy)+' м. '+locationProviderLabel(fix.provider)+'. '+(isDestination?'Проверьте вход на месте.':'Сверьте направление.');p.classList.toggle('nearStop',near);
  }
  transferMapView?.updateFix(fix);
 }
