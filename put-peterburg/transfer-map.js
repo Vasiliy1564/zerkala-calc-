@@ -47,45 +47,7 @@ function updateTransferLocation(){
  }
  transferMapView?.updateFix(fix);
 }
-function makeTransferMap(ctx,state){
- const section=node('section',undefined,'transferMapSection'),toolbar=node('div',undefined,'transferMapToolbar');toolbar.append(node('strong',ctx.boarding?'Выход → ваша остановка':ctx.title),node('span','Север ↑'));
- const frame=node('div',undefined,'transferMap'),ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 360 300');svg.setAttribute('role','img');svg.setAttribute('aria-label',ctx.boarding?'Карта выхода метро и остановки '+ctx.stop.name+' для '+ctx.service+' в сторону '+ctx.direction:'Карта пешего пути до '+ctx.stop.name);frame.append(svg);
- const caption=node('p','Загружаем карту улиц…','transferMapStatus');caption.setAttribute('role','status');
- const route=state?.state==='ready'?state.route:null,origin=state?.a||ctx.stop,target=state?.b||ctx.stop,exit=state?.exit;
- const base=[origin,target,...(route?.coordinates||[]).map(p=>({lon:p[0],lat:p[1]}))];
- const world=(p,z)=>{const n=256*2**z,s=Math.sin(p.lat*Math.PI/180);return [n*(p.lon+180)/360,n*(.5-Math.log((1+s)/(1-s))/(4*Math.PI))]};
- const unworld=(p,z)=>{const n=256*2**z;return {lon:p[0]/n*360-180,lat:Math.atan(Math.sinh(Math.PI*(1-2*p[1]/n)))*180/Math.PI}};
- let zoom=17,center,fix=transferGps(),layers={};
- function fit(){zoom=18;for(;zoom>12;zoom--){const ps=base.map(p=>world(p,zoom));if(Math.max(...ps.map(p=>p[0]))-Math.min(...ps.map(p=>p[0]))<250&&Math.max(...ps.map(p=>p[1]))-Math.min(...ps.map(p=>p[1]))<190)break;}const ps=base.map(p=>world(p,zoom));center=unworld([(Math.min(...ps.map(p=>p[0]))+Math.max(...ps.map(p=>p[0])))/2,(Math.min(...ps.map(p=>p[1]))+Math.max(...ps.map(p=>p[1])))/2],zoom);}
- function element(parent,tag,attrs={},text){const e=document.createElementNS(ns,tag);for(const [k,v]of Object.entries(attrs))e.setAttribute(k,v);if(text)e.textContent=text;parent.append(e);return e;}
- function project(p){const a=world(p,zoom),c=world(center,zoom);return [a[0]-c[0]+180,a[1]-c[1]+150]}
- function mark(p,label,color,r=15,parent=layers.marks){const [x,y]=project(p);element(parent,'circle',{cx:x,cy:y,r,fill:color,stroke:'#fff','stroke-width':3});if(label)element(parent,'text',{x,y:y+4,'text-anchor':'middle',fill:'#fff','font-size':12,'font-weight':800},label);}
- function drawFix(){if(!layers.gps)return;layers.gps.replaceChildren();if(!fix)return;const [x,y]=project(fix),mpp=156543.03392*Math.cos(fix.lat*Math.PI/180)/2**zoom;const radius=Math.min(200,fix.accuracy/mpp);element(layers.gps,'circle',{cx:x,cy:y,r:radius,fill:'#2573eb','fill-opacity':.1,stroke:'#2573eb','stroke-opacity':.3});mark(fix,'Я','#1764ce',12,layers.gps);}
- function paint(){
-  svg.replaceChildren();layers={tiles:element(svg,'g'),route:element(svg,'g'),marks:element(svg,'g'),gps:element(svg,'g')};const c=world(center,zoom),left=c[0]-180,top=c[1]-150;let loaded=0,failed=0,total=0;const generation=layers.tiles;
-  const status=()=>{if(generation!==layers.tiles)return;caption.textContent=loaded?(ctx.boarding?'Карта 2ГИС · М — выход, С — сесть, Я — ваше место.':'Карта 2ГИС · А — начало, '+(state?.entry?'М — вход метро':'Б — цель')+', Я — ваше место.')+' Перетаскивайте карту; масштаб — кнопками.':failed===total?'Карта улиц недоступна. Показана только схема точек'+(route?' и рассчитанного пути':'')+'. Откройте 2ГИС для проверки переходов.':'Загружаем карту улиц…';};
-  for(let x=Math.floor(left/256);x<=Math.floor((left+360)/256);x++)for(let y=Math.floor(top/256);y<=Math.floor((top+300)/256);y++){
-   total++;const tile=element(layers.tiles,'image',{x:x*256-left,y:y*256-top,width:256,height:256,href:PUT_MAP_API+'?z='+zoom+'&x='+x+'&y='+y});tile.addEventListener('load',()=>{loaded++;status()});tile.addEventListener('error',()=>{failed++;status()});
-  }
-  if(route)element(layers.route,'path',{d:route.coordinates.map((p,i)=>(i?'L':'M')+project({lon:p[0],lat:p[1]}).join(' ')).join(' '),stroke:'#fff','stroke-width':9,fill:'none','stroke-linejoin':'round'});
-  if(route)element(layers.route,'path',{d:route.coordinates.map((p,i)=>(i?'L':'M')+project({lon:p[0],lat:p[1]}).join(' ')).join(' '),stroke:'#175ed0','stroke-width':5,fill:'none','stroke-linejoin':'round'});
-  for(const stop of ctx.nearby)mark(stop,'','#a8b5aa',7);
-  if(ctx.station)for(const e of WALKING_ENTRANCES[ctx.station.name]||[])if(e.osmId!==exit?.osmId&&e.entrance!=='entrance'&&!['no','private'].includes(e.access))mark(e,'','#8065aa',6);
-  if(route?.steps[walkingIndex]?.location&&walkingIndex>0){const xy=route.steps[walkingIndex].location;mark({lon:xy[0],lat:xy[1]},String(walkingIndex+1),'#a56512',11);}
-  if(ctx.next){const a=project(ctx.stop),b=project(ctx.next),d=Math.hypot(b[0]-a[0],b[1]-a[1]);if(d>1){const v=[(b[0]-a[0])/d,(b[1]-a[1])/d],tip=[a[0]+v[0]*52,a[1]+v[1]*52],end=[tip[0]-v[0]*10,tip[1]-v[1]*10];element(layers.route,'path',{d:'M'+a.join(' ')+'L'+tip.join(' ')+'M'+[end[0]-v[1]*6,end[1]+v[0]*6].join(' ')+'L'+tip.join(' ')+'L'+[end[0]+v[1]*6,end[1]-v[0]*6].join(' '),stroke:'#c33223','stroke-width':4,fill:'none'});}}
-  if(state){mark(origin,exit?'М':ctx.station&&!stepOriginIsGps(state)?'?':'А',exit?'#bf3528':'#655b4c');}
-  mark(target,ctx.boarding?'С':state?.entry?'М':'Б',ctx.boarding?'#c33223':'#246d47',17);drawFix();
- }
- function stepOriginIsGps(s){return s.a?.name==='Моё место на улице'}
- const controls=node('div',undefined,'transferMapControls');
- function button(label,aria,fn){const b=node('button',label);b.type='button';b.setAttribute('aria-label',aria);b.onclick=fn;controls.append(b);}
- button('+','Увеличить карту',()=>{zoom=Math.min(19,zoom+1);paint()});button('−','Уменьшить карту',()=>{zoom=Math.max(12,zoom-1);paint()});button('Весь путь','Показать весь пеший путь',()=>{fit();paint()});button('Где я','Показать моё место',()=>{const p=transferGps();if(p){center=p;zoom=18;paint()}else if(typeof Phone!=='undefined'){Phone.locate();say('Определяем ваше место на улице.')}});
- let drag=null;svg.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,center:world(center,zoom)};svg.setPointerCapture?.(e.pointerId)});svg.addEventListener('pointermove',e=>{if(!drag)return;const scale=360/(svg.getBoundingClientRect().width||360);center=unworld([drag.center[0]-(e.clientX-drag.x)*scale,drag.center[1]-(e.clientY-drag.y)*scale],zoom);layers.tiles.setAttribute('opacity','.6');});svg.addEventListener('pointerup',()=>{if(drag){drag=null;paint()}});svg.addEventListener('pointercancel',()=>{drag=null;paint()});
- const attribution=node('a','© 2ГИС');attribution.href='https://2gis.ru/';attribution.className='transferAttribution';frame.append(attribution);section.append(toolbar,frame,controls,caption);
- const legend=node('p','Красная стрелка — направление к следующей остановке по базе рейса; изгибы дороги она не показывает. Серые точки — соседние одноимённые остановки; фиолетовые — другие выходы метро.','hint');if(ctx.boarding)section.append(legend);else section.append(node('p','Линия показывает рассчитанный пеший путь. Повороты — под картой.','hint'));
- if(state&&!exit&&ctx.station&&origin.name!=='Моё место на улице')section.append(node('p','? — координата станции, дверь выхода пока не подтверждена. На улице нажмите «Где я» и «Путь от моего места».','routeCaution'));
- fit();paint();transferMapView={updateFix(p){fix=p;drawFix()}};return section;
-}
+function makeTransferMap(ctx,state){return putMapRender(ctx,state)}
 const transferWalkingPanel=walkingPanel;
 walkingPanel=function(guide,step){
  const ctx=transferContext(step)||walkingMapContext(step);
@@ -108,7 +70,7 @@ drawGuidance=function(){
 const receiveBeforeTransfer=receive;
 receive=function(type,data){if(type==='gps'&&Number.isFinite(data?.lat)&&Number.isFinite(data?.lon))transferFix={...data,received:Date.now()};receiveBeforeTransfer(type,data);if(type==='gps'||type==='gpsError'||type==='gpsFinished')updateTransferLocation();};
 const transferClearGuidance=clearGuidance;
-clearGuidance=function(){transferMapView=null;transferClearGuidance()};
+clearGuidance=function(){transferMapView=null;clearPutMaps();transferClearGuidance()};
 setInterval(updateTransferLocation,1000);
 // Preserve a chosen mapped exit across steps and resume; GPS origin takes precedence.
 const transferGuidanceSteps=guidanceSteps;

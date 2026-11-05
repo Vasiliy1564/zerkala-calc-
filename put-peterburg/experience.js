@@ -11,7 +11,7 @@ function routeInstruction(tag,text,className,line=null){
  }
  el.append(document.createTextNode(text.slice(offset)));return el;
 }
-const JOURNEY_PLANNER_VERSION='0.37';
+const JOURNEY_PLANNER_VERSION='0.38';
 let walkingIndex=0,walkingActiveKey='',journeyFinished=false;
 function rememberJourney(){try{if(guidancePlan&&!journeyFinished)localStorage.setItem('put.journey.v24',JSON.stringify({plannerVersion:JOURNEY_PLANNER_VERSION,plan:guidancePlan,points,index:guidanceIndex,walkingIndex,time:Date.now()}));}catch(e){}}
 function forgetJourney(){try{localStorage.removeItem('put.journey.v24')}catch(e){}}
