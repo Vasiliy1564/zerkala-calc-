@@ -1025,7 +1025,6 @@
 
     // Поездка за полотном, установка и доставка — без наценки и надбавок.
     price += purchaseTripPrice();
-    var reinfSides = mirrorDeliverySides();
     var reinfKind = window.MirrorSupplierPricing.reinforcementKind(state.reinf, state.shape, w, h, h2);
     price += window.MirrorSupplierPricing.rearProfile(reinfKind, state.shape, w, h, h2).cost;
     if (state.install) price += installationPrice(area, state.light);
