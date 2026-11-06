@@ -18,3 +18,14 @@
 #mirror-service-details{display:block;min-width:0;overflow-anchor:none}
 #mirror-service-details:has(>#carry-fields[hidden]):has(>#delivery-address-panel[hidden]){display:none}
 #mirror-service-details>#carry-fields,#mirror-service-details>#delivery-address-panel{margin:12px 0 0}
+
+/* Address suggestions and delivery map */
+.delivery-candidate small{display:block;font-size:12px;opacity:.7;margin-top:2px}
+.delivery-map-box{margin:12px 0 4px}
+.delivery-map{height:280px;border-radius:12px;border:1px solid #a296a2;overflow:hidden;z-index:0;background:#eef1ec}
+@media (max-width:560px){.delivery-map{height:240px}}
+.delivery-map-hint{font-size:13px;opacity:.8;margin:8px 0 0}
+.delivery-pin{border-radius:50%;border:3px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.35)}
+.delivery-pin--origin{background:#91612e}
+.delivery-pin--dest{background:#174936;cursor:grab}
+.delivery-map .leaflet-control-attribution{font-size:10px}
