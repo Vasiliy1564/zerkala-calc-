@@ -124,6 +124,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
 <link href="css/motion-site.css?v=20261105-2" rel="stylesheet"/><style id="header-bot-contact">
 .header-contacts{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:14px;padding-bottom:14px;border-bottom:1px solid var(--line,#d8d8d8)}.header-owner-phone{display:flex;flex-direction:column;gap:2px;text-decoration:none;min-height:44px;justify-content:center;color:var(--ink,#171b1e)}.header-owner-phone span{font-size:13px;line-height:1.3}.header-owner-phone strong{font-size:clamp(15px,2vw,19px);line-height:1.35;white-space:nowrap}.header-max-link{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;border-radius:999px;background:var(--brand,#174936);color:#fff!important;text-decoration:none;font-size:14px;font-weight:600;line-height:1.2;text-align:center}.header-max-link:hover{filter:brightness(1.12)}.header-max-link:focus-visible,.header-owner-phone:focus-visible{outline:3px solid var(--accent,#fc734d);outline-offset:4px}@media(max-width:420px){.header-contacts{gap:8px}.header-max-link{padding:10px 12px;font-size:12px;max-width:145px}.header-owner-phone strong{font-size:15px}}
 </style>
+<link rel="stylesheet" href="css/showroom.css?v=20261106-1"/>
 </head>
 <body>
 <a class="skip-link" href="#main">К содержимому</a>
@@ -158,7 +159,118 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
 </header>
 <main id="main">
 <!-- ============ HERO ============ -->
-<section aria-labelledby="hero-title" class="hero" id="top"><div class="hero-copy"><h1 id="hero-title">Больше света.<br/>Больше <em>вашего</em><br/>пространства.</h1><p class="lead">Зеркала по вашим размерам. От первого эскиза до установки в вашем доме.</p><div><a class="cta" href="#calculator">Создать своё зеркало <svg class="arrow" viewbox="0 0 24 18"><path d="M1 9h21M15 2l7 7-7 7"></path></svg></a><a class="secondary-link" href="#projects">Посмотреть работы</a></div><p class="hero-note"><i class="dot"></i>Индивидуальная форма. Ваш размер. Ваш свет.</p></div><div aria-label="Демонстрация прямоугольного зеркала с подсветкой в интерьере" class="room lit" id="heroRoom" role="img"><div class="scene-evening"></div><div class="light-spill"></div><div class="scene-flare"></div><div class="hero-mirror"><span class="mirror-sheen"></span></div><div class="room-caption"><span>Прямоугольник · мягкая подсветка</span><button aria-label="Включить или выключить подсветку в интерьере" aria-pressed="true" class="light-toggle" id="heroLight"><span>Свет</span><i class="switch"></i></button></div></div></section><section aria-labelledby="calculator-title" class="section calculator" id="calculator">
+<section aria-labelledby="hero-title" class="hero" id="top"><div class="hero-copy"><h1 id="hero-title">Больше света.<br/>Больше <em>вашего</em><br/>пространства.</h1><p class="lead">Зеркала по вашим размерам. От первого эскиза до установки в вашем доме.</p><div><a class="cta" href="#calculator">Рассчитать своё зеркало <svg class="arrow" viewbox="0 0 24 18"><path d="M1 9h21M15 2l7 7-7 7"></path></svg></a><a class="secondary-link" href="#projects">Посмотреть работы</a></div><p class="hero-note"><i class="dot"></i>Индивидуальная форма. Ваш размер. Ваш свет.</p></div><div aria-label="Демонстрация прямоугольного зеркала с подсветкой в интерьере" class="room lit" id="heroRoom" role="img"><div class="scene-evening"></div><div class="light-spill"></div><div class="scene-flare"></div><div class="hero-mirror"><span class="mirror-sheen"></span></div><div class="room-caption"><span>Прямоугольник · мягкая подсветка</span><button aria-label="Включить или выключить подсветку в интерьере" aria-pressed="true" class="light-toggle" id="heroLight"><span>Свет</span><i class="switch"></i></button></div></div></section>
+<section aria-labelledby="projects-title" class="section projects-showcase" id="projects">
+<div class="container">
+<div class="section-head projects-head">
+<div>
+<p class="eyebrow">Примеры работ</p>
+<h2 class="display" id="projects-title">Ваше пространство.<br/>Наши зеркала.</h2>
+</div>
+<p class="section-copy">Большие зеркала в полный рост, решения для прихожей и компактные модели для ванной. Выберите близкий вам вариант. Нажмите на фотографию, чтобы рассмотреть детали.</p>
+</div>
+<div aria-label="Показать определённый вид зеркал" class="filters project-filters">
+<button class="filter active" data-filter="all" type="button">Все работы</button>
+<button class="filter" data-filter="light" type="button">С подсветкой</button>
+<button class="filter" data-filter="no-light" type="button">Без подсветки</button>
+<button class="filter" data-filter="full-height" type="button">В полный рост</button>
+<button class="filter" data-filter="bathroom" type="button">Для ванной</button>
+<button class="filter" data-filter="compact" type="button">Компактные</button>
+<button class="filter" data-filter="gold-frame" type="button">В золотой раме</button>
+</div>
+<div class="projects-grid" id="work-gallery"><button class="project project--tall-photo" data-caption="Высокое зеркало без рамы с тёплой подсветкой и сенсорной кнопкой в спальне" data-category="light full-height bedroom" type="button">
+<img alt="Высокое зеркало в спальне с подсветкой по периметру и небольшой сенсорной кнопкой справа чуть ниже середины" height="1448" loading="lazy" src="assets/projects/bedroom-led-touch-20261014.jpg" width="1086"/>
+<span class="project-info"><strong>Зеркало в спальне с подсветкой</strong><span>С подсветкой · в полный рост</span></span>
+</button><button class="project project--tall-photo" data-caption="Зеркало в чёрной раме с тёплой подсветкой в прихожей" data-category="light full-height black-frame hallway" type="button">
+<img alt="Зеркало в чёрной раме с тёплой подсветкой в прихожей" height="1536" loading="lazy" src="assets/projects/hallway-black-frame-lived-20261014.jpg" width="864"/>
+<span class="project-info"><strong>Зеркало в прихожей</strong><span>С подсветкой · в полный рост</span></span>
+</button><button class="project project--tall-photo" data-caption="Зеркало без рамы над раковиной в обустроенном санузле" data-category="no-light bathroom" type="button">
+<img alt="Зеркало без рамы над раковиной в обустроенном санузле" height="1536" loading="lazy" src="assets/projects/bathroom-frameless-lived-20261014.jpg" width="1152"/>
+<span class="project-info"><strong>Зеркало для ванной</strong><span>Для ванной · без подсветки</span></span>
+</button><button class="project project--feature" data-caption="Круглая зеркальная композиция без подсветки с консолью" data-category="no-light compact decor" type="button">
+<img alt="Большая круглая зеркальная композиция с консолью в светлой комнате" height="1000" loading="lazy" src="assets/projects/round-composition.jpg" width="1000"/>
+<span class="project-info"><strong>Круглая композиция</strong><span>Без подсветки</span></span>
+</button><button class="project" data-caption="Зеркало в белой раме с подсветкой · визуализация" data-category="light white-frame" type="button"><img alt="Зеркало в белой раме с подсветкой" loading="lazy" src="assets/projects/white-frame-led-20261015.webp"/><span class="project-info"><strong>В белой раме</strong><span>С подсветкой · визуализация</span></span></button><button class="project" data-caption="Зеркало в чёрной раме с подсветкой · визуализация" data-category="light black-frame" type="button"><img alt="Зеркало в чёрной раме с подсветкой" loading="lazy" src="assets/projects/black-frame-led-20261015.webp"/><span class="project-info"><strong>В чёрной раме</strong><span>С подсветкой · визуализация</span></span></button><button class="project" data-caption="Зеркало в золотой раме с подсветкой · визуализация" data-category="light gold-frame" type="button"><img alt="Зеркало в золотой раме с подсветкой" loading="lazy" src="assets/projects/gold-frame-led-20261015.webp"/><span class="project-info"><strong>В золотой раме</strong><span>С подсветкой · визуализация</span></span></button><button class="project" data-caption="Зеркало в чёрной раме без подсветки" data-category="no-light black-frame full-height" type="button"><img alt="Зеркало в чёрной раме без подсветки" height="1448" loading="lazy" src="assets/projects/black-frame-full-height.jpg" width="1086"/><span class="project-info"><strong>В чёрной раме</strong><span>Без подсветки</span></span></button><button class="project project--tall-photo" data-caption="Высокое зеркало у душевой с бассейном в отражении" data-category="no-light full-height bathroom pool" type="button">
+<img alt="Высокое зеркало у душевой с бассейном в отражении" height="1536" loading="lazy" src="assets/projects/pool-frameless-lived-20261014.jpg" width="1152"/>
+<span class="project-info"><strong>Зеркало у бассейна</strong><span>Без подсветки · в полный рост</span></span>
+</button><button class="project project--tall-photo" data-caption="Зеркало в полный рост в обустроенной гардеробной" data-category="no-light full-height wardrobe" type="button">
+<img alt="Зеркало в полный рост в обустроенной гардеробной" height="1536" loading="lazy" src="assets/projects/wardrobe-frameless-lived-20261014.jpg" width="1152"/>
+<span class="project-info"><strong>Зеркало в гардеробной</strong><span>Без подсветки · в полный рост</span></span>
+</button><button class="project project--landscape" data-caption="Полукруглое зеркало из двух частей с подсветкой и полкой в прихожей" data-category="light hallway" type="button">
+<img alt="Полукруглое зеркало из двух частей с подсветкой и полкой в серой прихожей" height="1086" loading="lazy" src="assets/projects/hallway-semicircle-two-parts-led-20261011.jpg" width="1448"/>
+<span class="project-info"><strong>Полукруг с полкой</strong><span>Из двух частей · с подсветкой</span></span>
+</button><button class="project project--tall-photo" data-caption="Зеркальная стена в прихожей — без подсветки" data-category="no-light full-height hallway" type="button">
+<img alt="Зеркальная стена от пола до потолка в прихожей без подсветки" height="1448" loading="lazy" src="assets/projects/hallway-mirror-wall-finished-20261014.jpg" width="1086"/>
+<span class="project-info"><strong>Зеркальная стена</strong><span>Без подсветки · в полный рост</span></span>
+</button><button class="project project--landscape" data-caption="Зеркало в белой раме для ванной — без подсветки" data-category="no-light bathroom white-frame" type="button">
+<img alt="Зеркало в белой раме над ванной, без подсветки" height="1086" loading="lazy" src="assets/projects/bathroom-white-frame.jpg" width="1448"/>
+<span class="project-info"><strong>В белой раме</strong><span>Без подсветки · для ванной</span></span>
+</button><button class="project project--gold-portrait" data-caption="Зеркало в прихожей установлено вровень с полкой справа — по высоте и глубине" data-category="no-light full-height hallway" type="button">
+<img alt="Зеркало в полный рост в прихожей, вровень с полкой справа" height="1448" loading="lazy" src="assets/projects/hallway-flush-mirror.jpg" width="1086"/>
+<span class="project-info"><strong>Вровень с полкой</strong><span>Без подсветки · в полный рост</span></span>
+</button><button class="project project--portrait" data-caption="Зеркало в полный рост с тёплой подсветкой" data-category="light full-height hallway" type="button">
+<img alt="Высокое зеркало в полный рост с тёплой подсветкой" height="1400" loading="lazy" src="assets/projects/hallway-warm.jpg" width="1400"/>
+<span class="project-info"><strong>В полный рост</strong><span>С подсветкой</span></span>
+</button><button class="project project--gold-portrait" data-caption="Большое зеркало в полный рост в тонкой золотой раме" data-category="no-light full-height gold-frame hallway" type="button">
+<img alt="Большое зеркало в полный рост в тонкой золотой раме" height="1920" loading="lazy" src="assets/projects/gold-frame-portrait.jpg" width="1440"/>
+<span class="project-info"><strong>Золотая рама</strong><span>Без подсветки · в полный рост</span></span>
+</button><button class="project project--compact-photo" data-caption="Компактное зеркало с подсветкой для ванной" data-category="light compact bathroom" type="button">
+<img alt="Прямоугольное зеркало с подсветкой над раковиной в ванной" height="500" loading="lazy" src="assets/projects/bathroom-compact.jpg" width="500"/>
+<span class="project-info"><strong>Для ванной</strong><span>С подсветкой · компактное</span></span>
+</button><button class="project project--landscape" data-caption="Зеркало с подсветкой на тёмной стене" data-category="light compact bathroom" type="button">
+<img alt="Прямоугольное зеркало с подсветкой на тёмной мраморной стене" height="444" loading="lazy" src="assets/projects/bathroom-dark.jpg" width="666"/>
+<span class="project-info"><strong>Контрастный интерьер</strong><span>С подсветкой · компактное</span></span>
+</button><button class="project project--wide-photo" data-caption="Большое зеркало с подсветкой в жилой комнате" data-category="light full-height" type="button">
+<img alt="Большое зеркало с подсветкой почти от пола до потолка в жилой комнате" height="1440" loading="lazy" src="assets/projects/living-room-full-height.jpg" width="1920"/>
+<span class="project-info"><strong>От пола до потолка</strong><span>С подсветкой</span></span>
+</button><button class="project project--tall-photo" data-caption="Высокое зеркало с мягкой подсветкой в светлой прихожей" data-category="light full-height hallway" type="button">
+<img alt="Высокое зеркало с мягкой подсветкой в светлой прихожей" height="1448" loading="lazy" src="assets/projects/hallway-light.jpg" width="1086"/>
+<span class="project-info"><strong>Светлая прихожая</strong><span>С подсветкой · в полный рост</span></span>
+</button><button class="project project--tall-photo" data-caption="Зеркало в полный рост в интерьере в стиле лофт" data-category="light full-height hallway" type="button">
+<img alt="Высокое зеркало с подсветкой в прихожей в стиле лофт" height="1448" loading="lazy" src="assets/projects/hallway-loft.jpg" width="1086"/>
+<span class="project-info"><strong>Интерьер в стиле лофт</strong><span>С подсветкой · в полный рост</span></span>
+</button><button class="project project--third" data-caption="Зеркало с подсветкой в полный рост для бутика" data-category="light full-height commercial" type="button">
+<img alt="Зеркало с подсветкой в полный рост в красном интерьере бутика" height="1448" loading="lazy" src="assets/projects/boutique-full-height.jpg" width="1086"/>
+<span class="project-info"><strong>Для бутика</strong><span>С подсветкой · в полный рост</span></span>
+</button><button class="project project--third" data-caption="Зеркальная стена с боковой подсветкой в прихожей" data-category="light full-height hallway" type="button">
+<img alt="Большая зеркальная стена с боковой подсветкой в светлой прихожей" height="960" loading="lazy" src="assets/projects/mirror-wall-side-light.jpg" width="720"/>
+<span class="project-info"><strong>Зеркальная стена</strong><span>С подсветкой · большая</span></span>
+</button><button class="project project--third" data-caption="Большое зеркало в полный рост с мягкой подсветкой" data-category="light full-height hallway" type="button">
+<img alt="Большое зеркало в полный рост с мягкой подсветкой в белом интерьере" height="1920" loading="lazy" src="assets/projects/full-height-white-room.jpg" width="1440"/>
+<span class="project-info"><strong>Большое зеркало</strong><span>С подсветкой · в полный рост</span></span>
+</button>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+<div class="gallery-controls"><button type="button" class="gallery-more" aria-controls="work-gallery" aria-expanded="false" hidden>Показать все работы</button><button type="button" class="gallery-motion" aria-pressed="true" hidden>Анимация включена</button></div><div class="projects-action">
+<p>Любую идею адаптируем под нужный размер, форму и цвет света.</p>
+<a class="button" href="#quote-form">Рассчитать своё зеркало</a>
+</div>
+</div>
+</section>
+<section aria-labelledby="calculator-title" class="section calculator" id="calculator">
 <div class="container calc-grid">
 <div>
 <p class="eyebrow">Персональный расчёт</p>
@@ -352,6 +464,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
 </div>
 </div>
 </section>
+
 <!-- ============ INTRO ============ -->
 <section aria-label="О подходе" class="container intro">
 <h2>Изготовление зеркал<br/>по вашим размерам.</h2>
@@ -473,116 +586,7 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
 </div>
 </div>
 </section>
-<section aria-labelledby="projects-title" class="section projects-showcase" id="projects">
-<div class="container">
-<div class="section-head projects-head">
-<div>
-<p class="eyebrow">Примеры работ</p>
-<h2 class="display" id="projects-title">Зеркала в интерьере</h2>
-</div>
-<p class="section-copy">Большие зеркала в полный рост, решения для прихожей и компактные модели для ванной. Нажмите на фотографию, чтобы рассмотреть её крупнее.</p>
-</div>
-<div aria-label="Показать определённый вид зеркал" class="filters project-filters">
-<button class="filter active" data-filter="all" type="button">Все работы</button>
-<button class="filter" data-filter="light" type="button">С подсветкой</button>
-<button class="filter" data-filter="no-light" type="button">Без подсветки</button>
-<button class="filter" data-filter="full-height" type="button">В полный рост</button>
-<button class="filter" data-filter="bathroom" type="button">Для ванной</button>
-<button class="filter" data-filter="compact" type="button">Компактные</button>
-<button class="filter" data-filter="gold-frame" type="button">В золотой раме</button>
-</div>
-<div class="projects-grid">
-<button class="project" data-caption="Зеркало в белой раме с подсветкой · визуализация" data-category="light white-frame" type="button"><img alt="Зеркало в белой раме с подсветкой" loading="lazy" src="assets/projects/white-frame-led-20261015.webp"/><span class="project-info"><strong>В белой раме</strong><span>С подсветкой · визуализация</span></span></button>
-<button class="project" data-caption="Зеркало в чёрной раме с подсветкой · визуализация" data-category="light black-frame" type="button"><img alt="Зеркало в чёрной раме с подсветкой" loading="lazy" src="assets/projects/black-frame-led-20261015.webp"/><span class="project-info"><strong>В чёрной раме</strong><span>С подсветкой · визуализация</span></span></button>
-<button class="project" data-caption="Зеркало в золотой раме с подсветкой · визуализация" data-category="light gold-frame" type="button"><img alt="Зеркало в золотой раме с подсветкой" loading="lazy" src="assets/projects/gold-frame-led-20261015.webp"/><span class="project-info"><strong>В золотой раме</strong><span>С подсветкой · визуализация</span></span></button>
-<button class="project" data-caption="Зеркало в чёрной раме без подсветки" data-category="no-light black-frame full-height" type="button"><img alt="Зеркало в чёрной раме без подсветки" height="1448" loading="lazy" src="assets/projects/black-frame-full-height.jpg" width="1086"/><span class="project-info"><strong>В чёрной раме</strong><span>Без подсветки</span></span></button>
-<button class="project project--tall-photo" data-caption="Высокое зеркало без рамы с тёплой подсветкой и сенсорной кнопкой в спальне" data-category="light full-height bedroom" type="button">
-<img alt="Высокое зеркало в спальне с подсветкой по периметру и небольшой сенсорной кнопкой справа чуть ниже середины" height="1448" loading="lazy" src="assets/projects/bedroom-led-touch-20261014.jpg" width="1086"/>
-<span class="project-info"><strong>Зеркало в спальне с подсветкой</strong><span>С подсветкой · в полный рост</span></span>
-</button>
-<button class="project project--tall-photo" data-caption="Зеркало в чёрной раме с тёплой подсветкой в прихожей" data-category="light full-height black-frame hallway" type="button">
-<img alt="Зеркало в чёрной раме с тёплой подсветкой в прихожей" height="1536" loading="lazy" src="assets/projects/hallway-black-frame-lived-20261014.jpg" width="864"/>
-<span class="project-info"><strong>Зеркало в прихожей</strong><span>С подсветкой · в полный рост</span></span>
-</button>
-<button class="project project--tall-photo" data-caption="Высокое зеркало у душевой с бассейном в отражении" data-category="no-light full-height bathroom pool" type="button">
-<img alt="Высокое зеркало у душевой с бассейном в отражении" height="1536" loading="lazy" src="assets/projects/pool-frameless-lived-20261014.jpg" width="1152"/>
-<span class="project-info"><strong>Зеркало у бассейна</strong><span>Без подсветки · в полный рост</span></span>
-</button>
-<button class="project project--tall-photo" data-caption="Зеркало без рамы над раковиной в обустроенном санузле" data-category="no-light bathroom" type="button">
-<img alt="Зеркало без рамы над раковиной в обустроенном санузле" height="1536" loading="lazy" src="assets/projects/bathroom-frameless-lived-20261014.jpg" width="1152"/>
-<span class="project-info"><strong>Зеркало для ванной</strong><span>Для ванной · без подсветки</span></span>
-</button>
-<button class="project project--tall-photo" data-caption="Зеркало в полный рост в обустроенной гардеробной" data-category="no-light full-height wardrobe" type="button">
-<img alt="Зеркало в полный рост в обустроенной гардеробной" height="1536" loading="lazy" src="assets/projects/wardrobe-frameless-lived-20261014.jpg" width="1152"/>
-<span class="project-info"><strong>Зеркало в гардеробной</strong><span>Без подсветки · в полный рост</span></span>
-</button>
-<button class="project project--landscape" data-caption="Полукруглое зеркало из двух частей с подсветкой и полкой в прихожей" data-category="light hallway" type="button">
-<img alt="Полукруглое зеркало из двух частей с подсветкой и полкой в серой прихожей" height="1086" loading="lazy" src="assets/projects/hallway-semicircle-two-parts-led-20261011.jpg" width="1448"/>
-<span class="project-info"><strong>Полукруг с полкой</strong><span>Из двух частей · с подсветкой</span></span>
-</button>
-<button class="project project--tall-photo" data-caption="Зеркальная стена в прихожей — без подсветки" data-category="no-light full-height hallway" type="button">
-<img alt="Зеркальная стена от пола до потолка в прихожей без подсветки" height="1448" loading="lazy" src="assets/projects/hallway-mirror-wall-finished-20261014.jpg" width="1086"/>
-<span class="project-info"><strong>Зеркальная стена</strong><span>Без подсветки · в полный рост</span></span>
-</button>
-<button class="project project--landscape" data-caption="Зеркало в белой раме для ванной — без подсветки" data-category="no-light bathroom white-frame" type="button">
-<img alt="Зеркало в белой раме над ванной, без подсветки" height="1086" loading="lazy" src="assets/projects/bathroom-white-frame.jpg" width="1448"/>
-<span class="project-info"><strong>В белой раме</strong><span>Без подсветки · для ванной</span></span>
-</button>
-<button class="project project--gold-portrait" data-caption="Зеркало в прихожей установлено вровень с полкой справа — по высоте и глубине" data-category="no-light full-height hallway" type="button">
-<img alt="Зеркало в полный рост в прихожей, вровень с полкой справа" height="1448" loading="lazy" src="assets/projects/hallway-flush-mirror.jpg" width="1086"/>
-<span class="project-info"><strong>Вровень с полкой</strong><span>Без подсветки · в полный рост</span></span>
-</button>
-<button class="project project--feature" data-caption="Круглая зеркальная композиция без подсветки с консолью" data-category="no-light compact decor" type="button">
-<img alt="Большая круглая зеркальная композиция с консолью в светлой комнате" height="1000" loading="lazy" src="assets/projects/round-composition.jpg" width="1000"/>
-<span class="project-info"><strong>Круглая композиция</strong><span>Без подсветки</span></span>
-</button>
-<button class="project project--portrait" data-caption="Зеркало в полный рост с тёплой подсветкой" data-category="light full-height hallway" type="button">
-<img alt="Высокое зеркало в полный рост с тёплой подсветкой" height="1400" loading="lazy" src="assets/projects/hallway-warm.jpg" width="1400"/>
-<span class="project-info"><strong>В полный рост</strong><span>С подсветкой</span></span>
-</button>
-<button class="project project--gold-portrait" data-caption="Большое зеркало в полный рост в тонкой золотой раме" data-category="no-light full-height gold-frame hallway" type="button">
-<img alt="Большое зеркало в полный рост в тонкой золотой раме" height="1920" loading="lazy" src="assets/projects/gold-frame-portrait.jpg" width="1440"/>
-<span class="project-info"><strong>Золотая рама</strong><span>Без подсветки · в полный рост</span></span>
-</button>
-<button class="project project--compact-photo" data-caption="Компактное зеркало с подсветкой для ванной" data-category="light compact bathroom" type="button">
-<img alt="Прямоугольное зеркало с подсветкой над раковиной в ванной" height="500" loading="lazy" src="assets/projects/bathroom-compact.jpg" width="500"/>
-<span class="project-info"><strong>Для ванной</strong><span>С подсветкой · компактное</span></span>
-</button>
-<button class="project project--landscape" data-caption="Зеркало с подсветкой на тёмной стене" data-category="light compact bathroom" type="button">
-<img alt="Прямоугольное зеркало с подсветкой на тёмной мраморной стене" height="444" loading="lazy" src="assets/projects/bathroom-dark.jpg" width="666"/>
-<span class="project-info"><strong>Контрастный интерьер</strong><span>С подсветкой · компактное</span></span>
-</button>
-<button class="project project--wide-photo" data-caption="Большое зеркало с подсветкой в жилой комнате" data-category="light full-height" type="button">
-<img alt="Большое зеркало с подсветкой почти от пола до потолка в жилой комнате" height="1440" loading="lazy" src="assets/projects/living-room-full-height.jpg" width="1920"/>
-<span class="project-info"><strong>От пола до потолка</strong><span>С подсветкой</span></span>
-</button>
-<button class="project project--tall-photo" data-caption="Высокое зеркало с мягкой подсветкой в светлой прихожей" data-category="light full-height hallway" type="button">
-<img alt="Высокое зеркало с мягкой подсветкой в светлой прихожей" height="1448" loading="lazy" src="assets/projects/hallway-light.jpg" width="1086"/>
-<span class="project-info"><strong>Светлая прихожая</strong><span>С подсветкой · в полный рост</span></span>
-</button>
-<button class="project project--tall-photo" data-caption="Зеркало в полный рост в интерьере в стиле лофт" data-category="light full-height hallway" type="button">
-<img alt="Высокое зеркало с подсветкой в прихожей в стиле лофт" height="1448" loading="lazy" src="assets/projects/hallway-loft.jpg" width="1086"/>
-<span class="project-info"><strong>Интерьер в стиле лофт</strong><span>С подсветкой · в полный рост</span></span>
-</button>
-<button class="project project--third" data-caption="Зеркало с подсветкой в полный рост для бутика" data-category="light full-height commercial" type="button">
-<img alt="Зеркало с подсветкой в полный рост в красном интерьере бутика" height="1448" loading="lazy" src="assets/projects/boutique-full-height.jpg" width="1086"/>
-<span class="project-info"><strong>Для бутика</strong><span>С подсветкой · в полный рост</span></span>
-</button>
-<button class="project project--third" data-caption="Зеркальная стена с боковой подсветкой в прихожей" data-category="light full-height hallway" type="button">
-<img alt="Большая зеркальная стена с боковой подсветкой в светлой прихожей" height="960" loading="lazy" src="assets/projects/mirror-wall-side-light.jpg" width="720"/>
-<span class="project-info"><strong>Зеркальная стена</strong><span>С подсветкой · большая</span></span>
-</button>
-<button class="project project--third" data-caption="Большое зеркало в полный рост с мягкой подсветкой" data-category="light full-height hallway" type="button">
-<img alt="Большое зеркало в полный рост с мягкой подсветкой в белом интерьере" height="1920" loading="lazy" src="assets/projects/full-height-white-room.jpg" width="1440"/>
-<span class="project-info"><strong>Большое зеркало</strong><span>С подсветкой · в полный рост</span></span>
-</button>
-</div>
-<div class="projects-action">
-<p>Любую идею адаптируем под нужный размер, форму и цвет света.</p>
-<a class="button" href="#quote-form">Рассчитать своё зеркало</a>
-</div>
-</div>
-</section>
+
 <!-- ============ REVIEWS ============ -->
 <section aria-labelledby="avito-reviews-title" class="section avito-reviews" id="avito-reviews">
 <div class="container">
@@ -828,5 +832,6 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
 <script defer="" src="js/quote-details.js?v=delivery-label-20261103"></script><script defer="" src="js/order.js?v=max-bot-20261105"></script>
 <script defer="" src="js/comfort.js?v=installed-delivery-20261103-motion2"></script><script defer="" src="js/copy-calculation.js?v=cm-input-20261029-v3"></script><script defer="" src="js/keyboard.js?v=keyboard-resize-20261029"></script> <script defer="" src="js/client-tools.js?v=contact-20261103"></script>
 <script defer="True" src="js/motion-site.js?v=20261105-2"></script><script defer="True" src="js/motion-scene.js?v=20261105-1"></script><script defer src="js/max-bot-contact.js?v=20261105-1"></script>
+<script defer src="js/showroom.js?v=20261106-1"></script>
 </body>
 </html>
