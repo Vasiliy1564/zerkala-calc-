@@ -221,6 +221,7 @@
     edge: 'grind',
     film: false,
     heat: false,
+    reinf: 'auto',
     delivery: false,
     faceFrame: 'none',
     ledProfile: false,
@@ -422,6 +423,8 @@
     }
     state.film = opt('film');
     state.heat = opt('heat');
+    var reinfSel = document.getElementById('reinf');
+    state.reinf = reinfSel ? reinfSel.value : 'auto';
     state.install = opt('install');
     state.delivery = opt('delivery');
     updateFaceFrameAvailability();
@@ -1022,6 +1025,9 @@
 
     // Поездка за полотном, установка и доставка — без наценки и надбавок.
     price += purchaseTripPrice();
+    var reinfSides = mirrorDeliverySides();
+    var reinfKind = window.MirrorSupplierPricing.reinforcementKind(state.reinf, state.shape, w, h, h2);
+    price += window.MirrorSupplierPricing.rearProfile(reinfKind, state.shape, w, h, h2).cost;
     if (state.install) price += installationPrice(area, state.light);
     price += clientDeliveryPrice();
 
@@ -1064,7 +1070,7 @@
         size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),material:state.material,
         materialLabel:window.MirrorSupplierPricing.materials[state.material].label+(state.material==='decorative'?' · '+mirrorOptions.decor:''),
         edge:state.edge,edgeLabel:window.MirrorCalcOptions.edgeLabel(EDGE_LABELS[state.edge],mirrorOptions,supplierQuote),light:state.light,ctrl:state.ctrl,clr:state.clr,
-        film:state.film,heat:state.heat,ledProfile:state.ledProfile,faceFrame:state.faceFrame,
+        film:state.film,heat:state.heat,reinf:reinfKind,ledProfile:state.ledProfile,faceFrame:state.faceFrame,
         install:state.install,delivery:state.delivery,region:deliveryRegion(),estimate:supplierQuote.estimate
       }});
     }
@@ -1103,6 +1109,7 @@
 
     inc += row('Доставка', deliveryDescription());
     if (state.ledProfile) inc += row('Светодиодная лента в профиле', 'да');
+    if (reinfKind !== 'none') inc += row('Усиление сзади', window.MirrorSupplierPricing.REINF[reinfKind].label);
     if (state.faceFrame !== 'none') inc += row('Алюминиевая рама', FACE_FRAME_LABELS[state.faceFrame]);
     if (supplierQuote.estimate) inc += '<p class="figure-price-note">Точная стоимость после согласования контура и заготовки. Установка и доставка — по выбранным условиям.</p>';
     document.getElementById('r-inc').innerHTML = inc;
@@ -1117,6 +1124,7 @@
     if (state.install) details.push('с установкой');
     if (state.film) details.push('с бронеплёнкой');
     if (state.ledProfile) details.push('со светодиодной лентой в алюминиевом профиле');
+    if (reinfKind !== 'none') details.push('усиление сзади: ' + window.MirrorSupplierPricing.REINF[reinfKind].label);
     if (state.delivery || state.install) details.push('доставка: ' + deliveryDescription());
 
     if (state.faceFrame !== 'none') details.push('алюминиевая рама — ' + FACE_FRAME_LABELS[state.faceFrame]);
@@ -1197,6 +1205,12 @@
       var res = document.getElementById('calc-result');
       if (res && res.classList.contains('show')) calc();
     });
+  });
+  var reinfEl = document.getElementById('reinf');
+  if (reinfEl) reinfEl.addEventListener('change', function () {
+    readState();
+    var res = document.getElementById('calc-result');
+    if (res && res.classList.contains('show')) calc(false);
   });
   $all('input[name="option"][value="film"], input[name="option"][value="heat"], input[name="option"][value="delivery"], input[name="option"][value="led-profile"]').forEach(function (r) {
     r.addEventListener('change', function () {

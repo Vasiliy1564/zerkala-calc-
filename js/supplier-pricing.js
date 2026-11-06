@@ -123,6 +123,20 @@ function markup(light,shape){return light?1.5:1;}
 function purchasingTrip(width,height){
  var mm=Math.max(Number(width),Number(height));return mm<=1800?300:mm<=2000?450:750;
 }
+// Усиление сзади (опция): уголок 20×20×1,5 — 141 ₽/м, труба 20×10×1,5 — 334 ₽/м, плюс 300 ₽ за поездку.
+var REINF={angle:{label:'уголок 20×20×1,5 мм',rate:141},tube:{label:'труба 20×10×1,5 мм',rate:334}};
+function rearProfile(kind,shape,width,height,height2){
+ var t=REINF[kind];if(!t)return {metres:0,cost:0};
+ var w=Number(width),h=shape==='circle'?w:Number(height);
+ if(shape==='double'||shape==='semidouble')h+=Number(height2||0);
+ var metres=h<=2000?2*h/1000:2*(w+h)/1000;
+ return {metres:metres,cost:Math.round(metres*t.rate+300)};
+}
+function reinforcementKind(choice,shape,width,height,height2){
+ var w=Number(width),h=shape==='circle'?w:Number(height);
+ if(shape==='double'||shape==='semidouble')h+=Number(height2||0);
+ return (choice==='angle'||choice==='tube')?choice:(h>1800?'angle':'none');
+}
 function reinforcement(shape,width,height,height2){
  var w=Number(width),h=shape==='circle'?w:Number(height);
  if(shape==='double'||shape==='semidouble')h+=Number(height2||0);
@@ -295,7 +309,7 @@ function refreshCleanCalculation(data){
 }
 
 
-var api={materials:materials,agreedLookup:agreedLookup,refreshCleanCalculation:refreshCleanCalculation,tariffs:{supplier:"RIAL",date:"2026-11-02",silver:1568,special:2800,straightGrind:80,straightPolish:80,curvedGrind:120,curvedPolish:120,cnc:270,curvedCnc:405,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement};
+var api={materials:materials,agreedLookup:agreedLookup,refreshCleanCalculation:refreshCleanCalculation,tariffs:{supplier:"RIAL",date:"2026-11-02",silver:1568,special:2800,straightGrind:80,straightPolish:80,curvedGrind:120,curvedPolish:120,cnc:270,curvedCnc:405,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement,rearProfile:rearProfile,reinforcementKind:reinforcementKind,REINF:REINF};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);
 
