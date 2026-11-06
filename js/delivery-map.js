@@ -14,7 +14,8 @@
     else if (p.osm_key === 'highway') parts = [loc, p.name];
     else parts = [loc, p.street, p.name];
     var seen = {};
-    return parts.filter(function (x) { if (!x || seen[x]) return false; seen[x] = true; return true; }).join(', ');
+    // Municipal units («…сельское поселение») only add noise next to the settlement name.
+    return parts.filter(function (x) { if (!x || seen[x] || /поселени/i.test(x)) return false; seen[x] = true; return true; }).join(', ');
   }
   function toFeature(f) {
     var p = f.properties || {}, c = f.geometry && f.geometry.coordinates;
@@ -106,7 +107,7 @@
       status.textContent = 'Определяем адрес точки…';
       var lat = Math.round(latlng.lat * 1e6) / 1e6, lon = Math.round(latlng.lng * 1e6) / 1e6;
       var label = await reverse(lat, lon);
-      window.MirrorDelivery.choose({ properties: { label: (label ? label + ' · ' : '') + 'точка на карте ' + lat.toFixed(5) + ', ' + lon.toFixed(5) }, geometry: { coordinates: [lon, lat] }, approx: false });
+      window.MirrorDelivery.choose({ properties: { label: (label ? label + ' ' : 'Точка на карте ') + '(' + lat.toFixed(5) + ', ' + lon.toFixed(5) + ')' }, geometry: { coordinates: [lon, lat] }, approx: false });
     }
     function draw() {
       if (!map) return;

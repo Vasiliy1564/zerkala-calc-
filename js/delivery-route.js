@@ -40,7 +40,9 @@ async function searchAddress(query,market,token){
  var remote=json(url,{credentials:'omit'},6000).then(remember);
  var jobs=[remote];
  // OpenStreetMap search covers villages and points the main provider misses or fails on.
- if(window.MirrorPhoton)jobs.push(remote.then(function(data){if(data.features&&data.features.length)throw {data:data};return null;},function(){return null;}).then(function(){return window.MirrorPhoton.search(query);}));
+ if(window.MirrorPhoton){var osm=window.MirrorPhoton.search(query);osm.catch(function(){});
+  // Starts at once, but yields to the main provider if it answers with matches within 2.5 s.
+  jobs.push(Promise.race([remote.then(function(d){return d.features&&d.features.length?'hit':'miss';},function(){return 'miss';}),new Promise(function(r){setTimeout(function(){r('miss');},2500);})]).then(function(s){if(s==='hit')throw {data:{features:[]}};return osm;}));}
  if(window.MirrorAddressFallback)jobs.push(window.MirrorAddressFallback.search(query,function(done,total){if(!finished&&token===revision)status.textContent='Загружаем адресную базу: '+done+' / '+total+'…';}).then(remember));
  // Both sources start together; an empty answer must not hide a valid slower answer.
  try{return await Promise.any(jobs.map(function(job){return job.then(function(data){if(data.features&&data.features.length)return data;throw {data:data};});}));}
