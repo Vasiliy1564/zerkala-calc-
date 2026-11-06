@@ -4,7 +4,7 @@
 var origin='Мурино, улица Шувалова, 16/9',point=[30.4290869,60.0565448],route=null,revision=0,busy=false,lastSearch=0;
 var form=document.getElementById('quote-form'),option=document.querySelector('input[name="option"][value="delivery"]');
 var panel=document.createElement('div');panel.id='delivery-address-panel';panel.className='delivery-address-panel';
-panel.innerHTML='<label for="delivery-address">Укажите адрес доставки</label><input id="delivery-address" type="text" autocomplete="street-address" placeholder="Город, улица, дом"><button type="button" class="button" id="delivery-search">Рассчитать доставку</button><div id="delivery-candidates"></div><p id="delivery-route-status" role="status" aria-live="polite"></p><small class="delivery-attribution">© 2ГИС · © OpenStreetMap</small>';
+panel.innerHTML='<label for="delivery-address">Укажите адрес доставки</label><input id="delivery-address" type="text" autocomplete="street-address" placeholder="Город, улица, дом"><button type="button" class="button" id="delivery-search">Рассчитать доставку</button><div id="delivery-candidates"></div><p id="delivery-route-status" role="status" aria-live="polite"></p><div id="delivery-map-slot"></div><small class="delivery-attribution">© 2ГИС · © OpenStreetMap</small>';
 // Keep expanding details outside the option grid so its buttons never reflow.
 var group=document.getElementById('deliveryOpt').closest('.options'),details=document.createElement('div');details.id='mirror-service-details';group.after(details);details.appendChild(panel);
 var input=document.getElementById('delivery-address'),status=document.getElementById('delivery-route-status'),results=document.getElementById('delivery-candidates'),button=document.getElementById('delivery-search');
@@ -18,11 +18,13 @@ function describe(){
  if(!route)return 'укажите адрес';
  return (base?extra:total).toLocaleString('ru-RU')+' ₽';
 }
-function updatePrice(){if(route)status.textContent='Доставка: '+describe();}
+function updatePrice(){if(route)status.textContent='Доставка: '+describe()+' ('+String(route.km).replace('.',',')+' км)'+(route.approx?' — до центра населённого пункта, уточним при согласовании':'');}
 function emit(){updatePrice();window.dispatchEvent(new Event('mirror-delivery-change'));}
 function warmAddresses(){if(window.MirrorAddressFallback&&window.MirrorAddressFallback.preload)window.MirrorAddressFallback.preload();}
 function visibility(){panel.hidden=!option.checked;if(option.checked)warmAddresses();}
-window.MirrorDelivery={describe:describe,getRoute:function(){return route;},updateVisibility:function(){visibility();updatePrice();}};
+window.MirrorDelivery={describe:describe,getRoute:function(){return route;},updateVisibility:function(){visibility();updatePrice();},origin:{label:origin,point:point},
+ // Lets the map and address suggestions set the destination directly.
+ choose:function(f){if(!f||!f.geometry)return;var token=++revision;route=null;results.replaceChildren();input.value=address(f);busy=true;button.disabled=true;emit();choose(f,token);}};
 visibility();option.addEventListener('change',visibility);
 function reset(){revision++;route=null;busy=false;button.disabled=false;results.replaceChildren();status.textContent='';emit();}
 input.addEventListener('focus',warmAddresses);
@@ -37,6 +39,8 @@ async function searchAddress(query,market,token){
  function remember(data){if(data.features&&data.features.length){try{localStorage.setItem(key,JSON.stringify({at:Date.now(),data:data}));}catch(e){}}return data;}
  var remote=json(url,{credentials:'omit'},6000).then(remember);
  var jobs=[remote];
+ // OpenStreetMap search covers villages and points the main provider misses or fails on.
+ if(window.MirrorPhoton)jobs.push(remote.then(function(data){if(data.features&&data.features.length)throw {data:data};return null;},function(){return null;}).then(function(){return window.MirrorPhoton.search(query);}));
  if(window.MirrorAddressFallback)jobs.push(window.MirrorAddressFallback.search(query,function(done,total){if(!finished&&token===revision)status.textContent='Загружаем адресную базу: '+done+' / '+total+'…';}).then(remember));
  // Both sources start together; an empty answer must not hide a valid slower answer.
  try{return await Promise.any(jobs.map(function(job){return job.then(function(data){if(data.features&&data.features.length)return data;throw {data:data};});}));}
@@ -56,15 +60,15 @@ async function choose(f,token){
  var destination=f.geometry.coordinates;results.replaceChildren();status.textContent='Считаем доставку…';
  try{
   var path=point.join(',')+';'+destination.join(',');
-  var routeKey='mirror.road.v1.'+path,cached;
+  var routeKey='mirror.road.v2.'+path,cached;
   try{cached=JSON.parse(localStorage.getItem(routeKey));}catch(e){}
-  var data=cached&&Date.now()-cached.at<86400000&&cached.data?cached.data:await json('https://router.project-osrm.org/route/v1/driving/'+path+'?overview=false&alternatives=false&steps=false');
+  var data=cached&&Date.now()-cached.at<86400000&&cached.data?cached.data:await json('https://router.project-osrm.org/route/v1/driving/'+path+'?overview=simplified&geometries=geojson&alternatives=false&steps=false');
   if(token!==revision)return;
   if(data.code!=='Ok'||!data.routes||!data.routes.length||!Number.isFinite(data.routes[0].distance))throw Error('No route');
   var metres=data.routes[0].distance;
   if(metres<0||metres>500000)throw Error('Out of area');
   try{localStorage.setItem(routeKey,JSON.stringify({at:Date.now(),data:data}));}catch(e){}
-  route={origin:origin,address:address(f),km:Math.round(metres/100)/10};input.value=route.address;
+  route={origin:origin,address:address(f),km:Math.round(metres/100)/10,point:destination,approx:Boolean(f.approx),geometry:data.routes[0].geometry||null};input.value=route.address;
   updatePrice();
   emit();
  }catch(e){if(token===revision){route=null;status.textContent='Не удалось построить маршрут. Проверьте адрес и повторите. Укажите адрес для уточнения стоимости.';emit();}}
