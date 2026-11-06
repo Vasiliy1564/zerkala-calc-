@@ -120,7 +120,7 @@
         dest.on('dragend', function () { setPoint(dest.getLatLng()); });
       } else dest.setLatLng(ll);
       if (r.geometry && r.geometry.coordinates) {
-        line = L.polyline(r.geometry.coordinates.map(function (c) { return [c[1], c[0]]; }), { color: '#174936', weight: 4, opacity: .75 }).addTo(map);
+        line = L.polyline(r.geometry.coordinates.map(function (c) { return [c[1], c[0]]; }), { color: '#8a6f45', weight: 4, opacity: .75 }).addTo(map);
         map.fitBounds(line.getBounds(), { padding: [24, 24], maxZoom: 14 });
       } else map.fitBounds(L.latLngBounds([[BIAS.lat, BIAS.lon], ll]), { padding: [24, 24], maxZoom: 14 });
     }
