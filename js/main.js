@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var files = {black:'black-frame-full-height.jpg',white:'bathroom-white-frame.jpg',gold:'gold-frame-portrait.jpg'};
+  var files = {black:'black-frame-full-height.webp',white:'bathroom-white-frame.webp',gold:'gold-frame-portrait.webp'};
   var names = {black:'чёрной',white:'белой',gold:'золотой'};
   var box, returnTarget, returnButton;
   function move(target) {
