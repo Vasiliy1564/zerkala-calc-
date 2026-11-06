@@ -1,4 +1,4 @@
-/* Photo showroom: content first, depth only around the photographs. */
+/* Static photo showroom with a clearly lit gallery control. */
 .hero{min-height:600px!important;padding-top:35px!important;padding-bottom:48px!important}
 .hero .room{height:520px!important}
 .hero .cta{min-height:52px;gap:18px;font-size:14px}
@@ -6,14 +6,12 @@
 #projects{padding-top:58px;padding-bottom:58px;scroll-margin-top:24px}
 #projects .section-head{margin-bottom:28px}
 #projects .display{font-size:clamp(32px,4vw,52px)!important;line-height:1.12}
-#projects .projects-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:auto;gap:24px;perspective:1400px}
-#projects .projects-grid .project{grid-column:auto;grid-row:auto;aspect-ratio:4/3;min-height:0;border-radius:12px;padding:0;transform:perspective(1100px) rotateX(var(--work-rx,0deg)) rotateY(var(--work-ry,0deg));transform-style:preserve-3d;transition:transform .5s cubic-bezier(.16,1,.3,1),box-shadow .5s;box-shadow:0 14px 30px #0004;isolation:isolate}
+#projects .projects-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:auto;gap:24px}
+#projects .projects-grid .project{grid-column:auto;grid-row:auto;aspect-ratio:4/3;min-height:0;border-radius:12px;padding:0;box-shadow:0 14px 30px #0004;isolation:isolate}
 #projects .project:focus-visible{outline:3px solid #ffb59e;outline-offset:5px}
-#projects .project img{width:100%;height:100%;object-fit:cover;transform:scale(1.025);transition:transform .7s cubic-bezier(.16,1,.3,1)}
-#projects .project:hover img{transform:scale(1.055)}
-#projects .project:before{content:'';position:absolute;inset:-50%;z-index:3;background:linear-gradient(110deg,transparent 38%,#fff3 49%,transparent 60%);transform:translateX(-75%);pointer-events:none;opacity:0}
-#projects .project.work-pass:before{animation:work-light-pass 1.1s cubic-bezier(.16,1,.3,1) both}
-#projects .project.work-pass{animation:work-depth .95s cubic-bezier(.16,1,.3,1)}
+#projects .project img{width:100%;height:100%;object-fit:cover;transform:none;transition:none}
+#projects .project,#projects .project img,#projects .project-info{animation:none!important;transition:none!important;transform:none!important;translate:none!important}
+#projects .project:before{display:none!important}
 #projects .project-info{inset:auto 22px 20px;gap:12px}
 #projects .project-info strong{font-family:Studio,'Open Sans',sans-serif;font-size:19px;line-height:1.3;font-weight:600;max-width:70%}
 #projects .project-info span{font-size:12px}
@@ -21,11 +19,10 @@
 .gallery-controls button{min-height:48px;padding:12px 20px;background:#202729;color:#f6f3ed;border:1px solid #7e8d87;border-radius:8px;font:inherit}
 .gallery-controls button:hover{background:#333c3b}
 .gallery-controls button[hidden]{display:none}
-.gallery-motion{font-size:12px!important;color:#d3dcda!important}
+.gallery-controls .gallery-more{background:#ffc780;color:#24180e;font-size:16px;font-weight:700;min-height:56px;padding:16px 28px;border-color:#ffe4bc;box-shadow:0 0 12px #ffc78066,0 8px 32px #ffb45c55}
+.gallery-controls .gallery-more:hover{background:#ffdbac;box-shadow:0 0 16px #ffc78088,0 8px 36px #ffb45c66}
+.gallery-controls .gallery-more:focus-visible{outline:3px solid #fff1d9;outline-offset:5px}
+@media(max-width:560px){.gallery-controls .gallery-more{width:100%;padding:16px 20px}}
 #calculator{scroll-margin-top:24px}
-@keyframes work-light-pass{0%{opacity:0;transform:translateX(-75%)}20%{opacity:1}100%{opacity:0;transform:translateX(75%)}}
-@keyframes work-depth{0%{transform:perspective(1100px) rotateY(-3deg) rotateX(2deg)}100%{transform:perspective(1100px) rotateY(0) rotateX(0)}}
 @media(max-width:800px){.hero{padding:28px 6% 34px!important;gap:30px!important;grid-template-columns:1fr!important;width:100%!important}.hero .room{height:380px!important}.hero h1{font-size:clamp(38px,8vw,54px)!important}.hero .hero-copy>div{display:flex;gap:18px;flex-wrap:wrap;align-items:center}.hero .secondary-link{margin-left:0}.hero .hero-note{margin-top:20px!important}#projects .projects-grid{gap:16px}#projects .project-info{inset:auto 14px 14px;display:block}#projects .project-info strong{display:block;font-size:16px;max-width:100%}#projects .project-info span{display:block;margin-top:5px;text-align:left;max-width:none}}
 @media(max-width:560px){#projects .projects-grid{grid-template-columns:1fr}#projects .projects-grid .project{aspect-ratio:5/4}#projects{padding-top:38px;padding-bottom:38px}.hero .room{height:330px!important}.hero .cta{padding:15px 18px;font-size:13px}.gallery-controls{gap:8px}.gallery-controls button{padding:10px 14px}}
-@media(prefers-reduced-motion:reduce){#projects .projects-grid .project,#projects .project img{animation:none!important;transform:none!important;transition:none!important}#projects .project:before{display:none}}
-html.gallery-still #projects .project,html.gallery-still #projects .project:before{animation:none!important;transform:none!important}
