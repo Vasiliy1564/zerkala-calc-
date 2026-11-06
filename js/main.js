@@ -75,7 +75,7 @@
 })();
 
 /* ============================================================
-   ЗЕРКАЛА ПРО — дизайн ARCO
+   ЗЕРКАЛО PRO — дизайн ARCO
    Интерактив + калькулятор СПб: прайс от 12.10.2026.
    Наценка только на полотно и обработку: 100% / 150% с LED.
    ============================================================ */
@@ -86,7 +86,7 @@
     '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="700">' +
     '<rect width="100%" height="100%" fill="#f3f2ef"/>' +
     '<rect x="50%" y="42%" width="120" height="60" transform="translate(-60,-30)" fill="none" stroke="#c4c0b8" stroke-width="2"/>' +
-    '<text x="50%" y="60%" font-family="Georgia,serif" font-size="20" letter-spacing="5" fill="#8f8d88" text-anchor="middle">ЗЕРКАЛА ПРО</text>' +
+    '<text x="50%" y="60%" font-family="Georgia,serif" font-size="20" letter-spacing="5" fill="#8f8d88" text-anchor="middle">ЗЕРКАЛО PRO</text>' +
     '</svg>'
   );
 
@@ -554,7 +554,7 @@
     var tones={silver:['#c8d7cf',.035],crystal:['#ffffff',.08],graphite:['#252c36',.58],bronze:['#9b6235',.43],antique:['#82704a',.27],satinSilver:['#e1e4de',.55],satinBronze:['#ab8058',.58],satinGraphite:['#535963',.64],decorative:['#d5ddd6',.12]};
     var tone=tones[material]||tones.silver;
     var defs='<defs><filter id="materialFrost"><feGaussianBlur stdDeviation="3"/></filter><filter id="materialPatina"><feTurbulence type="fractalNoise" baseFrequency=".12" numOctaves="3" seed="7"/><feColorMatrix type="matrix" values="0 0 0 0 .15 0 0 0 0 .12 0 0 0 0 .08 0 0 0 1.8 -.8"/></filter><pattern id="materialDecor" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M16 0L32 16 16 32 0 16Z" fill="none" stroke="#edf0e8" stroke-width="1.4" opacity=".65"/></pattern></defs>';
-    return defs+'<g class="mirror-material-surface" data-material="'+material+'"><rect width="170" height="240" fill="#d7dbd3"/><image class="mirror-reflection" href="assets/mirror-reflection.png" width="170" height="240" preserveAspectRatio="xMidYMid slice" opacity="'+(satin?'.55':'.94')+'"'+(satin?' filter="url(#materialFrost)"':'')+'/><rect class="mirror-material-tint" width="170" height="240" fill="'+tone[0]+'" opacity="'+tone[1]+'"/>'+(material==='antique'?'<rect width="170" height="240" filter="url(#materialPatina)" opacity=".6"/>':'')+(material==='decorative'?'<rect width="170" height="240" fill="url(#materialDecor)"/>':'')+'</g>';
+    return defs+'<g class="mirror-material-surface" data-material="'+material+'"><rect width="170" height="240" fill="#d7dbd3"/><image class="mirror-reflection" href="assets/mirror-reflection.svg" width="170" height="240" preserveAspectRatio="xMidYMid slice" opacity="'+(satin?'.55':'.94')+'"'+(satin?' filter="url(#materialFrost)"':'')+'/><rect class="mirror-material-tint" width="170" height="240" fill="'+tone[0]+'" opacity="'+tone[1]+'"/>'+(material==='antique'?'<rect width="170" height="240" filter="url(#materialPatina)" opacity=".6"/>':'')+(material==='decorative'?'<rect width="170" height="240" fill="url(#materialDecor)"/>':'')+'</g>';
   }
 
   window.MirrorMaterialReflection=materialReflection;

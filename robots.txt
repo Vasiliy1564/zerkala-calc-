@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /put-peterburg/
+Disallow: /tests/
+Disallow: /tools/
+Disallow: /docs/
 
 Sitemap: https://zerkalo-pro-spb.ru/sitemap.xml
