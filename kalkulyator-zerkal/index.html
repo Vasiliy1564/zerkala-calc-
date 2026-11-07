@@ -133,7 +133,7 @@ textarea{width:100%;min-height:220px;background:var(--card2);color:var(--text);b
   <h2>Услуги и опции</h2>
   <label class="switch"><span>Бронеплёнка</span><input type="checkbox" id="film"></label>
   <label class="switch"><span>Подогрев 400×600 мм</span><input type="checkbox" id="heat"></label>
-  <div class="field"><span class="lab">Усиление сзади</span><select id="reinf"><option value="auto">Авто (уголок для зеркал выше 180 см)</option><option value="angle">Уголок 20×20×1,5 мм</option><option value="tube">Труба 20×10×1,5 мм</option></select></div>
+  <div class="field"><span class="lab">Усиление сзади</span><select id="reinf"><option value="auto">Авто (уголок для зеркал выше 180 см)</option><option value="none">Без усиления</option><option value="angle">Уголок 20×20×1,5 мм</option><option value="tube">Труба 20×10×1,5 мм</option></select></div>
   <label class="switch"><span>Установка</span><input type="checkbox" id="install"></label>
   <label class="switch"><span>Доставка по адресу</span><input type="checkbox" id="delivery"></label>
   <div id="kmBox" class="sub-fields" hidden><label class="lab" for="km">Расстояние до клиента, км</label><input id="km" type="number" inputmode="decimal" step="0.1" min="0"><div class="hint" id="kmHint"></div></div>
@@ -285,6 +285,7 @@ function rearProfile(kind,shape,width,height,height2){
 function reinforcementKind(choice,shape,width,height,height2){
  var w=Number(width),h=shape==='circle'?w:Number(height);
  if(shape==='double'||shape==='semidouble')h+=Number(height2||0);
+ if(choice==='none')return 'none';
  return (choice==='angle'||choice==='tube')?choice:(h>1800?'angle':'none');
 }
 function reinforcement(shape,width,height,height2){
