@@ -25,7 +25,7 @@ function refreshServices(data){
  var m=data.mirror,w=Number(m.width),h=m.shape==='circle'?w:Number(m.height);
  if(m.shape==='double'||m.shape==='semidouble')h+=Number(m.height2)||0;
  if(!(w>0&&h>0))return data;
- var area=w*h/1000000,installation=m.install?(m.light?2500:2000)+Math.max(0,area-1)*700:0;
+ var area=w*h/1000000,installation=m.install?(function(b){return m.light?Math.max(2500,b+500):b;})(area<=2?Math.max(2000,area*1300):area*1500):0;
  var trip=tripPrice(Math.max(w,h)),r=route();
  var delivery=deliveryPrice(Math.max(w,h),r?r.km:null,m.delivery||m.install,m.install);
  var carry=carryPrice(maxSide(m),m.carry);

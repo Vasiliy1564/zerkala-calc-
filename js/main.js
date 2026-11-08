@@ -308,7 +308,8 @@
   };
 
   function installationPrice(area, light) {
-    return (light ? 2500 : 2000) + Math.max(0, area - 1) * 700;
+    var base = (area <= 2) ? Math.max(2000, area * 1300) : area * 1500;
+    return light ? Math.max(2500, base + 500) : base;
   }
   function deliveryRegion() {
     var select = document.getElementById('delivery-region');
