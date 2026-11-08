@@ -119,7 +119,8 @@ function lookup(shape,material,width,height,edge,height2,options){
   shapeRate:shapeRate,sizeSurcharge:0,splitFactor:1,roundedFactor:1,area:area,perimeter:perimeter,maxSide:Math.max.apply(null,[w].concat(parts)),minSide:Math.min.apply(null,[w].concat(parts))};
 }
 
-function markup(light,shape){return light?1.5:1;}
+// Markup on mirror + edge: no light +100%; with light +150% (rect, double) or +115% (shaped).
+function markup(light,shape){return light?(rectangular(shape)?1.5:1.15):1;}
 function purchasingTrip(width,height){
  var mm=Math.max(Number(width),Number(height));return mm<=1800?300:mm<=2000?450:750;
 }
