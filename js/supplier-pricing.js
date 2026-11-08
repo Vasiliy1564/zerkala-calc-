@@ -130,18 +130,18 @@ function rearProfile(kind,shape,width,height,height2){
  var t=REINF[kind];if(!t)return {metres:0,cost:0};
  var w=Number(width),h=shape==='circle'?w:Number(height);
  if(shape==='double'||shape==='semidouble')h+=Number(height2||0);
- var metres=h<=2000?2*h/1000:2*(w+h)/1000;
+ var metres=2*(w+h)/1000;
  return {metres:metres,cost:Math.round(metres*t.rate+300)};
 }
 function reinforcementKind(choice,shape,width,height,height2){
  var w=Number(width),h=shape==='circle'?w:Number(height);
  if(shape==='double'||shape==='semidouble')h+=Number(height2||0);
- return (choice==='angle'||choice==='tube')?choice:(h>1800?'angle':'none');
+ return (choice==='angle'||choice==='tube')?choice:(Math.max(w,h)>1800?'angle':'none');
 }
 function reinforcement(shape,width,height,height2){
  var w=Number(width),h=shape==='circle'?w:Number(height);
  if(shape==='double'||shape==='semidouble')h+=Number(height2||0);
- var metres=h<=1800?0:h<=2000?2*h/1000:2*(w+h)/1000;
+ var metres=Math.max(w,h)<=1800?0:2*(w+h)/1000;
  return {metres:metres,cost:metres*349,rate:349};
 }
 
