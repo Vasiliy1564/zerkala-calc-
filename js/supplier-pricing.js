@@ -124,8 +124,8 @@ function markup(light,shape){return light?(rectangular(shape)?1.5:1.15):1;}
 function purchasingTrip(width,height){
  var mm=Math.max(Number(width),Number(height));return mm<=1800?300:mm<=2000?450:750;
 }
-// Усиление сзади (опция): уголок 20×20×1,5 — 141 ₽/м, труба 20×10×1,5 — 334 ₽/м, плюс 300 ₽ за поездку.
-var REINF={angle:{label:'уголок 20×20×1,5 мм',rate:141},tube:{label:'труба 20×10×1,5 мм',rate:334}};
+// Усиление сзади (опция): уголок 20×20×1,5 — 141 ₽/м, труба 20×20×2 — 366,5 ₽/м, плюс 300 ₽ за поездку.
+var REINF={angle:{label:'уголок 20×20×1,5 мм',rate:141},tube:{label:'труба 20×20×2 мм',rate:366.5}};
 function rearProfile(kind,shape,width,height,height2){
  var t=REINF[kind];if(!t)return {metres:0,cost:0};
  var w=Number(width),h=shape==='circle'?w:Number(height);
@@ -136,7 +136,7 @@ function rearProfile(kind,shape,width,height,height2){
 function reinforcementKind(choice,shape,width,height,height2){
  var w=Number(width),h=shape==='circle'?w:Number(height);
  if(shape==='double'||shape==='semidouble')h+=Number(height2||0);
- return (choice==='angle'||choice==='tube')?choice:(Math.max(w,h)>1800?'angle':'none');
+ return (choice==='angle'||choice==='tube')?choice:(Math.max(w,h)>2600?'tube':Math.max(w,h)>1800?'angle':'none');
 }
 function reinforcement(shape,width,height,height2){
  var w=Number(width),h=shape==='circle'?w:Number(height);
