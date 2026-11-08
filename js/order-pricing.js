@@ -32,7 +32,7 @@ function refreshServices(data){
  var total=data.total,hasTrip=false,hasDelivery=false,hasCarry=false;
  var rows=data.rows.map(function(row){
   var sale=row.sale,cost=row.cost;
-  if(row.key==='mirror'&&m.light&&m.lightSurcharge!==600)sale=row.sale+600;
+  if(row.key==='mirror'&&m.light&&m.lightSurcharge!==400)sale=row.sale+400;
   if(row.key==='installation')sale=installation;
   if(row.key==='carry'){sale=carry.amount;hasCarry=true;}
   if(row.key==='purchase-trip'){sale=trip;cost=trip;hasTrip=true;}
@@ -43,7 +43,7 @@ function refreshServices(data){
  if(!hasTrip){rows.push({key:'purchase-trip',name:'Поездка с зеркалами',sale:trip,cost:trip});total+=trip;}
  if(!hasDelivery&&delivery){rows.push({key:'customer-delivery',name:'Доставка клиенту',sale:delivery,cost:null,expense:'delivery'});total+=delivery;}
  if(!hasCarry&&carry.requested){rows.push({key:'carry',name:'Подъём до квартиры',sale:carry.amount,cost:null,expense:'carry'});total+=carry.amount;}
- return Object.assign({},data,{rows:rows,total:total,mirror:m.light?Object.assign({},m,{lightSurcharge:600}):m});
+ return Object.assign({},data,{rows:rows,total:total,mirror:m.light?Object.assign({},m,{lightSurcharge:400}):m});
 }
 function calculate(items,settings){
  settings=settings||{};
