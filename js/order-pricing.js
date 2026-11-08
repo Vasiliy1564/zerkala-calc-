@@ -7,7 +7,7 @@ function tripPrice(mm){return mm<=1800?300:mm<=2000?450:750;}
 function deliveryRate(mm,km){return (mm<=1800?30:mm<=2000?38:mm<=2500?42:52)+(Number(km)>10?15:0);}
 function route(){return root.MirrorDelivery?root.MirrorDelivery.getRoute():null;}
 function deliveryBase(){return 0;}
-function deliveryPrice(mm,km,requested){return !requested||!Number.isFinite(km)||km<0?0:Math.round(km*deliveryRate(mm,km));}
+function deliveryPrice(mm,km,requested){return !requested||!Number.isFinite(km)||km<0?0:Math.max(500,Math.round(km*deliveryRate(mm,km)));}
 
 function carryPrice(mm,options){
  var o=options||{};if(!o.enabled)return {requested:false,amount:0,pending:false};
