@@ -1,0 +1,11 @@
+# Калькулятор зеркал (Android, com.zerkalopro.calc)
+
+Приложение — WebView с одним файлом `src/index.html` (assets/index.html внутри APK).
+Интерфейс прежний, пакет `com.zerkalopro.calc`.
+
+- `apk/Kalkulyator-zerkal-6-original.apk` — исходная версия (расчёт установки по питерской формуле).
+- `apk/Kalkulyator-zerkal-7.apk` — версия 7: установка считается как на ставропольском сайте
+  (до 2 м²: max(2000, 1300 ₽/м²), свыше: 1500 ₽/м²; с подсветкой +500 ₽, минимум 2500 ₽).
+- `src/index.html` — актуальный код калькулятора (версия 7).
+
+Сборка: заменить `assets/index.html` внутри APK, переподписать (apksigner), zipalign.
