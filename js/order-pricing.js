@@ -3,7 +3,7 @@
 'use strict';
 function bounded(value,min,max,fallback){var n=Number(value);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback;}
 function maxSide(m){var w=Number(m.width)||0,h=m.shape==='circle'?w:Number(m.height)||0;if(m.shape==='double'||m.shape==='semidouble')h+=Number(m.height2)||0;return Math.max(w,h);}
-function tripPrice(mm){return mm<=1800?300:mm<=2000?450:750;}
+function tripPrice(mm){return mm<=1800?300:mm<=2490?1000:mm<=2500?1500:2000;}
 function deliveryRate(mm,km){return (mm<=1800?30:mm<=2000?38:mm<=2500?42:52)+(Number(km)>10?15:0);}
 function route(){return root.MirrorDelivery?root.MirrorDelivery.getRoute():null;}
 function deliveryBase(){return 0;}
