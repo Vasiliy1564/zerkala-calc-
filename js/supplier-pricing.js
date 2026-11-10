@@ -122,7 +122,7 @@ function lookup(shape,material,width,height,edge,height2,options){
 // Markup on mirror + edge: no light +100%; with light +150% (rect, double) or +115% (shaped).
 function markup(light,shape){return light?(rectangular(shape)?1.5:1.15):1;}
 function purchasingTrip(width,height){
- var mm=Math.max(Number(width),Number(height));return mm<=1800?300:mm<=2490?1000:mm<=2500?1500:2000;
+ var mm=Math.max(Number(width),Number(height));return mm<=1800?500:mm<=2490?1400:mm<=2500?2100:2600;
 }
 // Усиление сзади (опция): уголок 20×20×1,5 — 141 ₽/м, труба 20×20×2 — 366,5 ₽/м, плюс 300 ₽ за поездку.
 var REINF={angle:{label:'уголок 20×20×1,5 мм',rate:141},tube:{label:'труба 20×20×2 мм',rate:366.5}};
