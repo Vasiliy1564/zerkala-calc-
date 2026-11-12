@@ -37,3 +37,17 @@ function streetHints(query){
  return choices.slice(0,10).map(x=>({...x,query:x.name+(part.house?', '+part.house:''),corrected:x.score>0,house:part.house}));
 }
 function streetOptions(f,hints){const box=$(f+'List');for(const h of hints){const b=node('button');b.append(node('strong',h.query),node('small',h.score===0?'Улица / территория из базы · уточнить адрес':h.score<=2?'Подходящее название · выбрать':'Возможно, вы имели в виду · выбрать'));b.onclick=()=>{const resume=pendingBuild;$(f).value=h.query;points[f]=null;seq[f]++;requests[f]=null;box.replaceChildren();pendingBuild=resume;searchPlace(f,true)};box.append(b)}}
+/* Fix 0.45: адрес с хвостом «район / город» разбирается офлайн */
+function addressQueryVariants(query){
+ const segs=String(query).split(',').map(s=>s.trim()).filter(Boolean);
+ const kept=segs.filter(s=>!/(?:^|\s)(?:район|р-н|округ)(?:\s|$)/i.test(s)&&!/^(?:санкт[\s-]петербург|спб)$/i.test(s));
+ const out=[];
+ // «Невский район» → слово «Невский»: так называются улицы-тёзки («Славянская (Невский) улица»)
+ const dist=segs.map(s=>s.match(/^([а-яё-]+?)(?:ск|ий|ый)?\s+(?:район|р-н)$/i)).filter(Boolean).map(m=>m[0].replace(/\s+(?:район|р-н)$/i,''));
+ if(kept.length&&dist.length){const m=kept[0].match(/^(.*?)[\s,]+(\d[^,]*)$/);if(m)for(const d of dist)out.push(m[1]+' '+d+' '+m[2])}
+ for(let k=kept.length;k>=1;k--)out.push(kept.slice(0,k).join(', '));
+ return out.length?[...new Set(out)]:[String(query)];
+}
+const streetPartsOne=streetParts,knownAddressPartsOne=knownAddressParts;
+streetParts=function(query){const v=addressQueryVariants(query);for(const q of v){const p=streetPartsOne(q);if(p.house)return p}return streetPartsOne(v[0])};
+knownAddressParts=function(query){const out=[];for(const q of addressQueryVariants(query))out.push(...knownAddressPartsOne(q));return out};
