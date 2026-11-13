@@ -117,7 +117,7 @@
   }
   function mount() {
     var style = document.createElement('style');
-    style.textContent = '#analytics-consent-panel{position:fixed;z-index:2147483647;bottom:16px;left:16px;right:16px;max-width:680px;margin:auto;padding:20px;border:1px solid #bbb;border-radius:12px;background:#fff;color:#202020;box-shadow:0 4px 24px #0003;font:16px/1.5 system-ui;max-height:80vh;overflow:auto}#analytics-consent-panel p{margin:10px 0}#analytics-consent-panel button{font:inherit;padding:10px 14px;margin:4px;border:1px solid #505050;background:#fff;color:#202020;border-radius:6px;cursor:pointer}#analytics-consent-panel a{color:#164da6;text-decoration:underline}.analytics-settings-button{display:block;margin:12px auto;padding:8px 12px;font:14px/1.4 system-ui;border:1px solid #888;border-radius:5px;background:#fff;color:#222;cursor:pointer}';
+    style.textContent = '#analytics-consent-panel{position:fixed;z-index:2147483647;bottom:12px;left:12px;right:12px;max-width:440px;margin:0;padding:14px 16px;border:1px solid #bbb;border-radius:12px;background:#fff;color:#202020;box-shadow:0 4px 24px #0003;font:14px/1.45 system-ui;max-height:60vh;overflow:auto}#analytics-consent-panel p{margin:6px 0}#analytics-consent-panel button{font:inherit;padding:8px 12px;margin:4px;border:1px solid #505050;background:#fff;color:#202020;border-radius:6px;cursor:pointer}#analytics-consent-panel a{color:#164da6;text-decoration:underline}.analytics-settings-button{display:block;margin:12px auto;padding:8px 12px;font:14px/1.4 system-ui;border:1px solid #888;border-radius:5px;background:#fff;color:#222;cursor:pointer}';
     document.head.appendChild(style);
     var settings = button('Настройки аналитики', open);
     settings.className = 'analytics-settings-button';
