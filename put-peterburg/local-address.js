@@ -24,6 +24,8 @@ function houseFamilyRows(house){
  const idx=regionalSearchIndex();if(!idx.houseFamilies){idx.houseFamilies=new Map();HOUSE_DATA.houses.forEach((h,i)=>{const key=houseFamily(h[3]);if(!key)return;if(!idx.houseFamilies.has(key))idx.houseFamilies.set(key,[]);idx.houseFamilies.get(key).push(i)})}
  return idx.houseFamilies.get(house)||[];
 }
+// Same street name exists in several districts: show the one nearest to the other route point / GPS first.
+function addressAnchor(){try{const pts=typeof points!=='undefined'?points:{};for(const p of [pts.from,pts.to,typeof gpsPoint!=='undefined'?gpsPoint:null])if(p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon))return p}catch(e){}return null}
 function localAddressMatches(query,limit=20){const seen=new Set();for(const part of [streetParts(query),...knownAddressParts(query)]){const key=part.text+'|'+part.house;if(seen.has(key))continue;seen.add(key);const results=localAddressPartMatches(query,part,limit);if(results.length)return results}return []}
 function localAddressPartMatches(query,part,limit){
  if(!part.house)return [];const house=canonicalHouse(part.house),base=houseBase(house);
@@ -38,7 +40,8 @@ function localAddressPartMatches(query,part,limit){
   results.push({name,lat:h[0],lon:h[1],kind:'address',house:h[3],exactHouse:hn===house,source:'offline-osm',osmId:h[4],locality:label.city});
  }
  const rank=p=>norm(p.locality)==='санкт петербург'?0:norm(p.locality).includes('санкт петербург')?1:!p.locality?3:2;
- results.sort((a,b)=>Number(b.exactHouse)-Number(a.exactHouse)||rank(a)-rank(b)||a.name.localeCompare(b.name,'ru',{numeric:true}));const groups=new Map(),unique=[];for(const p of results){const k=norm(p.name),group=groups.get(k)||[];if(group.some(x=>distance(x,p)<30))continue;group.push(p);groups.set(k,group);unique.push(p);if(unique.length>=limit)break}return unique;
+ const anchor=addressAnchor(),near=p=>anchor?distance(anchor,p):0;
+ results.sort((a,b)=>Number(b.exactHouse)-Number(a.exactHouse)||rank(a)-rank(b)||near(a)-near(b)||a.name.localeCompare(b.name,'ru',{numeric:true}));const groups=new Map(),unique=[];for(const p of results){const k=norm(p.name),group=groups.get(k)||[];if(group.some(x=>distance(x,p)<30))continue;group.push(p);groups.set(k,group);unique.push(p);if(unique.length>=limit)break}return unique;
 }
 function localPlaceMatches(query,limit=20){
  const q=addressWords(query);if(q.length<2)return [];const tokens=q.split(' '),idx=regionalSearchIndex(),out=[];
