@@ -837,7 +837,8 @@ function summary(r){
  if(r.frame!=='none')L.push('Алюминиевая рама: '+FRAME_LABELS[r.frame]+'.');
  if(m.film)L.push('Бронеплёнка: да.');if(m.heat)L.push('Подогрев 400×600 мм: да.');
  L.push('');
- L.push('Зеркало: '+money(t.goods-t.installation-t.carry)+'.');
+ // Поездка за полотном входит в цену зеркала, чтобы строки сходились с итогом.
+ L.push('Зеркало: '+money(t.total-(t.installation?t.installationAfterDiscount:0)-(t.carry||0)-(t.delivery||0))+'.');
  if(t.installation)L.push('Установка'+(t.discount?' (со скидкой '+t.discountRate+'%)':'')+': '+money(t.installationAfterDiscount)+'.');
  if(t.carry)L.push('Подъём: '+money(t.carry)+'.');
  if(t.delivery)L.push('Доставка: '+money(t.delivery)+'.');
