@@ -477,7 +477,8 @@ function tripPrice(mm){return mm<=1800?500:mm<=2000?1400:mm<=2500?2100:2600;}
 function deliveryRate(mm,km){return (mm<=1800?30:mm<=2000?38:mm<=2500?42:52)+(Number(km)>10?15:0);}
 function route(){return root.MirrorDelivery?root.MirrorDelivery.getRoute():null;}
 function deliveryBase(){return 0;}
-function deliveryPrice(mm,km,requested){return !requested||!Number.isFinite(km)||km<0?0:Math.min(1890,Math.max(500,Math.round(km*deliveryRate(mm,km))));}
+// Потолок доставки: с установкой — 1 500 ₽, без установки — 1 980 ₽.
+function deliveryPrice(mm,km,requested,installed){return !requested||!Number.isFinite(km)||km<0?0:Math.min(installed?1500:1980,Math.max(500,Math.round(km*deliveryRate(mm,km))));}
 
 function carryPrice(mm,options){
  var o=options||{};if(!o.enabled)return {requested:false,amount:0,pending:false};
@@ -678,7 +679,7 @@ function compute(s){
  var install=s.install?(function(b){return light?Math.max(2500,b+500):b;})(q.area<=2?Math.max(2000,q.area*1300):q.area*1500)*(1.06*1.02*(s.shape==='rounded'?1.15:s.shape==='double'?1+2000/16469.75:s.shape==='semidouble'?1.2:1))+300+q.area*150:0;price+=install;
  var wantDelivery=s.delivery||s.install;
  var km=num(s.km);kmValue=km>0?km:null;
- var delivery=OP.deliveryPrice(longer,kmValue,wantDelivery);price+=delivery;
+ var delivery=OP.deliveryPrice(longer,kmValue,wantDelivery,!!s.install);price+=delivery;
  var frameCost=0;
  if(frame!=='none'){var bars=frameStock(shape,w,h,h2).bars;frameCost=bars*FRAME_PRICES[frame]+FRAME_DELIVERY[frame];price+=frameCost;res.frameBars=bars;}
  var materialLabel=SP.materials[s.material].label+(s.material==='decorative'?' · '+s.decor:'');
