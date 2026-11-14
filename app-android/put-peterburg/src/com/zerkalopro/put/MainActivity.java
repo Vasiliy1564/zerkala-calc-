@@ -64,7 +64,9 @@ public class MainActivity extends Activity {
         web.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
-                if (!("https://" + HOST).equals(origin)) { callback.invoke(origin, false, false); return; }
+                // WebView передаёт адрес со слэшем на конце ("https://host/"): сравниваем по имени хоста, иначе доступ к месту всегда отклонялся.
+                Uri from = origin == null ? null : Uri.parse(origin);
+                if (from == null || !"https".equals(from.getScheme()) || !HOST.equals(from.getHost())) { callback.invoke(origin, false, false); return; }
                 if (hasLocation()) { callback.invoke(origin, true, false); return; }
                 pendingOrigin = origin;
                 pendingCallback = callback;
