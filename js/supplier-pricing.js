@@ -229,19 +229,19 @@ function refreshEVACalculation(data){
 }
 
 function refreshProfileCalculation(data){
- if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.ledProfileTariffVersion===1)return data;
+ if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.ledProfileTariffVersion===2)return data;
  var m=data.mirror,delta=0,metres=0;
  if(m.ledProfile&&m.light){
   var q=legacyLookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost});
   if(q.needsQuote)return data;
-  metres=q.perimeter;delta=metres*(250-600);
+  metres=q.perimeter;delta=metres*(400-(m.ledProfileTariffVersion===1?250:600));
  }
  var rows=data.rows.map(function(row){
   if(row.key==='mirror')return Object.assign({},row,{sale:row.sale+delta});
-  if(m.ledProfile&&m.light&&(row.expense==='profile'||row.name==='LED-профиль'))return Object.assign({},row,{sale:metres*250});
+  if(m.ledProfile&&m.light&&(row.expense==='profile'||row.name==='LED-профиль'))return Object.assign({},row,{sale:metres*400});
   return Object.assign({},row);
  });
- return Object.assign({},data,{rows:rows,total:data.total+delta,mirror:Object.assign({},m,{ledProfileTariffVersion:1})});
+ return Object.assign({},data,{rows:rows,total:data.total+delta,mirror:Object.assign({},m,{ledProfileTariffVersion:2})});
 }
 
 function refreshRialCalculation(data){

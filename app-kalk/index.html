@@ -378,19 +378,19 @@ function refreshEVACalculation(data){
 }
 
 function refreshProfileCalculation(data){
- if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.ledProfileTariffVersion===1)return data;
+ if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.ledProfileTariffVersion===2)return data;
  var m=data.mirror,delta=0,metres=0;
  if(m.ledProfile&&m.light){
   var q=legacyLookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost});
   if(q.needsQuote)return data;
-  metres=q.perimeter;delta=metres*(250-600);
+  metres=q.perimeter;delta=metres*(400-(m.ledProfileTariffVersion===1?250:600));
  }
  var rows=data.rows.map(function(row){
   if(row.key==='mirror')return Object.assign({},row,{sale:row.sale+delta});
-  if(m.ledProfile&&m.light&&(row.expense==='profile'||row.name==='LED-профиль'))return Object.assign({},row,{sale:metres*250});
+  if(m.ledProfile&&m.light&&(row.expense==='profile'||row.name==='LED-профиль'))return Object.assign({},row,{sale:metres*400});
   return Object.assign({},row);
  });
- return Object.assign({},data,{rows:rows,total:data.total+delta,mirror:Object.assign({},m,{ledProfileTariffVersion:1})});
+ return Object.assign({},data,{rows:rows,total:data.total+delta,mirror:Object.assign({},m,{ledProfileTariffVersion:2})});
 }
 
 function refreshRialCalculation(data){
@@ -667,7 +667,7 @@ function compute(s){
  if(light){ledCost=Math.ceil(q.perimeter/PRICE.ledRollLen)*PRICE.ledRoll+PRICE.block+PRICE.sw+q.perimeter*119;price+=ledCost;}
  var filmCost=s.film?geo.area*(q.pricingMode==='stavropol'?200:500):0;price+=filmCost;
  var heatCost=s.heat?2500:0;price+=heatCost;
- var profCost=ledProfile?geo.per*250:0;price+=profCost;
+ var profCost=ledProfile?geo.per*400:0;price+=profCost;
  var sides=shape==='circle'?[w,w]:[w,shape.indexOf('double')!==-1?h+h2:h];
  var longer=Math.max(sides[0],sides[1]),shorter=Math.min(sides[0],sides[1]);
  var trip=SP.purchasingTrip(longer,shorter);price+=trip;
@@ -686,7 +686,7 @@ function compute(s){
   {key:'purchase-trip',sale:trip,cost:trip},
   {key:'customer-delivery',sale:delivery,cost:null,expense:'delivery'},
   {key:'installation',sale:install,cost:null,expense:'install'}],
-  mirror:{carry:carryOpts,shape:shape,name:SHAPE_NAMES[shape],width:w,height:h,height2:h2,supplierTariffVersion:2,mirrorOptions:opts,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:1,supplierCategory:'rial',supplierCost:null,material:s.material,materialLabel:materialLabel,edge:edge,edgeLabel:edgeLabel(EDGE_LABELS[edge],opts),light:light,ctrl:s.ctrl,clr:s.clr,film:!!s.film,heat:!!s.heat,ledProfile:ledProfile,faceFrame:frame,install:!!s.install,delivery:!!s.delivery,estimate:q.estimate}};
+  mirror:{carry:carryOpts,shape:shape,name:SHAPE_NAMES[shape],width:w,height:h,height2:h2,supplierTariffVersion:2,mirrorOptions:opts,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:2,supplierCategory:'rial',supplierCost:null,material:s.material,materialLabel:materialLabel,edge:edge,edgeLabel:edgeLabel(EDGE_LABELS[edge],opts),light:light,ctrl:s.ctrl,clr:s.clr,film:!!s.film,heat:!!s.heat,ledProfile:ledProfile,faceFrame:frame,install:!!s.install,delivery:!!s.delivery,estimate:q.estimate}};
  var qty=Math.max(1,Math.min(10,Math.floor(num(s.qty))||1));
  var totals=OP.calculate([{qty:qty,data:data}],{});
  res.q=q;res.qty=qty;res.totals=totals;res.data=data;res.opts=opts;res.edgeLabel=data.mirror.edgeLabel;res.materialLabel=materialLabel;res.frame=frame;res.light=light;res.ledProfile=ledProfile;res.reinf=reinfKind;
