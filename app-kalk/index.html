@@ -74,12 +74,11 @@ textarea{width:100%;min-height:220px;background:var(--card2);color:var(--text);b
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style></head>
 <body>
-<header><div class="logo">ЗЕРКАЛО PRO<small>Калькулятор зеркал · обновляется сам</small></div><button class="ghost" id="btnReset" type="button">Сбросить</button></header>
 <main>
 <div class="side">
  <div class="card">
-  <h2>Результат</h2>
-  <div class="stage"><div><svg id="svg" viewBox="0 0 200 280" role="img" aria-label="Схема зеркала"></svg><div class="cap" id="cap"></div></div></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px"><h2 style="margin:0">Результат</h2><button class="ghost" id="btnReset" type="button">Сбросить</button></div>
+  <div class="stage" hidden><div><svg id="svg" viewBox="0 0 200 280" role="img" aria-label="Схема зеркала"></svg><div class="cap" id="cap"></div></div></div>
   <div class="price" id="price">—</div>
   <div class="err" id="err" role="status"></div>
   <div class="note" id="priceNote"></div>
