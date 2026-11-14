@@ -61,7 +61,8 @@ function smartRouteOptions(rawFrom,rawTo,preference='all'){
  // Metro is the core of this mode; buses remain available at both ends.
  const metroPlans=out.filter(p=>hasPreference(p));
  const assisted=preference==='metro'&&metroPlans.some(p=>p.access<=700&&p.egress<=700);
- out.sort((a,b)=>(preference==='metro'?Number(hasPreference(b))-Number(hasPreference(a)):0)||(assisted?Number(b.access<=700&&b.egress<=700)-Number(a.access<=700&&a.egress<=700):0)||compare(a,b));
+ /* Fix 0.45: «Автобус», «Трамвай» и т. д. раньше не влияли на выбор: теперь маршрут с выбранным транспортом идёт первым, если он не более чем вдвое дольше лучшего. */const bestScore=Math.min(...out.map(rank)),preferred=p=>preference==='metro'?hasPreference(p):preference!=='all'&&hasPreference(p)&&rank(p)<=bestScore*2;
+ out.sort((a,b)=>(Number(preferred(b))-Number(preferred(a)))||(assisted?Number(b.access<=700&&b.egress<=700)-Number(a.access<=700&&a.egress<=700):0)||compare(a,b));
  // First retain distinct services (101 and 101Э are different services).
  // Several boarding/alighting variants of one service must not fill every slot.
  const serviceKey=p=>p.legs.filter(l=>l.type==='ride').map(l=>l.line?'metro:'+l.line:(l.transport||'bus')+':'+patternById.get(l.route).ref).join('|');
