@@ -25,7 +25,7 @@ function refreshServices(data){
  var m=data.mirror,w=Number(m.width),h=m.shape==='circle'?w:Number(m.height);
  if(m.shape==='double'||m.shape==='semidouble')h+=Number(m.height2)||0;
  if(!(w>0&&h>0))return data;
- var area=w*h/1000000,installation=m.install?(function(b){return m.light?Math.max(2500,b+500):b;})(area<=2?Math.max(2000,area*1300):area*1500)*(1.06*1.02*(m.shape==='rounded'?1.15:m.shape==='double'?1+2000/16469.75:m.shape==='semidouble'?1.2:1))+300+(h>=2000?400:0)+(h>=2500?300:0):0;
+ var area=w*h/1000000,installation=m.install?(function(b){return m.light?Math.max(2500,b+500):b;})(area<=2?Math.max(2000,area*1300):area*1500)*(1.06*1.02*(m.shape==='rounded'?1.15:m.shape==='double'?1+2000/16469.75:m.shape==='semidouble'?1.2:1))+300+area*150:0;
  var trip=tripPrice(Math.max(w,h)),r=route();
  var delivery=deliveryPrice(Math.max(w,h),r?r.km:null,m.delivery||m.install,m.install);
  var carry=carryPrice(maxSide(m),m.carry);
