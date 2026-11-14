@@ -6,7 +6,7 @@
 
 - `../app-kalk/index.html` — код калькулятора (единственный источник), `../app-kalk/sw.js` — сохранение и обновление.
 - `kalkulyator/` — исходники оболочки (манифест, `MainActivity`, иконки).
-- `apk/Kalkulyator-zerkal-18.apk` — оболочка с самообновлением.
+- `apk/Kalkulyator-zerkal-19.apk` — оболочка с самообновлением (при ошибке связи показывает причину); 18 — то же без причины.
 - `apk/Kalkulyator-zerkal-6…17.apk` — старые версии со страницей внутри APK (без обновления).
 
 Сборка оболочки без Gradle: `aapt2 compile/link` → `javac -source 8 -target 8` → `d8` → `zipalign` → `apksigner`

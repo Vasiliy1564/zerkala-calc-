@@ -33,6 +33,7 @@ class CalcClient extends WebViewClient {
         String page = "<!doctype html><html lang='ru'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
                 + "<body style='font:17px sans-serif;background:#1f1a16;color:#ece4d6;padding:40px 24px'>"
                 + "<h2>Нет связи</h2><p>Для первого запуска нужен интернет: приложение скачает калькулятор с сайта. После этого оно работает без сети и обновляется само.</p>"
+                + "<p style='color:#b9ae9d;font-size:14px'>Причина: " + android.text.TextUtils.htmlEncode(String.valueOf(error.getDescription())) + " (код " + error.getErrorCode() + ")</p>"
                 + "<p><a href='" + MainActivity.START + "' style='display:inline-block;background:#c9a876;color:#211b16;padding:14px 22px;border-radius:14px;text-decoration:none'>Повторить</a></p></body></html>";
         view.loadDataWithBaseURL(null, page, "text/html", "utf-8", null);
     }
