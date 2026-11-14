@@ -1,4 +1,4 @@
-const METRO_BRIGHT={1:'#FF3355',2:'#33AEFF',3:'#27E676',4:'#FF9A33',5:'#CF78FF',6:'#E3A07C'};
+const METRO_BRIGHT={1:'#FF4D6A',2:'#4DBBFF',3:'#3DF58A',4:'#FFA94D',5:'#DA8CFF',6:'#F0B08C'};
 function applyMetroLine(el,line){const l=LINES.get(Number(line));if(!l)return el;el.classList.add('metroLine');el.style.setProperty('--metro-line-color',l.color);el.style.setProperty('--metro-line-bright',METRO_BRIGHT[Number(line)]||l.color);el.dataset.metroLine=String(line);return el}
 function coloredRoute(p,tag='span'){const el=node(tag,undefined,'coloredRoute');const rides=p.legs.filter(l=>l.type==='ride');rides.forEach((l,i)=>{if(i)el.append(document.createTextNode(' → '));const label=l.line?'Метро '+l.line:transportName(l.transport)+' '+patternById.get(l.route).ref,part=node('span',label);if(l.line)applyMetroLine(part,l.line);el.append(part)});return el}
 /* Journey-first interface. Existing transport/address engines remain the source of truth. */
