@@ -126,3 +126,47 @@ localPlaceMatches=function(query,limit=20){
  const hits=landmarkPlaces().filter(p=>tokens.every(t=>p.tokens.some(k=>k.startsWith(t)))).map(p=>({...p,score:p.searchNames.includes(q)?0:1}));
  return hits.length?[...hits,...rest].slice(0,limit):rest;
 };
+
+// Fix 0.46: «Рыбацкое Слвянская улица, 8». Район/станция рядом с адресом — это подсказка места, а не часть названия улицы;
+// опечатка в названии улицы исправляется по словарю улиц из базы. Срабатывает, только когда точный поиск ничего не дал.
+const AREA_CATEGORIES=new Set(['suburb','neighbourhood','quarter','city_district','borough','town','village','hamlet','city','locality']);
+let areaIndex=null,streetWords=null;
+function areaAnchors(){
+ if(areaIndex)return areaIndex;areaIndex=new Map();
+ const put=(name,p)=>{const k=addressWords(name);if(k.length>=4&&!areaIndex.has(k))areaIndex.set(k,{lat:p.lat,lon:p.lon})};
+ for(const s of TRANSIT.metro)if(!s.closed)put(s.name,s);
+ for(const p of regionalSearchIndex().places)if(p.kind==='settlement'||AREA_CATEGORIES.has(p.category))for(const n of [p.name,...(p.aliases||[])])put(n,p);
+ return areaIndex;
+}
+function splitAreaContext(tokens){
+ const areas=areaAnchors();
+ for(let k=Math.min(3,tokens.length-1);k>=1;k--){
+  const head=areas.get(tokens.slice(0,k).join(' '));if(head)return {anchor:head,rest:tokens.slice(k)};
+  const tail=areas.get(tokens.slice(-k).join(' '));if(tail)return {anchor:tail,rest:tokens.slice(0,-k)};
+ }
+ return {anchor:null,rest:tokens};
+}
+function fixStreetWord(word){
+ if(!streetWords){streetWords=new Map();for(const l of regionalSearchIndex().labels)for(const t of l.tokens)streetWords.set(t,(streetWords.get(t)||0)+1)}
+ if(word.length<5||/\d/.test(word)||streetWords.has(word))return word;
+ const max=word.length>=9?2:1;let best=null,bestD=max+1,bestN=0;
+ for(const [w,n] of streetWords){if(Math.abs(w.length-word.length)>max||w[0]!==word[0])continue;const d=metroEditDistance(word,w);if(d<bestD||(d===bestD&&n>bestN)){best=w;bestD=d;bestN=n}}
+ return best||word;
+}
+const localAddressMatchesStrict=localAddressMatches;
+localAddressMatches=function(query,limit=20){
+ const strict=localAddressMatchesStrict(query,limit);
+ if(strict.length){
+  // «Славянская улица 8, Рыбацкое»: район после запятой — ближайший к нему дом первым.
+  if(strict.length>1)for(const seg of String(query).split(',').slice(1)){const a=areaAnchors().get(addressWords(seg));if(!a)continue;const all=localAddressMatchesStrict(query,200).sort((x,y)=>Number(y.exactHouse)-Number(x.exactHouse)||distance(a,x)-distance(a,y)),near=all.filter(p=>distance(a,p)<=7000);return (near.length?near:all).slice(0,limit)}
+  return strict;
+ }
+ const part=streetParts(query);if(!part.house)return [];
+ const tokens=addressQueryTokens(part.text);if(!tokens.length)return [];
+ const {anchor,rest}=splitAreaContext(tokens),fixed=rest.map(fixStreetWord);
+ if(!anchor&&fixed.join(' ')===tokens.join(' '))return [];
+ const type=streetType(part.text.split(',').at(-1));
+ let results=localAddressMatchesStrict(fixed.join(' ')+(type?' '+type:'')+', '+part.house,200);
+ if(anchor){results.sort((a,b)=>Number(b.exactHouse)-Number(a.exactHouse)||distance(anchor,a)-distance(anchor,b));const near=results.filter(p=>distance(anchor,p)<=7000);if(near.length)results=near}
+ return results.slice(0,limit).map(p=>({...p,corrected:true}));
+};
