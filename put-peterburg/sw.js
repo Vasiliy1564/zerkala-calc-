@@ -1,4 +1,4 @@
-/* Offline cache is restricted to this application directory. */
+/* Offline cache is restricted to this application directory. Release 048 — меняйте номер при каждом выпуске, чтобы обновление находилось сразу. */
 importScripts('./offline-config.js');
 const PREFIX='put-peterburg:'+new URL('.',self.location.href).pathname+':';
 const CACHE=PREFIX+'v'+self.PUT_OFFLINE.version;

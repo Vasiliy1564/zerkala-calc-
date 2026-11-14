@@ -9,8 +9,11 @@
  const dataCacheName='put-peterburg:'+new URL('.',location.href).pathname+':data-'+cfg.dataVersion;
  let dataCache=null;try{dataCache=await caches.open(dataCacheName)}catch(e){}
  // Новая версия установилась, пока страница открыта: предлагаем перезагрузить, а не молча работаем на старой.
- if('serviceWorker' in navigator){const hadController=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!hadController||document.getElementById('updateNotice'))return;const box=document.createElement('p');box.id='updateNotice';box.className='status';box.setAttribute('role','status');box.textContent='Вышло обновление приложения. ';const b=document.createElement('button');b.textContent='Обновить сейчас';b.className='mapButton';b.onclick=()=>location.reload();box.append(b);document.querySelector('header').after(box)})}
+ // 0.48: обновление ставится само. Если человек ничего не вводит и не едет по маршруту — страница перезагружается сразу, иначе показываем кнопку.
+ if('serviceWorker' in navigator){const hadController=!!navigator.serviceWorker.controller;let reloading=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!hadController||reloading)return;const busy=document.body.classList.contains('travelling')||['from','to'].some(id=>document.getElementById(id)?.value);if(!busy){reloading=true;location.reload();return}if(document.getElementById('updateNotice'))return;const box=document.createElement('p');box.id='updateNotice';box.className='status';box.setAttribute('role','status');box.textContent='Вышло обновление приложения. ';const b=document.createElement('button');b.textContent='Обновить сейчас';b.className='mapButton';b.onclick=()=>location.reload();box.append(b);document.querySelector('header').after(box)})}
  const registration='serviceWorker' in navigator?navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).catch(()=>null):Promise.resolve(null);
+ // Проверяем новую версию при каждом запуске и при возвращении в приложение.
+ registration.then(reg=>{if(!reg)return;const check=()=>reg.update().catch(()=>{});check();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check()})});
  async function resource(file){
   const url=new URL(file,location.href).href;const saved=await dataCache?.match(url);if(saved)return saved;
   for(let attempt=0;attempt<3;attempt++){
