@@ -307,9 +307,10 @@
     purchaseTrip: 350
   };
 
-  function installationPrice(area, light) {
+  // Установка считается как на ставропольском сайте: база × 1,06 × 1,02 и надбавка за форму.
+  function installationPrice(area, light, shape) {
     var base = (area <= 2) ? Math.max(2000, area * 1300) : area * 1500;
-    return light ? Math.max(2500, base + 500) : base;
+    return (light ? Math.max(2500, base + 500) : base) * (1.06*1.02*(shape==='rounded'?1.15:shape==='double'?1+2000/16469.75:shape==='semidouble'?1.2:1));
   }
   function deliveryRegion() {
     var select = document.getElementById('delivery-region');
@@ -1024,11 +1025,11 @@
        без минимальной покупки 6 м. Ставки скрыты в клиентском интерфейсе. */
     if (state.ledProfile && state.light) price += geo.per * 250;
 
-    // Поездка за полотном, установка и доставка — без наценки и надбавок.
+    // Поездка за полотном и доставка — без наценки и надбавок; установка — как в Ставрополе.
     price += purchaseTripPrice();
     var reinfKind = window.MirrorSupplierPricing.reinforcementKind(state.reinf, state.shape, w, h, h2);
     price += window.MirrorSupplierPricing.rearProfile(reinfKind, state.shape, w, h, h2).cost;
-    if (state.install) price += installationPrice(area, state.light);
+    if (state.install) price += installationPrice(area, state.light, state.shape);
     price += clientDeliveryPrice();
 
     if (state.faceFrame !== 'none') {
@@ -1060,7 +1061,7 @@
 
     if (window.onPersonalCalculation) {
       var orderTrip=purchaseTripPrice(),orderDelivery=clientDeliveryPrice();
-      var orderInstall=state.install?installationPrice(area,state.light):0;
+      var orderInstall=state.install?installationPrice(area,state.light,state.shape):0;
       window.onPersonalCalculation({total:price,rows:[
         {key:'mirror',sale:price-orderTrip-orderDelivery-orderInstall,cost:null,expense:'mirror'},
         {key:'purchase-trip',sale:orderTrip,cost:orderTrip},
