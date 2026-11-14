@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Калькулятор зеркал</string>
+    <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#1F1A16</item>
+        <item name="android:navigationBarColor">#1F1A16</item>
+        <item name="android:windowBackground">@color/bg</item>
+    </style>
+    <color name="bg">#1F1A16</color>
+</resources>

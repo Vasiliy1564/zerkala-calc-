@@ -74,7 +74,7 @@ textarea{width:100%;min-height:220px;background:var(--card2);color:var(--text);b
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style></head>
 <body>
-<header><div class="logo">ЗЕРКАЛО PRO<small>Калькулятор зеркал · без интернета</small></div><button class="ghost" id="btnReset" type="button">Сбросить</button></header>
+<header><div class="logo">ЗЕРКАЛО PRO<small>Калькулятор зеркал · обновляется сам</small></div><button class="ghost" id="btnReset" type="button">Сбросить</button></header>
 <main>
 <div class="side">
  <div class="card">
@@ -874,6 +874,20 @@ buildControls();
 try{var st=JSON.parse(localStorage.getItem('mc_state')||'null');if(st&&SHAPE_NAMES[st.shape])S=Object.assign({},DEFAULT,st);$('showCost').checked=localStorage.getItem('mc_showCost')==='1';}catch(e){}
 renderHist();sync();
 window.__calc={compute:compute,S:function(){return S;},set:function(o){S=Object.assign({},DEFAULT,o);sync();return last;}};
+})();
+</script>
+<script>
+/* Самообновление: страница всегда берётся с сайта, а без сети — из сохранённой копии. */
+(function(){
+ if(!('serviceWorker' in navigator)||location.protocol!=='https:')return;
+ navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).catch(function(){});
+ var current=null,busy=false;
+ function latest(){return fetch('./index.html',{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.text();});}
+ latest().then(function(t){current=t;}).catch(function(){});
+ document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState!=='visible'||busy||current===null)return;busy=true;
+  latest().then(function(t){if(t!==current)location.reload();}).catch(function(){}).then(function(){busy=false;});
+ });
 })();
 </script>
 </body></html>

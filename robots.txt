@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /put-peterburg/
+Disallow: /app-kalk/
 Disallow: /tests/
 Disallow: /tools/
 Disallow: /docs/
