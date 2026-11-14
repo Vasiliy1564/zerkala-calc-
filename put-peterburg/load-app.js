@@ -34,18 +34,18 @@
  for(const src of cfg.scripts)await script(src);
 
  // Do not expose Android-only settings in the web interface.
- gpsControls=function(){const box=document.getElementById('gpsTools');box.replaceChildren(node('p','Разрешите местоположение в настройках этого сайта. Точность зависит от браузера, устройства и условий приёма.'));if(gpsBusy){const cancel=node('button','Остановить определение','mapButton');cancel.onclick=()=>Phone.cancelLocation();box.append(cancel)}};
+ gpsControls=function(){const box=document.getElementById('gpsTools');box.replaceChildren(node('p','Разрешите приложению доступ к местоположению. Точность зависит от браузера, устройства и условий приёма.'));if(gpsBusy){const cancel=node('button','Остановить определение','mapButton');cancel.onclick=()=>Phone.cancelLocation();box.append(cancel)}};
  controls.forEach(n=>n.disabled=false);banner.remove();
  for(const f of ['from','to']){const list=document.getElementById(f+'List');list.setAttribute('aria-label','Подсказки: '+(f==='from'?'откуда':'куда'));document.getElementById(f).setAttribute('aria-controls',f+'List')}
  document.getElementById('siteLoading')?.remove();
  window.siteReady=true;
  const offline=document.createElement('p');offline.id='offlineStatus';offline.className='status';offline.setAttribute('role','status');document.querySelector('header').after(offline);
- offline.textContent='Сохраняем сайт для работы без интернета…';
+ offline.textContent='Сохраняем приложение для работы без интернета…';
  async function checkOffline(){
   try{const reg=await registration;if(!reg)throw Error('worker');await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('timeout')),30000))]);const cache=await caches.open(cacheName),data=await caches.open(dataCacheName);const available=await Promise.all(cfg.files.map(async f=>{const u=new URL(f,location.href).href;return await cache.match(u)||await data.match(u)}));if(available.some(r=>!r))throw Error('partial');
    offline.textContent='✓ Готово без интернета: поиск по скачанной базе и маршруты. Новые пешие указания и поиск в интернете требуют связи.';navigator.storage?.persist?.().catch(()=>{});
-  }catch(e){offline.textContent='Маршруты готовы. Сохранение для работы без интернета не завершено — откройте сайт в обычном Chrome и дождитесь отметки «Готово без интернета».'}
+  }catch(e){offline.textContent='Маршруты готовы. Сохранение для работы без интернета не завершено — откройте приложение при хорошей связи и дождитесь отметки «Готово без интернета».'}
  }
  checkOffline();
- }catch(e){controls.forEach(n=>n.disabled=true);banner.setAttribute('role','alert');banner.textContent=e.message||'Не удалось загрузить сайт. Проверьте интернет.';const retry=document.createElement('button');retry.textContent='Повторить загрузку';retry.onclick=()=>location.reload();banner.append(document.createElement('br'),retry);console.error(e)}
+ }catch(e){controls.forEach(n=>n.disabled=true);banner.setAttribute('role','alert');banner.textContent=e.message||'Не удалось загрузить приложение. Проверьте интернет.';const retry=document.createElement('button');retry.textContent='Повторить загрузку';retry.onclick=()=>location.reload();banner.append(document.createElement('br'),retry);console.error(e)}
 })();
