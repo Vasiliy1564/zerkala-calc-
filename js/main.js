@@ -307,10 +307,12 @@
     purchaseTrip: 350
   };
 
-  // Установка считается как на ставропольском сайте: база × 1,06 × 1,02 и надбавка за форму.
-  function installationPrice(area, light, shape) {
+  // Установка: как на ставропольском сайте (база × 1,06 × 1,02 и надбавка за форму),
+  // плюс 300 ₽ ко всем, ещё 400 ₽ при высоте от 200 см и ещё 300 ₽ при высоте от 250 см.
+  function installationPrice(area, light, shape, heightMm) {
     var base = (area <= 2) ? Math.max(2000, area * 1300) : area * 1500;
-    return (light ? Math.max(2500, base + 500) : base) * (1.06*1.02*(shape==='rounded'?1.15:shape==='double'?1+2000/16469.75:shape==='semidouble'?1.2:1));
+    return (light ? Math.max(2500, base + 500) : base) * (1.06*1.02*(shape==='rounded'?1.15:shape==='double'?1+2000/16469.75:shape==='semidouble'?1.2:1))
+      + 300 + (heightMm >= 2000 ? 400 : 0) + (heightMm >= 2500 ? 300 : 0);
   }
   function deliveryRegion() {
     var select = document.getElementById('delivery-region');
@@ -1029,7 +1031,7 @@
     price += purchaseTripPrice();
     var reinfKind = window.MirrorSupplierPricing.reinforcementKind(state.reinf, state.shape, w, h, h2);
     price += window.MirrorSupplierPricing.rearProfile(reinfKind, state.shape, w, h, h2).cost;
-    if (state.install) price += installationPrice(area, state.light, state.shape);
+    if (state.install) price += installationPrice(area, state.light, state.shape,(state.shape==='circle'?w:h+(state.shape.indexOf('double')!==-1?h2:0)));
     price += clientDeliveryPrice();
 
     if (state.faceFrame !== 'none') {
@@ -1061,7 +1063,7 @@
 
     if (window.onPersonalCalculation) {
       var orderTrip=purchaseTripPrice(),orderDelivery=clientDeliveryPrice();
-      var orderInstall=state.install?installationPrice(area,state.light,state.shape):0;
+      var orderInstall=state.install?installationPrice(area,state.light,state.shape,(state.shape==='circle'?w:h+(state.shape.indexOf('double')!==-1?h2:0))):0;
       window.onPersonalCalculation({total:price,rows:[
         {key:'mirror',sale:price-orderTrip-orderDelivery-orderInstall,cost:null,expense:'mirror'},
         {key:'purchase-trip',sale:orderTrip,cost:orderTrip},
