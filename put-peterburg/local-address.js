@@ -18,7 +18,7 @@ function stripKnownLocality(tokens){const q=tokens.join(' ');for(const k of regi
 function candidateIndices(tokens,type,allCount){const idx=regionalSearchIndex(),lists=tokens.filter(t=>t.length>=3).map(t=>idx.prefix.get(type+':'+t.slice(0,3))||[]);if(!lists.length)return Array.from({length:allCount},(_,i)=>i);return lists.reduce((a,b)=>a.length<=b.length?a:b)}
 // An unqualified number may have several explicitly recorded letters/corpora.
 // Offer their full addresses for selection; never invent a point for the whole property.
-function houseFamily(s){return canonicalHouse(s).match(/^(\d+)(?=[а-яa-z]|$)/u)?.[1]||''}
+function houseFamily(s){return canonicalHouse(s).match(/^(\d+)(?=[а-яa-z/-]|$)/u)?.[1]||''}
 function houseFamilyRows(house){
  if(!/^\d+$/.test(house))return [];
  const idx=regionalSearchIndex();if(!idx.houseFamilies){idx.houseFamilies=new Map();HOUSE_DATA.houses.forEach((h,i)=>{const key=houseFamily(h[3]);if(!key)return;if(!idx.houseFamilies.has(key))idx.houseFamilies.set(key,[]);idx.houseFamilies.get(key).push(i)})}
@@ -27,25 +27,30 @@ function houseFamilyRows(house){
 // Same street name exists in several districts: show the one nearest to the other route point / GPS first.
 function addressAnchor(){try{const pts=typeof points!=='undefined'?points:{};for(const p of [pts.from,pts.to,typeof gpsPoint!=='undefined'?gpsPoint:null])if(p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon))return p}catch(e){}return null}
 function localAddressMatches(query,limit=20){const seen=new Set();for(const part of [streetParts(query),...knownAddressParts(query)]){const key=part.text+'|'+part.house;if(seen.has(key))continue;seen.add(key);const results=localAddressPartMatches(query,part,limit);if(results.length)return results}return []}
+// Fix 0.45: «наб. Фонтанки», «Большой ПС», «7 линия», «наб. р. Мойки» — служебные слова названия необязательны.
+const STREET_OPTIONAL=new Set(['реки','канала','я','й','е','в','о','п','с']);
+function addressQueryTokens(text){let n=' '+addressWords(text)+' ';n=n.replace(/ петроградск(?:ой|ая) сторон[аы] /g,' п с ').replace(/ васильевск(?:ого|ий) остров[а]? /g,' в о ').replace(/ пс /g,' п с ').replace(/ во /g,' в о ').replace(/ р /g,' реки ').replace(/ кан /g,' канала ').replace(/ (\d+)(?:(я|ая)|(й|ый|ой)|(е|ое))(?= )/g,(m,d,a,b,c)=>' '+d+' '+(a?'я':b?'й':'е'));return n.trim().split(' ').filter(Boolean)}
 function localAddressPartMatches(query,part,limit){
  if(!part.house)return [];const house=canonicalHouse(part.house),base=houseBase(house);
- const tokens=addressWords(part.text).split(' ').filter(Boolean);if(!tokens.length)return [];
+ const tokens=addressQueryTokens(part.text);if(!tokens.length)return [];
  const queryType=streetType(part.text.split(',').at(-1)),idx=regionalSearchIndex(),requestedSpb=/(?:^|\s)(?:санкт петербург|спб)(?:\s|$)/.test(norm(query)),rows=idx.houseNumbers.get(house)||idx.houseNumbers.get(base)||[],results=[],seen=new Set();
  for(const i of new Set([...rows,...houseFamilyRows(house)])){const h=HOUSE_DATA.houses[i],label=idx.labels[h[2]],hn=idx.houseKeys?idx.houseKeys[i]:canonicalHouse(h[3]);if(queryType&&queryType!==label.type)continue;if(hn!==house&&!(house===base&&(hn.startsWith(base+'к')||hn.startsWith(base+'с')))&&!(/^\d+$/.test(house)&&houseFamily(hn)===house))continue;
   if(!tokens.every(t=>label.tokens.includes(t)))continue;
   if(requestedSpb&&label.cityKey&&!label.cityKey.includes('санкт петербург'))continue;
   // "Садовая" is not "Малая Садовая" or "2-я Садовая" unless the full street name was supplied.
-  if(!label.streetTokens.every(t=>tokens.includes(t)))continue;
+  const strictStreet=label.streetTokens.every(t=>tokens.includes(t));
+  if(!strictStreet&&!(label.streetTokens.every(t=>STREET_OPTIONAL.has(t)||tokens.includes(t))&&label.streetTokens.some(t=>!STREET_OPTIONAL.has(t))))continue;
   if(seen.has(h[4]))continue;seen.add(h[4]);const name=[label.city,label.street,h[3]].filter(Boolean).join(', ');
-  results.push({name,lat:h[0],lon:h[1],kind:'address',house:h[3],exactHouse:hn===house,source:'offline-osm',osmId:h[4],locality:label.city});
+  results.push({name,lat:h[0],lon:h[1],kind:'address',house:h[3],exactHouse:hn===house,looseStreet:!strictStreet,source:'offline-osm',osmId:h[4],locality:label.city});
  }
  const rank=p=>norm(p.locality)==='санкт петербург'?0:norm(p.locality).includes('санкт петербург')?1:!p.locality?3:2;
  const anchor=addressAnchor(),near=p=>anchor?distance(anchor,p):0;
- results.sort((a,b)=>Number(b.exactHouse)-Number(a.exactHouse)||rank(a)-rank(b)||near(a)-near(b)||a.name.localeCompare(b.name,'ru',{numeric:true}));const groups=new Map(),unique=[];for(const p of results){const k=norm(p.name),group=groups.get(k)||[];if(group.some(x=>distance(x,p)<30))continue;group.push(p);groups.set(k,group);unique.push(p);if(unique.length>=limit)break}return unique;
+ results.sort((a,b)=>Number(b.exactHouse)-Number(a.exactHouse)||rank(a)-rank(b)||Number(a.looseStreet)-Number(b.looseStreet)||near(a)-near(b)||a.name.localeCompare(b.name,'ru',{numeric:true}));const groups=new Map(),unique=[];for(const p of results){const k=norm(p.name),group=groups.get(k)||[];if(group.some(x=>distance(x,p)<30))continue;group.push(p);groups.set(k,group);unique.push(p);if(unique.length>=limit)break}return unique;
 }
+function placeTokenHit(k,t){return /^\d/.test(t)?k===t||(k.startsWith(t)&&!/\d/.test(k[t.length])):k.startsWith(t)}
 function localPlaceMatches(query,limit=20){
  const q=addressWords(query);if(q.length<2)return [];const tokens=q.split(' '),idx=regionalSearchIndex(),out=[];
- for(const i of candidateIndices(tokens,'place',idx.places.length)){const p=idx.places[i];if(!tokens.every(t=>p.tokens.some(k=>k.startsWith(t))))continue;
+ for(const i of candidateIndices(tokens,'place',idx.places.length)){const p=idx.places[i];if(!tokens.every(t=>p.tokens.some(k=>placeTokenHit(k,t))))continue;
   const score=p.searchNames.includes(q)?0:p.searchNames.some(n=>n.startsWith(q))?1:p.searchNames.some(n=>tokens.every(t=>n.split(' ').some(w=>w.startsWith(t))))?1.5:2;
   out.push({...p,name:[p.name,p.locality,p.street,p.house].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', '),score});
  }
@@ -62,7 +67,7 @@ function fuzzyPlaceMatches(tokens,idx){
 function offerNamedPlaces(f){const items=localPlaceMatches($(f).value.trim());if(!items.length)return false;const box=$(f+'List');box.replaceChildren();appendPiers(f,items);const online=node('button','Искать другие места через интернет');online.onclick=()=>searchPlace(f,true,true);box.append(online);$('go').disabled=false;say(items.some(p=>p.corrected)?'Возможно, в названии опечатка. Выберите нужное место из списка.':'Выберите нужное место из списка — затем построим маршрут.');return true}
 function coordinatePoint(query){const m=String(query).trim().match(/^([+-]?\d{1,2}\.\d+)\s*[,;\s]\s*([+-]?\d{1,3}\.\d+)$/);if(!m)return null;const lat=Number(m[1]),lon=Number(m[2]);if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return null;return {name:lat+', '+lon,lat,lon,kind:'address',source:'coordinates'}}
 function appendLocalAddresses(f,items){const box=$(f+'List');for(const p of items){const b=node('button');const duplicate=items.some(x=>x!==p&&norm(x.name)===norm(p.name));b.append(node('strong',p.name),node('small',p.locality?'Дом из встроенной базы'+(duplicate?' · '+p.lat.toFixed(4)+', '+p.lon.toFixed(4):' · выбрать'):'Дом · населённый пункт не указан · '+p.lat.toFixed(4)+', '+p.lon.toFixed(4)));b.onclick=()=>pick(f,p);box.append(b)}}
-function offerLocalAddress(f){const items=localAddressMatches($(f).value.trim());if(!items.length)return false;const exact=items.filter(p=>p.exactHouse);if(exact.length===1){pick(f,exact[0]);return true}const box=$(f+'List');box.replaceChildren();appendLocalAddresses(f,exact.length?exact:items);const online=node('button','Искать адрес через интернет');online.onclick=()=>searchPlace(f,true,true);box.append(online);$('go').disabled=false;say('Выберите нужное здание: населённый пункт, дом, корпус или литеру из списка.');return true}
+function offerLocalAddress(f){const items=localAddressMatches($(f).value.trim());if(!items.length)return false;const exact=items.filter(p=>p.exactHouse),elsewhere=exact.length?items.filter(p=>!p.exactHouse&&norm(p.locality)!==norm(exact[0].locality)):[];/* Fix 0.45: «Невский 1» — не выбирать молча тёзку в другом городе, если в базе есть «1/4» в Петербурге. */if(exact.length===1&&!elsewhere.length){pick(f,exact[0]);return true}const box=$(f+'List');box.replaceChildren();appendLocalAddresses(f,exact.length&&!elsewhere.length?exact:items);const online=node('button','Искать адрес через интернет');online.onclick=()=>searchPlace(f,true,true);box.append(online);$('go').disabled=false;say('Выберите нужное здание: населённый пункт, дом, корпус или литеру из списка.');return true}
 
 /* Pier names, addresses and map markers from the primary water-tour catalogue.
  * https://boattour.ru/ru/piers — retrieved 2026-10-30. Missing/zero and out-of-region coordinates excluded.
@@ -104,3 +109,20 @@ function locationAddressText(p){
  const nearby=typeof nearestHouse==='function'?nearestHouse(p,150):null;
  return 'Точный адрес не указан.'+(nearby?' Ближайший адрес-ориентир: '+nearby.address+' (около '+nearby.distanceMeters+' м).':p.locality?' '+p.locality+'.':'');
 }
+
+// Fix 0.45: вокзалов нет в снимке мест как объектов. Точка — станция метро в здании вокзала (координаты из базы метро, не выдуманы).
+const LANDMARKS=[['Московский вокзал','Площадь Восстания',['мосвокзал']],['Витебский вокзал','Пушкинская',[]],['Ладожский вокзал','Ладожская',[]],['Финляндский вокзал','Площадь Ленина',['финбан']],['Балтийский вокзал','Балтийская',['балты']]];
+let landmarkCache=null;
+function landmarkPlaces(){
+ if(landmarkCache)return landmarkCache;landmarkCache=[];
+ for(const [name,station,aliases] of LANDMARKS){const m=TRANSIT.metro.find(x=>x.name===station&&!x.closed);if(!m)continue;
+  landmarkCache.push({name,lat:m.lat,lon:m.lon,kind:'poi',category:'railway_station',address:'вокзал у станции метро «'+station+'»',locality:'',street:'',house:'',aliases,osmId:'landmark:'+name,searchNames:[name,...aliases].map(addressWords),tokens:addressWords([name,...aliases].join(' ')).split(' ')})}
+ return landmarkCache;
+}
+const localPlaceMatchesBeforeLandmarks=localPlaceMatches;
+localPlaceMatches=function(query,limit=20){
+ const q=addressWords(query),tokens=q.split(' ').filter(Boolean),rest=localPlaceMatchesBeforeLandmarks(query,limit);
+ if(q.length<3||/\d/.test(q))return rest;
+ const hits=landmarkPlaces().filter(p=>tokens.every(t=>p.tokens.some(k=>k.startsWith(t)))).map(p=>({...p,score:p.searchNames.includes(q)?0:1}));
+ return hits.length?[...hits,...rest].slice(0,limit):rest;
+};

@@ -27,7 +27,7 @@ function validateWalking(data,a,b){
  if(data?.code!=='Ok'||!data.routes?.length||data.waypoints?.length!==2)throw Error('Пешеходный маршрут не найден.');
  const r=data.routes[0],xy=r.geometry?.coordinates;
  if(!Number.isFinite(r.distance)||r.distance<0||r.distance>15000||!Array.isArray(xy)||xy.length<2||xy.some(p=>!Array.isArray(p)||p.length<2||!p.every(Number.isFinite)))throw Error('Сервис вернул неполный маршрут.');
- for(const [i,p] of [a,b].entries()){const w=data.waypoints[i];if(!Number.isFinite(w.distance)||w.distance>60||!Array.isArray(w.location)||w.location.length!==2||distance(p,{lon:w.location[0],lat:w.location[1]})>65)throw Error('Начало или конец пути далеко от пешеходной сети. Уточните точку.');}
+ for(const [i,p] of [a,b].entries()){const w=data.waypoints[i];if(!Number.isFinite(w.distance)||w.distance>150||!Array.isArray(w.location)||w.location.length!==2||distance(p,{lon:w.location[0],lat:w.location[1]})>160)throw Error('Начало или конец пути далеко от пешеходной сети. Уточните точку.');}
  const raw=r.legs?.flatMap(l=>l.steps||[])||[];
  if(!raw.length||raw.some(s=>s.mode!=='walking'||!s.maneuver||!Array.isArray(s.maneuver.location)))throw Error('Пешеходные указания не подтверждены.');
  return {distance:r.distance,duration:r.duration,coordinates:xy,steps:raw.map(walkingInstruction),savedAt:Number(data.savedAt)||Date.now(),cached:!!data.cached,snaps:data.waypoints.map(w=>w.distance)};

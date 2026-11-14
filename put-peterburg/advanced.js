@@ -4,6 +4,27 @@ function platformFor(id,sign){const t=TRANSIT.platforms.technology;if(t.stationI
 function decorateMetro(p){for(const leg of p.legs){if(leg.type!=='ride'||!leg.line)continue;const d=metroDirection(leg);leg.transport='metro';leg.direction=d.terminus;leg.directionSign=d.sign;leg.boardPlatform=platformFor(leg.from,d.sign);leg.arrivalPlatform=platformFor(leg.to,d.sign);leg.platforms=leg.stops.map(id=>platformFor(id,d.sign));}for(let i=0;i<p.legs.length;i++){const t=p.legs[i];if(t.type!=='transfer')continue;const a=p.legs.slice(0,i).reverse().find(x=>x.type==='ride'),b=p.legs.slice(i+1).find(x=>x.type==='ride');t.arrivalPlatform=a?.arrivalPlatform||null;t.boardPlatform=b?.boardPlatform||null;if(t.arrivalPlatform&&t.boardPlatform)t.instruction=t.arrivalPlatform.hall===t.boardPlatform.hall?`Оставайтесь в зале «Технологический институт-${t.arrivalPlatform.hall}». Перейдите на другую сторону платформы к поездам линии № ${b.line}, в сторону «${b.direction}».`:`Из зала «Технологический институт-${t.arrivalPlatform.hall}» пройдите по переходу в зал «Технологический институт-${t.boardPlatform.hall}». Линия № ${b.line}, в сторону «${b.direction}».`;else t.instruction=`По указателям перейдите со станции «${METRO.get(t.from).name}» (линия № ${METRO.get(t.from).line}) на «${METRO.get(t.to).name}» (линия № ${METRO.get(t.to).line}).`;}
 return p}
 const originalMetroPlan=metroPlan;metroPlan=function(from,to,profile='transfers'){let best=null;for(const a of from.metroIds||[from.metroId])for(const b of to.metroIds||[to.metroId]){const p=originalMetroPlan({...from,metroId:a},{...to,metroId:b},profile);if(!best||p.cost<best.cost)best=p}decorateMetro(best);if(from.requestedHall){const leg=best.legs.find(l=>l.type==='ride');if(leg?.boardPlatform&&leg.boardPlatform.hall!==from.requestedHall)best.originHallInstruction='Из зала «Технологический институт-'+from.requestedHall+'» перейдите в зал «Технологический институт-'+leg.boardPlatform.hall+'» к поездам в сторону «'+leg.direction+'».'}return best};
+// Fix 0.45: «1 остановку / 2 остановки / 5 остановок».
+function stopsText(n,accusative=false){const a=n%10,b=n%100;return n+' '+(a===1&&b!==11?(accusative?'остановку':'остановка'):a>=2&&a<=4&&(b<12||b>14)?'остановки':'остановок')}
+// Fix 0.45: если точка — адрес, поездка не начинается и не заканчивается переходом между станциями:
+// идём сразу ко входу нужной станции. Выбранная вручную станция остаётся как есть.
+function trimEdgeTransfers(p,from,to){
+ if(!p||!Array.isArray(p.legs)||!p.legs.some(l=>l.type==='ride'))return p;
+ const explicit=x=>!!x.metroId||x.kind==='bus'||x.kind==='rail',table=id=>METRO.get(id)||BUS.get(id);
+ if(!explicit(from)){const i=p.legs.findIndex(l=>l.type==='ride');if(i>0){p.legs.splice(0,i);const s=table(p.legs[0].from);if(s){p.start=s.id;p.access=distance(from,s)}}}
+ if(!explicit(to)){const i=p.legs.findLastIndex(l=>l.type==='ride');if(i<p.legs.length-1){p.legs.splice(i+1);const s=table(p.legs[i].to);if(s){p.end=s.id;p.egress=distance(to,s)}}}
+ // Переход между станциями одного узла не подменяется «выйдите к остановке и вернитесь в метро».
+ for(let i=1;i<p.legs.length-1;i++){
+  if(p.legs[i].type!=='walk')continue;let j=i;while(j<p.legs.length&&p.legs[j].type==='walk')j++;
+  const a=p.legs[i-1],b=p.legs[j];
+  if(a?.type==='ride'&&a.line&&b?.type==='ride'&&b.line&&a.to!==b.from&&TRANSIT.transfers.some(g=>g.includes(a.to)&&g.includes(b.from))){p.legs.splice(i,j-i,{type:'transfer',from:a.to,to:b.from});decorateMetro(p)}
+  else i=j-1;
+ }
+ // Два пеших перехода подряд — один шаг.
+ const spot=(l,end)=>end?(l.pointTo||BUS.get(String(l.stopTo||'').replace(/^w/,''))||METRO.get(l.stopTo)):(l.pointFrom||BUS.get(String(l.from||'').replace(/^w/,''))||METRO.get(l.from));
+ for(let i=0;i<p.legs.length-1;i++){const x=p.legs[i],y=p.legs[i+1];if(x.type!=='walk'||y.type!=='walk')continue;const a=spot(x,false),b=spot(y,true);if(!a||!b)continue;p.legs.splice(i,2,{type:'walk',from:a.id,stopTo:b.id,pointFrom:a,pointTo:b,meters:distance(a,b),unverified:true});i--}
+ return p;
+}
 function planTable(leg){return leg.line?METRO:BUS}
 function transportName(kind){return {bus:'Автобус',tram:'Трамвай',trolley:'Троллейбус',metro:'Метро',rail:'Электричка'}[kind]||'Транспорт'}
 // Offline heuristic, deliberately independent of topology ranking costs.
@@ -14,7 +35,7 @@ function estimateRideTime(leg){
  const n=Math.max(0,leg.stops.length-1);
  if(leg.transport==='rail')return {min:Math.max(n*1.5,km/70*60),max:Math.max(n*3,km/35*60)};
  if(leg.line)return {min:Math.max(n*1.5,km/55*60),max:Math.max(n*2.7,km/32*60)};
- return {min:km*1.15/30*60+n*0.3,max:km*1.5/15*60+n*0.8};
+ return {min:km*1.15/30*60+n*0.3,max:km*1.35/17*60+n*0.6};
 }
 function estimateTravelTime(p){
  const rides=p.legs.filter(l=>l.type==='ride'),ride={min:0,max:0};

@@ -5,13 +5,17 @@
  function script(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(Error('Не удалось загрузить '+src));document.body.append(s)})}
  const cfg=self.PUT_OFFLINE;
  const cacheName='put-peterburg:'+new URL('.',location.href).pathname+':v'+cfg.version;
- let dataCache=null;try{dataCache=await caches.open(cacheName)}catch(e){}
+ // Fix 0.45: база лежит в отдельном кэше и переживает обновления программы.
+ const dataCacheName='put-peterburg:'+new URL('.',location.href).pathname+':data-'+cfg.dataVersion;
+ let dataCache=null;try{dataCache=await caches.open(dataCacheName)}catch(e){}
+ // Новая версия установилась, пока страница открыта: предлагаем перезагрузить, а не молча работаем на старой.
+ if('serviceWorker' in navigator){const hadController=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!hadController||document.getElementById('updateNotice'))return;const box=document.createElement('p');box.id='updateNotice';box.className='status';box.setAttribute('role','status');box.textContent='Вышло обновление приложения. ';const b=document.createElement('button');b.textContent='Обновить сейчас';b.className='mapButton';b.onclick=()=>location.reload();box.append(b);document.querySelector('header').after(box)})}
  const registration='serviceWorker' in navigator?navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).catch(()=>null):Promise.resolve(null);
  async function resource(file){
   const url=new URL(file,location.href).href;const saved=await dataCache?.match(url);if(saved)return saved;
   for(let attempt=0;attempt<3;attempt++){
    try{const response=await fetch(url,{cache:'no-cache'});if(!response.ok)throw Error('HTTP '+response.status);try{await dataCache?.put(url,response.clone())}catch(e){}return response}
-   catch(e){if(attempt===2)throw Error('Не удалось скачать «'+file+'». Проверьте связь и нажмите «Повторить загрузку». Уже скачанные части сохранятся.')}
+   catch(e){if(attempt<2)await new Promise(r=>setTimeout(r,700*(attempt+1)));if(attempt===2)throw Error('Не удалось скачать «'+file+'». Проверьте связь и нажмите «Повторить загрузку». Уже скачанные части сохранятся.')}
   }
  }
  async function dataset(name,files){
@@ -38,7 +42,7 @@
  const offline=document.createElement('p');offline.id='offlineStatus';offline.className='status';offline.setAttribute('role','status');document.querySelector('header').after(offline);
  offline.textContent='Сохраняем сайт для работы без интернета…';
  async function checkOffline(){
-  try{const reg=await registration;if(!reg)throw Error('worker');await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('timeout')),30000))]);const cache=await caches.open(cacheName);const available=await Promise.all(cfg.files.map(f=>cache.match(new URL(f,location.href).href)));if(available.some(r=>!r))throw Error('partial');
+  try{const reg=await registration;if(!reg)throw Error('worker');await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('timeout')),30000))]);const cache=await caches.open(cacheName),data=await caches.open(dataCacheName);const available=await Promise.all(cfg.files.map(async f=>{const u=new URL(f,location.href).href;return await cache.match(u)||await data.match(u)}));if(available.some(r=>!r))throw Error('partial');
    offline.textContent='✓ Готово без интернета: поиск по скачанной базе и маршруты. Новые пешие указания и поиск в интернете требуют связи.';navigator.storage?.persist?.().catch(()=>{});
   }catch(e){offline.textContent='Маршруты готовы. Сохранение для работы без интернета не завершено — откройте сайт в обычном Chrome и дождитесь отметки «Готово без интернета».'}
  }
