@@ -229,19 +229,21 @@ function refreshEVACalculation(data){
 }
 
 function refreshProfileCalculation(data){
- if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.ledProfileTariffVersion===2)return data;
- var m=data.mirror,delta=0,metres=0;
+ if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.ledProfileTariffVersion===3)return data;
+ var m=data.mirror,delta=0,sale=0;
  if(m.ledProfile&&m.light){
   var q=legacyLookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost});
   if(q.needsQuote)return data;
-  metres=q.perimeter;delta=metres*(400-(m.ledProfileTariffVersion===1?250:600));
+  // Версия 3: профиль только слева и справа (две высоты) по 400 ₽/м; раньше — весь периметр по 400, 250 или 600 ₽/м.
+  var h=m.shape==='circle'?Number(m.width):Number(m.height)+((m.shape==='double'||m.shape==='semidouble')?Number(m.height2||0):0);
+  sale=2*h/1000*400;delta=sale-q.perimeter*(m.ledProfileTariffVersion===2?400:m.ledProfileTariffVersion===1?250:600);
  }
  var rows=data.rows.map(function(row){
   if(row.key==='mirror')return Object.assign({},row,{sale:row.sale+delta});
-  if(m.ledProfile&&m.light&&(row.expense==='profile'||row.name==='LED-профиль'))return Object.assign({},row,{sale:metres*400});
+  if(m.ledProfile&&m.light&&(row.expense==='profile'||row.name==='LED-профиль'))return Object.assign({},row,{sale:sale});
   return Object.assign({},row);
  });
- return Object.assign({},data,{rows:rows,total:data.total+delta,mirror:Object.assign({},m,{ledProfileTariffVersion:2})});
+ return Object.assign({},data,{rows:rows,total:data.total+delta,mirror:Object.assign({},m,{ledProfileTariffVersion:3})});
 }
 
 function refreshRialCalculation(data){
