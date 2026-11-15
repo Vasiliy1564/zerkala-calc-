@@ -13,7 +13,7 @@
    оставляет на экране только калькулятор и добавляет личный блок владельца (owner.js). */
 (async function(){
  try{
-  if('serviceWorker' in navigator&&location.protocol==='https:'){
+  if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='127.0.0.1')){
    await navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'});
    if(!navigator.serviceWorker.controller)await Promise.race([new Promise(function(ok){navigator.serviceWorker.addEventListener('controllerchange',ok,{once:true});}),new Promise(function(ok){setTimeout(ok,2500);})]);
   }
@@ -22,8 +22,8 @@
   var r=await fetch('/index.html',{cache:'no-store'});if(!r.ok)throw Error('код '+r.status);
   var h=await r.text();
   h=h.replace(/<script[^>]*analytics-consent[^>]*><\/script>/,'');
-  h=h.replace(/<head[^>]*>/,function(m){return m+'<base href="/"><meta name="robots" content="noindex"><link rel="stylesheet" href="/app-kalk/owner.css?v=1">';});
-  h=h.replace('</body>','<script src="/app-kalk/owner.js?v=1"><\/script></body>');
+  h=h.replace(/<head[^>]*>/,function(m){return m+'<base href="/"><meta name="robots" content="noindex"><link rel="stylesheet" href="/app-kalk/owner.css">';});
+  h=h.replace('</body>','<script src="/app-kalk/owner.js"><\/script></body>');
   document.open();document.write(h);document.close();
  }catch(e){
   document.getElementById('st').innerHTML='Не удалось загрузить калькулятор ('+String(e.message||e).replace(/[<>&]/g,'')+'). <a href="./" style="color:#c9a876">Повторить</a> · <a href="classic.html" style="color:#c9a876">Открыть прежний калькулятор</a>';

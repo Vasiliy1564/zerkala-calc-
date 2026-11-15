@@ -73,10 +73,28 @@ function start(){
 
  /* ---- блок владельца ---- */
  var panel=document.createElement('div');panel.id='owner-panel';
- panel.innerHTML='<h3>Только для меня</h3><label class="otoggle"><span>Показать закупку и наценку</span><input type="checkbox" id="owner-show-cost"></label><div id="owner-rows"></div><p class="owner-hint"><a href="/app-kalk/classic.html">Открыть прежний калькулятор</a></p>';
+ panel.innerHTML='<h3>Только для меня</h3><label class="otoggle"><span>Показать закупку и наценку</span><input type="checkbox" id="owner-show-cost"></label><div id="owner-rows"></div><button type="button" id="owner-update" class="owner-btn">Обновить приложение</button><p class="owner-hint" id="owner-update-note"></p><p class="owner-hint"><a href="/app-kalk/classic.html">Открыть прежний калькулятор</a></p>';
  var res=$('calc-result');(res&&res.parentNode?res:field.closest('form')||field).after(panel);
  $('owner-show-cost').checked=showCost;
  $('owner-show-cost').addEventListener('change',function(){showCost=this.checked;try{localStorage.setItem('mc_showCost',showCost?'1':'0');}catch(e){}renderOwner();stripeHint();});
+ /* Обновление: приложение открывается из сохранённой копии, кнопка скачивает свежую версию и перезапускает экран. */
+ (function(){
+  var btn=$('owner-update'),note=$('owner-update-note'),sw=navigator.serviceWorker;
+  var stamp=null;try{stamp=localStorage.getItem('mc_updated');}catch(e){}
+  note.textContent=stamp?'Последнее обновление: '+stamp+'.':'';
+  if(!sw){btn.addEventListener('click',function(){location.reload();});return;}
+  sw.addEventListener('message',function(e){
+   if(!e.data||e.data.type!=='refreshed')return;
+   if(e.data.ok&&!e.data.fail){try{localStorage.setItem('mc_updated',new Date().toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}));}catch(x){}location.reload();}
+   else{btn.disabled=false;note.textContent=e.data.ok?'Обновилось не всё: нет связи с сайтом для '+e.data.fail+' файлов. Приложение работает на сохранённой копии, попробуйте ещё раз позже.':'Нет связи с сайтом. Приложение работает на сохранённой копии, попробуйте позже.';}
+  });
+  btn.addEventListener('click',function(){
+   btn.disabled=true;note.textContent='Обновляю…';
+   sw.ready.then(function(reg){if(reg.update)reg.update().catch(function(){});var w=reg.active||sw.controller;if(w)w.postMessage({type:'refresh'});else location.reload();})
+    .catch(function(){btn.disabled=false;note.textContent='Не удалось обновить.';});
+   setTimeout(function(){if(btn.disabled){btn.disabled=false;note.textContent='Сайт не ответил. Приложение работает на сохранённой копии, попробуйте позже.';}},40000);
+  });
+ })();
  var current=null;
  function orow(a,b,c){return '<div class="orow'+(c?' '+c:'')+'"><span>'+a+'</span><span>'+b+'</span></div>';}
  function renderOwner(){

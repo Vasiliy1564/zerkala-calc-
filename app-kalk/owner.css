@@ -17,3 +17,5 @@ body{padding-bottom:0!important}
 #owner-panel label.otoggle{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;cursor:pointer}
 #owner-panel input[type=checkbox]{width:22px;height:22px}
 #owner-panel a{color:#c9a876}
+.owner-btn{display:block;width:100%;min-height:46px;margin-top:12px;border:0;border-radius:12px;background:#c9a876;color:#211b16;font:600 15px system-ui,sans-serif;cursor:pointer}
+.owner-btn:disabled{opacity:.6}
