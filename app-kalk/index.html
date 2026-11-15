@@ -79,7 +79,7 @@
 <meta content="ru_RU" property="og:locale"/>
 <meta content="Зеркала с подсветкой на заказ в СПб и Мурино | Зеркало Pro" property="og:title"/>
 <meta content="Зеркала по вашим размерам, с подсветкой и без. Замер, изготовление, доставка и монтаж в Мурино, Буграх, Новом Девяткино и Санкт-Петербурге." property="og:description"/>
-
+<link href="https://zerkalo-pro-spb.ru/" rel="canonical"/>
 <meta content="https://zerkalo-pro-spb.ru/" property="og:url"/>
 <meta content="https://zerkalo-pro-spb.ru/assets/hero.jpg" property="og:image"/>
 <link href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23111111'/%3E%3Ctext x='32' y='43' font-family='Georgia,serif' font-size='21' font-weight='bold' letter-spacing='0' fill='%23a99d8b' text-anchor='middle'%3E%D0%97%D0%9F%3C/text%3E%3C/svg%3E" rel="icon"/>
@@ -156,6 +156,12 @@ body{padding-bottom:0!important}
 #owner-panel a{color:#c9a876}
 .owner-btn{display:block;width:100%;min-height:46px;margin-top:12px;border:0;border-radius:12px;background:#c9a876;color:#211b16;font:600 15px system-ui,sans-serif;cursor:pointer}
 .owner-btn:disabled{opacity:.6}
+
+#mirror-sand-details>label[for="mirror-sand-area"],#mirror-sand-area{display:none!important}
+.mirror-reflection{display:none!important}
+.owner-guide{font-size:14px;line-height:1.45;color:#ddd3c3;margin:8px 0 12px;padding:10px 12px;border:1px solid #3d342a;border-radius:10px;background:#241e18}
+.owner-guide ul{margin:6px 0 0;padding-left:18px}
+.owner-guide li{margin:4px 0}
 </style>
 </head>
 <body>
@@ -926,11 +932,25 @@ function start(){
   '<p class="owner-hint" id="owner-stripe-hint"></p>';
  var details=$('mirror-sand-details');details.after(box);
  var extra=document.createElement('div');extra.className='owner-pattern-only';
- extra.innerHTML='<label for="owner-sand-paint">Покраска рисунка с амальгамы</label><select class="mirror-option-select" id="owner-sand-paint"><option value="0">нет, рисунок остаётся матовым</option><option value="1">1 цвет: золото, белый или чёрный</option><option value="2">2 цвета</option><option value="3">3 цвета</option></select>'+
+ extra.innerHTML='<label for="owner-pat-w">Ширина рисунка, см</label><input class="mirror-option-select" id="owner-pat-w" type="text" inputmode="decimal" placeholder="например, 20"><label for="owner-pat-h">Высота рисунка, см</label><input class="mirror-option-select" id="owner-pat-h" type="text" inputmode="decimal" placeholder="например, 30"><label for="owner-sand-paint">Покраска рисунка с амальгамы</label><select class="mirror-option-select" id="owner-sand-paint"><option value="0">нет, рисунок остаётся матовым</option><option value="1">1 цвет: золото, белый или чёрный</option><option value="2">2 цвета</option><option value="3">3 цвета</option></select>'+
   '<label for="owner-sand-sketch">Эскиз рисунка</label><select class="mirror-option-select" id="owner-sand-sketch"><option value="0">есть готовый макет в векторе</option><option value="1">нужна отрисовка эскиза</option></select>';
  details.appendChild(extra);
+ var guide=document.createElement('div');guide.id='owner-sand-guide';guide.className='owner-guide';
+ guide.innerHTML='<b>Что выбрать (цены по прайсу РИАЛ от 14.10.2026):</b><ul>'+
+  '<li><b>Без пескоструя</b> — зеркало гладкое, ничего не делаем.</li>'+
+  '<li><b>Сплошная матировка</b> — всё зеркало становится матовым, как матовое стекло. Считается на всю площадь зеркала: 900 ₽ за м².</li>'+
+  '<li><b>Пескоструйный рисунок</b> — рисунок, логотип или надпись на стекле. Нужны ширина и высота рисунка. 1 900 ₽ за м² рисунка. Сложный рисунок +50 %, особо сложный +100 %. Минимум 500 ₽.</li>'+
+  '<li><b>Покраска рисунка</b> — 1 900 ₽ за м² на каждый цвет. <b>Эскиз</b>, если готового макета нет — 1 000 ₽.</li>'+
+  '<li><b>Световые полосы</b> — две полосы у левого и правого края или рамка по периметру.</li></ul>';
+ details.before(guide);
 
  function sandNow(){var el=document.querySelector('input[name="mirror-sand"]:checked');return el?el.value:'none';}
+ function syncArea(){
+  var el=$('mirror-sand-area');if(!el)return;var s=sandNow(),v='';
+  if(s==='matte'){var w=num($('width').value),h=num($('height').value),h2=$('height2');if(h2&&h2.offsetParent!==null)h+=num(h2.value)||0;if(w>0&&h>0)v=(w*h/1e4).toFixed(2);}
+  else if(s==='pattern'){var pw=num($('owner-pat-w').value),ph=num($('owner-pat-h').value);if(pw>0&&ph>0)v=(pw*ph/1e4).toFixed(2);}
+  el.value=v.replace('.',',');
+ }
  function mark(){field.dataset.ownerSand=sandNow();}
 
  /* ---- расчёт ---- */
@@ -948,7 +968,7 @@ function start(){
   return q;
  };
  var read=O.read,restore=O.restore,sandCost=O.sandCost,sandLabel=O.sandLabel,facetCost=O.facetCost;
- O.read=function(){var o=read();o.stripeW=$('owner-stripe-w').value;o.stripeDir=$('owner-stripe-dir').value;o.stripeBill=$('owner-stripe-bill').value;o.sandPaint=$('owner-sand-paint').value;o.sandSketch=$('owner-sand-sketch').value==='1';return o;};
+ O.read=function(){syncArea();var o=read();o.stripeW=$('owner-stripe-w').value;o.stripeDir=$('owner-stripe-dir').value;o.stripeBill=$('owner-stripe-bill').value;o.sandPaint=$('owner-sand-paint').value;o.sandSketch=$('owner-sand-sketch').value==='1';return o;};
  O.restore=function(o){o=o||{};restore(o);
   if(o.sand==='stripes'){var r=field.querySelector('input[value="stripes"]');if(r)r.checked=true;}
   $('owner-stripe-w').value=o.stripeW||'3';$('owner-stripe-dir').value=o.stripeDir||'lr';$('owner-stripe-bill').value=o.stripeBill||'mirror';
@@ -1028,18 +1048,28 @@ function start(){
   if(!svg||drawing)return;drawing=true;
   try{
    var old=svg.querySelector('#owner-stripes');if(old)old.remove();
-   if(sandNow()==='stripes'&&last.dims){
+   var mode=sandNow();
+   if((mode==='stripes'||mode==='matte'||mode==='pattern')&&last.dims){
     var bodies=svg.querySelectorAll('[stroke="#707a74"]'),x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
     bodies.forEach(function(b){var bb=b.getBBox();x0=Math.min(x0,bb.x);y0=Math.min(y0,bb.y);x1=Math.max(x1,bb.x+bb.width);y1=Math.max(y1,bb.y+bb.height);});
-    var o=O.read(),sw=num(o.stripeW),dw=x1-x0,dh=y1-y0;
-    if(bodies.length&&dw>0&&dh>0&&sw>0){
-     var k=dw/last.dims.w,t=Math.max(1,sw*10*k),ins=Math.min(30*k,Math.min(dw,dh)/8),g='';
-     var lightOn=(document.querySelector('input[name="light"]:checked')||{}).value==='on',clr=(document.querySelector('input[name="clr"]:checked')||{}).value;
+    var dw=x1-x0,dh=y1-y0;
+    if(bodies.length&&dw>0&&dh>0){
+     var o=O.read(),k=dw/last.dims.w,g='',lightOn=(document.querySelector('input[name="light"]:checked')||{}).value==='on',clr=(document.querySelector('input[name="clr"]:checked')||{}).value;
      var col=lightOn?({warm:'#ffe2a6',neutral:'#fff6e6',cold:'#dcecff'}[clr]||'#ffe2a6'):'#eeece6';
-     var bar=function(bx,by,bw,bh){return '<rect x="'+bx.toFixed(2)+'" y="'+by.toFixed(2)+'" width="'+Math.max(0,bw).toFixed(2)+'" height="'+Math.max(0,bh).toFixed(2)+'" fill="'+col+'"/>';};
-     if(o.stripeDir==='p')g=bar(x0+ins,y0+ins,dw-2*ins,t)+bar(x0+ins,y1-ins-t,dw-2*ins,t)+bar(x0+ins,y0+ins,t,dh-2*ins)+bar(x1-ins-t,y0+ins,t,dh-2*ins);
-     else g=bar(x0+ins,y0+ins,t,dh-2*ins)+bar(x1-ins-t,y0+ins,t,dh-2*ins);
-     svg.insertAdjacentHTML('beforeend','<g id="owner-stripes" clip-path="url(#realMirrorClip)"'+(lightOn?' style="filter:drop-shadow(0 0 1.5px '+col+')"':'')+'>'+g+'</g>');
+     var rect=function(bx,by,bw,bh,fill,extra){return '<rect x="'+bx.toFixed(2)+'" y="'+by.toFixed(2)+'" width="'+Math.max(0,bw).toFixed(2)+'" height="'+Math.max(0,bh).toFixed(2)+'" fill="'+fill+'"'+(extra||'')+'/>';};
+     if(mode==='stripes'){
+      var sw=num(o.stripeW),t=Math.max(1,sw*10*k),ins=Math.min(30*k,Math.min(dw,dh)/8);
+      if(sw>0){
+       if(o.stripeDir==='p')g=rect(x0+ins,y0+ins,dw-2*ins,t,col)+rect(x0+ins,y1-ins-t,dw-2*ins,t,col)+rect(x0+ins,y0+ins,t,dh-2*ins,col)+rect(x1-ins-t,y0+ins,t,dh-2*ins,col);
+       else g=rect(x0+ins,y0+ins,t,dh-2*ins,col)+rect(x1-ins-t,y0+ins,t,dh-2*ins,col);
+      }
+     }else if(mode==='matte'){
+      g=rect(x0,y0,dw,dh,'rgba(255,255,255,.35)');
+     }else{
+      var pw=num($('owner-pat-w').value),ph=num($('owner-pat-h').value);
+      if(pw>0&&ph>0){var rw=Math.min(dw,pw*10*k),rh=Math.min(dh,ph*10*k);g=rect(x0+(dw-rw)/2,y0+(dh-rh)/2,rw,rh,'rgba(201,168,118,.35)',' stroke="#c9a876" stroke-width="1.2" stroke-dasharray="4 3"');}
+     }
+     if(g)svg.insertAdjacentHTML('beforeend','<g id="owner-stripes" clip-path="url(#realMirrorClip)"'+(mode==='stripes'&&lightOn?' style="filter:drop-shadow(0 0 1.5px '+col+')"':'')+'>'+g+'</g>');
     }
    }
   }catch(e){}
@@ -1050,6 +1080,7 @@ function start(){
  function recalc(){mark();if(window.calculateMirrorInPlace)window.calculateMirrorInPlace();stripeHint();drawStripes();}
  field.addEventListener('change',function(){mark();setTimeout(function(){stripeHint();drawStripes();},0);});
  $('owner-stripe-w').addEventListener('input',recalc);
+ $('owner-pat-w').addEventListener('input',recalc);$('owner-pat-h').addEventListener('input',recalc);
  document.addEventListener('change',function(e){if(e.target&&(e.target.name==='light'||e.target.name==='clr'||e.target.name==='option'))setTimeout(function(){stripeHint();drawStripes();},0);});
  mark();renderOwner();
 }
