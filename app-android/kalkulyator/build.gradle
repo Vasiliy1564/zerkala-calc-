@@ -10,8 +10,8 @@ android {
         applicationId 'com.zerkalopro.calc'
         minSdk 21
         targetSdk 34
-        versionCode 23
-        versionName '23'
+        versionCode 24
+        versionName '24'
     }
 
     buildTypes {

@@ -19,7 +19,11 @@ function start(){
  var box=document.createElement('div');box.id='owner-stripe-box';
  box.innerHTML='<p class="owner-hint">Светящиеся полосы на лице зеркала: на полосе зеркальный слой снимают, она становится матовой, и лента за ней светит сквозь стекло.</p>'+
   '<label for="owner-stripe-w">Ширина полосы, см</label><input class="mirror-option-select" id="owner-stripe-w" type="text" inputmode="decimal" value="3">'+
-  '<label for="owner-stripe-dir">Как идут полосы</label><select class="mirror-option-select" id="owner-stripe-dir"><option value="lr">две полосы: слева и справа</option><option value="p">по периметру: слева, справа, сверху и снизу</option></select>'+
+  '<div class="owner-sides"><span>Где ставить полосы (можно несколько):</span>'+
+  '<label><input type="checkbox" id="owner-side-l" checked> слева</label>'+
+  '<label><input type="checkbox" id="owner-side-r" checked> справа</label>'+
+  '<label><input type="checkbox" id="owner-side-t"> сверху</label>'+
+  '<label><input type="checkbox" id="owner-side-b"> снизу</label></div>'+
   '<label for="owner-stripe-bill">Как посчитает поставщик</label><select class="mirror-option-select" id="owner-stripe-bill"><option value="mirror">за всё зеркало (дороже, с запасом)</option><option value="strips">только за сами полосы (дешевле)</option></select>'+
   '<p class="owner-hint" id="owner-stripe-hint"></p>';
  var details=$('mirror-sand-details');details.after(box);
@@ -33,10 +37,12 @@ function start(){
   '<li><b>Сплошная матировка</b> — всё зеркало становится матовым, как матовое стекло. Считается на всю площадь зеркала: 900 ₽ за м².</li>'+
   '<li><b>Пескоструйный рисунок</b> — рисунок, логотип или надпись на стекле. Нужны ширина и высота рисунка. 1 900 ₽ за м² рисунка. Сложный рисунок +50 %, особо сложный +100 %. Минимум 500 ₽.</li>'+
   '<li><b>Покраска рисунка</b> — 1 900 ₽ за м² на каждый цвет. <b>Эскиз</b>, если готового макета нет — 1 000 ₽.</li>'+
-  '<li><b>Световые полосы</b> — две полосы у левого и правого края или рамка по периметру.</li></ul>';
+  '<li><b>Световые полосы</b> — слева, справа, сверху и/или снизу. Отметь нужные стороны галочками.</li></ul>';
  details.before(guide);
 
  function sandNow(){var el=document.querySelector('input[name="mirror-sand"]:checked');return el?el.value:'none';}
+ function sides(){return {l:$('owner-side-l').checked,r:$('owner-side-r').checked,t:$('owner-side-t').checked,b:$('owner-side-b').checked};}
+ function sideNames(sd){var n=[];if(sd.l)n.push('слева');if(sd.r)n.push('справа');if(sd.t)n.push('сверху');if(sd.b)n.push('снизу');return n.join(', ');}
  function syncArea(){
   var el=$('mirror-sand-area');if(!el)return;var s=sandNow(),v='';
   if(s==='matte'){var w=num($('width').value),h=num($('height').value),h2=$('height2');if(h2&&h2.offsetParent!==null)h+=num(h2.value)||0;if(w>0&&h>0)v=(w*h/1e4).toFixed(2);}
@@ -47,11 +53,13 @@ function start(){
 
  /* ---- расчёт ---- */
  function stripeOwn(o,d){
-  var per=o.stripeDir==='p',wcm=num(o.stripeW),W=d.w/1000,H=d.h/1000,t=wcm/100;
+  var sd=o.sides||{},wcm=num(o.stripeW),W=d.w/1000,H=d.h/1000,t=wcm/100;
+  if(!(sd.l||sd.r||sd.t||sd.b))throw Error('Выберите, с каких сторон ставить полосы');
   if(!Number.isFinite(wcm)||wcm<=0)throw Error('Укажите ширину световой полосы в см');
   if(wcm>30)throw Error('Ширина световой полосы не больше 30 см');
-  if(per){if(2*t>=Math.min(W,H))throw Error('Рамка шире самого зеркала');return 2*(W+H)*t-4*t*t;}
-  return 2*H*t;
+  var v=(sd.l?1:0)+(sd.r?1:0),hz=(sd.t?1:0)+(sd.b?1:0),vl=H-(sd.t?t:0)-(sd.b?t:0);
+  if(v&&vl<=0)throw Error('Полосы шире зеркала');
+  return v*t*vl+hz*t*W;
  }
  var lookup=P.lookup;
  P.lookup=function(shape,material,width,height,edge,height2,options){
@@ -60,10 +68,10 @@ function start(){
   return q;
  };
  var read=O.read,restore=O.restore,sandCost=O.sandCost,sandLabel=O.sandLabel,facetCost=O.facetCost;
- O.read=function(){syncArea();var o=read();o.stripeW=$('owner-stripe-w').value;o.stripeDir=$('owner-stripe-dir').value;o.stripeBill=$('owner-stripe-bill').value;o.sandPaint=$('owner-sand-paint').value;o.sandSketch=$('owner-sand-sketch').value==='1';return o;};
+ O.read=function(){syncArea();var o=read();o.stripeW=$('owner-stripe-w').value;o.sides=sides();o.stripeBill=$('owner-stripe-bill').value;o.sandPaint=$('owner-sand-paint').value;o.sandSketch=$('owner-sand-sketch').value==='1';return o;};
  O.restore=function(o){o=o||{};restore(o);
   if(o.sand==='stripes'){var r=field.querySelector('input[value="stripes"]');if(r)r.checked=true;}
-  $('owner-stripe-w').value=o.stripeW||'3';$('owner-stripe-dir').value=o.stripeDir||'lr';$('owner-stripe-bill').value=o.stripeBill||'mirror';
+  $('owner-stripe-w').value=o.stripeW||'3';var sd=o.sides||{l:true,r:true,t:false,b:false};$('owner-side-l').checked=!!sd.l;$('owner-side-r').checked=!!sd.r;$('owner-side-t').checked=!!sd.t;$('owner-side-b').checked=!!sd.b;$('owner-stripe-bill').value=o.stripeBill||'mirror';
   $('owner-sand-paint').value=String(o.sandPaint||'0');$('owner-sand-sketch').value=o.sandSketch?'1':'0';mark();};
  O.facetCost=function(o,q){var v=facetCost(o,q);last.facet=v;return v;};
  O.sandCost=function(o,q){
@@ -73,14 +81,14 @@ function start(){
   last.sand=v;return v;
  };
  O.sandLabel=function(o){
-  if(o&&o.sand==='stripes')return 'Световые полосы · '+(o.stripeDir==='p'?'по периметру':'слева и справа')+' · ширина '+String(o.stripeW).replace('.',',')+' см';
+  if(o&&o.sand==='stripes')return 'Световые полосы · '+sideNames(o.sides||{})+' · ширина '+String(o.stripeW).replace('.',',')+' см';
   var s=sandLabel(o);if(s&&o.sand==='pattern'){var p=Number(o.sandPaint||0);s+=(p?' · покраска в '+p+(p===1?' цвет':' цвета'):'')+(o.sandSketch?' · отрисовка эскиза':'');}
   return s;
  };
  // Профиль для ленты идёт по тем сторонам, где стоят световые полосы.
  window.MirrorProfileLength=function(len,d){
-  if(sandNow()!=='stripes')return len;var dir=$('owner-stripe-dir').value,H=d.shape==='circle'?d.w:d.h+(/double/.test(d.shape)?d.h2:0);
-  return dir==='p'?2*(d.w+H)/1000:len;
+  if(sandNow()!=='stripes')return len;var sd=sides(),H=d.shape==='circle'?d.w:d.h+(/double/.test(d.shape)?d.h2:0);
+  return ((sd.l?1:0)+(sd.r?1:0))*H/1000+((sd.t?1:0)+(sd.b?1:0))*d.w/1000;
  };
 
  /* ---- блок владельца ---- */
@@ -127,7 +135,7 @@ function start(){
   var el=$('owner-stripe-hint');if(sandNow()!=='stripes'){el.textContent='';return;}
   var o=O.read(),t='';
   try{if(last.dims&&last.q&&last.q.area){var own=stripeOwn(o,last.dims);
-   t=(o.stripeDir==='p'?'Рамка по периметру: ':'Сами полосы: ')+f2(own)+' м². Всё зеркало: '+f2(last.q.area)+' м². ';
+   t='Полосы: '+f2(own)+' м². Всё зеркало: '+f2(last.q.area)+' м². ';
    if(showCost)t+='Закупка у РИАЛ (1 900 ₽/м², минимум 500 ₽): за сами полосы '+money(Math.max(500,own*1900))+', за всё зеркало '+money(Math.max(500,last.q.area*1900))+'. В заказе № 17591 РИАЛ считал за всё зеркало. ';}}catch(e){}
   var light=document.querySelector('input[name="light"]:checked'),prof=document.querySelector('input[name="option"][value="led-profile"]');
   if((light&&light.value!=='on')||(prof&&!prof.checked))t+='Чтобы полосы светились, включите подсветку и «Светодиодная лента в профиле».';
@@ -150,10 +158,12 @@ function start(){
      var col=lightOn?({warm:'#ffe2a6',neutral:'#fff6e6',cold:'#dcecff'}[clr]||'#ffe2a6'):'#eeece6';
      var rect=function(bx,by,bw,bh,fill,extra){return '<rect x="'+bx.toFixed(2)+'" y="'+by.toFixed(2)+'" width="'+Math.max(0,bw).toFixed(2)+'" height="'+Math.max(0,bh).toFixed(2)+'" fill="'+fill+'"'+(extra||'')+'/>';};
      if(mode==='stripes'){
-      var sw=num(o.stripeW),t=Math.max(1,sw*10*k),ins=Math.min(30*k,Math.min(dw,dh)/8);
+      var sw=num(o.stripeW),t=Math.max(1,sw*10*k),ins=Math.min(30*k,Math.min(dw,dh)/8),sd=o.sides||{};
       if(sw>0){
-       if(o.stripeDir==='p')g=rect(x0+ins,y0+ins,dw-2*ins,t,col)+rect(x0+ins,y1-ins-t,dw-2*ins,t,col)+rect(x0+ins,y0+ins,t,dh-2*ins,col)+rect(x1-ins-t,y0+ins,t,dh-2*ins,col);
-       else g=rect(x0+ins,y0+ins,t,dh-2*ins,col)+rect(x1-ins-t,y0+ins,t,dh-2*ins,col);
+       if(sd.l)g+=rect(x0+ins,y0+ins,t,dh-2*ins,col);
+       if(sd.r)g+=rect(x1-ins-t,y0+ins,t,dh-2*ins,col);
+       if(sd.t)g+=rect(x0+ins,y0+ins,dw-2*ins,t,col);
+       if(sd.b)g+=rect(x0+ins,y1-ins-t,dw-2*ins,t,col);
       }
      }else if(mode==='matte'){
       g=rect(x0,y0,dw,dh,'rgba(255,255,255,.35)');
@@ -172,6 +182,7 @@ function start(){
  function recalc(){mark();if(window.calculateMirrorInPlace)window.calculateMirrorInPlace();stripeHint();drawStripes();}
  field.addEventListener('change',function(){mark();setTimeout(function(){stripeHint();drawStripes();},0);});
  $('owner-stripe-w').addEventListener('input',recalc);
+ ['owner-side-l','owner-side-r','owner-side-t','owner-side-b'].forEach(function(id){$(id).addEventListener('change',recalc);});
  $('owner-pat-w').addEventListener('input',recalc);$('owner-pat-h').addEventListener('input',recalc);
  document.addEventListener('change',function(e){if(e.target&&(e.target.name==='light'||e.target.name==='clr'||e.target.name==='option'))setTimeout(function(){stripeHint();drawStripes();},0);});
  mark();renderOwner();
