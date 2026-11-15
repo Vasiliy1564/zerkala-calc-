@@ -920,9 +920,8 @@ function start(){
  grid.insertBefore(lab,grid.children[1]||null);
  var box=document.createElement('div');box.id='owner-stripe-box';
  box.innerHTML='<p class="owner-hint">Светящиеся полосы на лице зеркала: на полосе зеркальный слой снимают, она становится матовой, и лента за ней светит сквозь стекло.</p>'+
-  '<label for="owner-stripe-n">Сколько полос</label><select class="mirror-option-select" id="owner-stripe-n"><option>1</option><option selected>2</option><option>3</option><option>4</option></select>'+
   '<label for="owner-stripe-w">Ширина полосы, см</label><input class="mirror-option-select" id="owner-stripe-w" type="text" inputmode="decimal" value="3">'+
-  '<label for="owner-stripe-dir">Как идут полосы</label><select class="mirror-option-select" id="owner-stripe-dir"><option value="h">сверху вниз, на всю высоту</option><option value="w">слева направо, на всю ширину</option><option value="p">рамкой по всему периметру</option></select>'+
+  '<label for="owner-stripe-dir">Как идут полосы</label><select class="mirror-option-select" id="owner-stripe-dir"><option value="lr">две полосы: слева и справа</option><option value="p">по периметру: слева, справа, сверху и снизу</option></select>'+
   '<label for="owner-stripe-bill">Как посчитает поставщик</label><select class="mirror-option-select" id="owner-stripe-bill"><option value="mirror">за всё зеркало (дороже, с запасом)</option><option value="strips">только за сами полосы (дешевле)</option></select>'+
   '<p class="owner-hint" id="owner-stripe-hint"></p>';
  var details=$('mirror-sand-details');details.after(box);
@@ -936,12 +935,11 @@ function start(){
 
  /* ---- расчёт ---- */
  function stripeOwn(o,d){
-  var per=o.stripeDir==='p',n=per?1:Number(o.stripeN),wcm=num(o.stripeW),W=d.w/1000,H=d.h/1000,t=wcm/100;
-  if([1,2,3,4].indexOf(n)<0)throw Error('Укажите, сколько световых полос');
+  var per=o.stripeDir==='p',wcm=num(o.stripeW),W=d.w/1000,H=d.h/1000,t=wcm/100;
   if(!Number.isFinite(wcm)||wcm<=0)throw Error('Укажите ширину световой полосы в см');
   if(wcm>30)throw Error('Ширина световой полосы не больше 30 см');
   if(per){if(2*t>=Math.min(W,H))throw Error('Рамка шире самого зеркала');return 2*(W+H)*t-4*t*t;}
-  return n*(o.stripeDir==='w'?W:H)*t;
+  return 2*H*t;
  }
  var lookup=P.lookup;
  P.lookup=function(shape,material,width,height,edge,height2,options){
@@ -950,10 +948,10 @@ function start(){
   return q;
  };
  var read=O.read,restore=O.restore,sandCost=O.sandCost,sandLabel=O.sandLabel,facetCost=O.facetCost;
- O.read=function(){var o=read();o.stripeN=$('owner-stripe-n').value;o.stripeW=$('owner-stripe-w').value;o.stripeDir=$('owner-stripe-dir').value;o.stripeBill=$('owner-stripe-bill').value;o.sandPaint=$('owner-sand-paint').value;o.sandSketch=$('owner-sand-sketch').value==='1';return o;};
+ O.read=function(){var o=read();o.stripeW=$('owner-stripe-w').value;o.stripeDir=$('owner-stripe-dir').value;o.stripeBill=$('owner-stripe-bill').value;o.sandPaint=$('owner-sand-paint').value;o.sandSketch=$('owner-sand-sketch').value==='1';return o;};
  O.restore=function(o){o=o||{};restore(o);
   if(o.sand==='stripes'){var r=field.querySelector('input[value="stripes"]');if(r)r.checked=true;}
-  $('owner-stripe-n').value=o.stripeN||'2';$('owner-stripe-w').value=o.stripeW||'3';$('owner-stripe-dir').value=o.stripeDir||'h';$('owner-stripe-bill').value=o.stripeBill||'mirror';
+  $('owner-stripe-w').value=o.stripeW||'3';$('owner-stripe-dir').value=o.stripeDir||'lr';$('owner-stripe-bill').value=o.stripeBill||'mirror';
   $('owner-sand-paint').value=String(o.sandPaint||'0');$('owner-sand-sketch').value=o.sandSketch?'1':'0';mark();};
  O.facetCost=function(o,q){var v=facetCost(o,q);last.facet=v;return v;};
  O.sandCost=function(o,q){
@@ -963,14 +961,14 @@ function start(){
   last.sand=v;return v;
  };
  O.sandLabel=function(o){
-  if(o&&o.sand==='stripes')return 'Световые полосы · '+(o.stripeDir==='p'?'рамкой по периметру':o.stripeN+' шт.')+' · ширина '+String(o.stripeW).replace('.',',')+' см';
+  if(o&&o.sand==='stripes')return 'Световые полосы · '+(o.stripeDir==='p'?'по периметру':'слева и справа')+' · ширина '+String(o.stripeW).replace('.',',')+' см';
   var s=sandLabel(o);if(s&&o.sand==='pattern'){var p=Number(o.sandPaint||0);s+=(p?' · покраска в '+p+(p===1?' цвет':' цвета'):'')+(o.sandSketch?' · отрисовка эскиза':'');}
   return s;
  };
  // Профиль для ленты идёт по тем сторонам, где стоят световые полосы.
  window.MirrorProfileLength=function(len,d){
   if(sandNow()!=='stripes')return len;var dir=$('owner-stripe-dir').value,H=d.shape==='circle'?d.w:d.h+(/double/.test(d.shape)?d.h2:0);
-  return dir==='p'?2*(d.w+H)/1000:dir==='w'?2*d.w/1000:len;
+  return dir==='p'?2*(d.w+H)/1000:len;
  };
 
  /* ---- блок владельца ---- */
@@ -1035,13 +1033,12 @@ function start(){
     bodies.forEach(function(b){var bb=b.getBBox();x0=Math.min(x0,bb.x);y0=Math.min(y0,bb.y);x1=Math.max(x1,bb.x+bb.width);y1=Math.max(y1,bb.y+bb.height);});
     var o=O.read(),sw=num(o.stripeW),dw=x1-x0,dh=y1-y0;
     if(bodies.length&&dw>0&&dh>0&&sw>0){
-     var k=dw/last.dims.w,t=Math.max(1,sw*10*k),ins=Math.min(30*k,Math.min(dw,dh)/8),n=Number(o.stripeN)||2,g='',i,pos;
+     var k=dw/last.dims.w,t=Math.max(1,sw*10*k),ins=Math.min(30*k,Math.min(dw,dh)/8),g='';
      var lightOn=(document.querySelector('input[name="light"]:checked')||{}).value==='on',clr=(document.querySelector('input[name="clr"]:checked')||{}).value;
      var col=lightOn?({warm:'#ffe2a6',neutral:'#fff6e6',cold:'#dcecff'}[clr]||'#ffe2a6'):'#eeece6';
      var bar=function(bx,by,bw,bh){return '<rect x="'+bx.toFixed(2)+'" y="'+by.toFixed(2)+'" width="'+Math.max(0,bw).toFixed(2)+'" height="'+Math.max(0,bh).toFixed(2)+'" fill="'+col+'"/>';};
      if(o.stripeDir==='p')g=bar(x0+ins,y0+ins,dw-2*ins,t)+bar(x0+ins,y1-ins-t,dw-2*ins,t)+bar(x0+ins,y0+ins,t,dh-2*ins)+bar(x1-ins-t,y0+ins,t,dh-2*ins);
-     else if(o.stripeDir==='w'){for(i=0;i<n;i++){pos=n===1?(dh-t)/2:ins+i*(dh-2*ins-t)/(n-1);g+=bar(x0+ins,y0+pos,dw-2*ins,t);}}
-     else{for(i=0;i<n;i++){pos=n===1?(dw-t)/2:ins+i*(dw-2*ins-t)/(n-1);g+=bar(x0+pos,y0+ins,t,dh-2*ins);}}
+     else g=bar(x0+ins,y0+ins,t,dh-2*ins)+bar(x1-ins-t,y0+ins,t,dh-2*ins);
      svg.insertAdjacentHTML('beforeend','<g id="owner-stripes" clip-path="url(#realMirrorClip)"'+(lightOn?' style="filter:drop-shadow(0 0 1.5px '+col+')"':'')+'>'+g+'</g>');
     }
    }
