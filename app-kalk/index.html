@@ -78,11 +78,11 @@ textarea{width:100%;min-height:220px;background:var(--card2);color:var(--text);b
 <div class="side">
  <div class="card">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px"><h2 style="margin:0">Результат</h2><button class="ghost" id="btnReset" type="button">Сбросить</button></div>
-  <div class="stage" hidden><div><svg id="svg" viewBox="0 0 200 280" role="img" aria-label="Схема зеркала"></svg><div class="cap" id="cap"></div></div></div>
   <div class="price" id="price">—</div>
   <div class="err" id="err" role="status"></div>
   <div class="note" id="priceNote"></div>
   <div class="rows" id="rows"></div>
+  <div class="stage" style="margin-top:12px"><div><svg id="svg" viewBox="0 0 200 280" role="img" aria-label="Схема зеркала"></svg><div class="cap" id="cap"></div></div></div>
   <label class="switch" style="margin-top:10px"><span>Показать закупку и наценку</span><input type="checkbox" id="showCost"></label>
   <div class="rows" id="costRows"></div>
  </div>
@@ -775,7 +775,7 @@ function render(){
  if(t.delivery)rows+=row('Доставка клиенту',money(t.delivery));
  rows+=row('Итого',money(t.total),'total');
  $('rows').innerHTML=rows;
- $('cap').textContent=SHAPE_NAMES[S.shape]+' · '+dimsText(r)+(r.light?' · свет '+CLR[S.clr]:' · без подсветки');
+ $('cap').textContent=SHAPE_NAMES[S.shape]+' · '+dimsText(r)+(r.light?' · свет '+CLR[S.clr]:' · без подсветки')+(S.sand==='stripes'?' · световые полосы':S.sand==='matte'?' · матовое':'');
  if($('showCost').checked){
   var p=r.parts,c='';if(qty>1)c+=row('Цифры ниже — за 1 зеркало','','sub');
   c+=row('Закупка полотна и кромки (поставщик)',money(r.q.cost));
@@ -815,7 +815,19 @@ function drawShape(r){
  var defs='<defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".55"/><stop offset=".45" stop-color="'+col+'"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient></defs>';
  var cmW=Math.round(mmw/10),cmH=Math.round(totalH/10);
  var dimTxt='<text x="100" y="'+(y+dh+16)+'" text-anchor="middle" fill="#b9ae9d" font-size="9" font-family="system-ui,sans-serif">'+cmW+' см</text><text transform="translate('+(x-8)+' 140) rotate(-90)" text-anchor="middle" fill="#b9ae9d" font-size="9" font-family="system-ui,sans-serif">'+cmH+' см</text>';
- svg.innerHTML=defs+'<g fill="url(#mg)" stroke="'+(on?glow:stroke)+'" stroke-width="'+(on?3:1.6)+'" style="'+glowStyle+'">'+shapeEl()+'</g>'+dimTxt;
+ // Световые полосы и матировка рисуются поверх зеркала, обрезаются по его форме.
+ var over='',k=dw/mmw;
+ if(S.sand==='stripes'){
+  var sw=Number(String(S.stripeW||'').replace(',','.')),t=Math.max(1.2,sw*10*k),ins=Math.min(30*k,Math.min(dw,dh)/8),n=Number(S.stripeN)||2,i,pos,sc=on?glow:'#f4f1ea';
+  var bar=function(bx,by,bw,bh){return '<rect x="'+bx.toFixed(1)+'" y="'+by.toFixed(1)+'" width="'+Math.max(0,bw).toFixed(1)+'" height="'+Math.max(0,bh).toFixed(1)+'" fill="'+sc+'"/>';};
+  if(sw>0){
+   if(S.stripeDir==='p')over=bar(x+ins,y+ins,dw-2*ins,t)+bar(x+ins,y+dh-ins-t,dw-2*ins,t)+bar(x+ins,y+ins,t,dh-2*ins)+bar(x+dw-ins-t,y+ins,t,dh-2*ins);
+   else if(S.stripeDir==='w'){for(i=0;i<n;i++){pos=n===1?(dh-t)/2:ins+i*(dh-2*ins-t)/(n-1);over+=bar(x+ins,y+pos,dw-2*ins,t);}}
+   else{for(i=0;i<n;i++){pos=n===1?(dw-t)/2:ins+i*(dw-2*ins-t)/(n-1);over+=bar(x+pos,y+ins,t,dh-2*ins);}}
+   over='<g clip-path="url(#mclip)" style="'+(on?'filter:drop-shadow(0 0 3px '+glow+')':'')+'">'+over+'</g>';
+  }
+ }else if(S.sand==='matte'){over='<g clip-path="url(#mclip)"><rect x="'+x+'" y="'+y+'" width="'+dw+'" height="'+dh+'" fill="#f1efe9" opacity=".72"/></g>';}
+ svg.innerHTML=defs+'<defs><clipPath id="mclip">'+shapeEl()+'</clipPath></defs><g fill="url(#mg)" stroke="'+(on?glow:stroke)+'" stroke-width="'+(on?3:1.6)+'" style="'+glowStyle+'">'+shapeEl()+'</g>'+over+dimTxt;
 }
 
 /* ---------- элементы управления ---------- */
