@@ -7,23 +7,26 @@
 <title>Калькулятор зеркал</title>
 </head>
 <body style="margin:0;background:#1f1a16;color:#ece4d6;font:17px system-ui,sans-serif">
-<div id="app"></div>
+<div id="app" style="padding:40px 24px"><p>Загружаю…</p></div>
 <script>
 (async function(){
  try{
   if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='127.0.0.1')){
-   await navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'});
-   if(!navigator.serviceWorker.controller)await Promise.race([new Promise(function(ok){navigator.serviceWorker.addEventListener('controllerchange',ok,{once:true});}),new Promise(function(ok){setTimeout(ok,2500);})]);
+   await navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).catch(function(){});
+   if(!navigator.serviceWorker.controller)await Promise.race([new Promise(function(ok){navigator.serviceWorker.addEventListener('controllerchange',ok,{once:true});}),new Promise(function(ok){setTimeout(ok,3000);})]);
   }
  }catch(e){}
  try{
-  var r=await fetch('./classic.html',{cache:'no-store'});if(!r.ok)throw Error('код '+r.status);
+  var c=new AbortController(),t=setTimeout(function(){c.abort();},8000);
+  var r=await fetch('./classic.html',{cache:'no-store',signal:c.signal});
+  clearTimeout(t);
+  if(!r.ok)throw Error('код '+r.status);
   var h=await r.text();
   h=h.replace('</head>','<link rel="stylesheet" href="/app-kalk/owner.css"></head>');
   h=h.replace('</body>','<script src="/app-kalk/owner.js"><\/script></body>');
   document.open();document.write(h);document.close();
  }catch(e){
-  document.getElementById('app').innerHTML='<div style="padding:40px 24px"><p>Ошибка: '+String(e.message||e).replace(/[<>&]/g,'')+'</p><p><a href="./" style="color:#c9a876">Повторить</a></p></div>';
+  document.getElementById('app').innerHTML='<p>Ошибка загрузки: '+String(e.message||e).replace(/[<>&]/g,'')+'</p><p><button onclick="location.reload()" style="padding:12px 24px;background:#c9a876;border:none;cursor:pointer;border-radius:8px;font-size:16px;color:#1f1a16">Повторить</button> <button onclick="window.location=\'classic.html\'" style="padding:12px 24px;background:#2a231e;border:1px solid #c9a876;cursor:pointer;border-radius:8px;font-size:16px;color:#c9a876">Простой</button></p>';
  }
 })();
 </script>
