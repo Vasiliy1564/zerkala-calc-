@@ -96,6 +96,12 @@ body{padding-bottom:0!important}
 
 </style></head>
 <body>
+<div style="position:fixed;top:0;left:0;right:0;z-index:100;background:#2a231c;border-bottom:1px solid #3d342a;padding:12px;color:#ece4d6">
+ <button onclick="if(navigator.serviceWorker){navigator.serviceWorker.ready.then(function(r){if(r.active)r.active.postMessage({type:'refresh'});});location.reload();}" style="background:#c9a876;color:#211b16;border:none;padding:10px 16px;border-radius:8px;font-weight:600;cursor:pointer">Обновить приложение</button>
+ <span style="margin-left:12px;font-size:13px;color:#b9ae9d" id="upd-note"></span>
+</div><script>try{var t=localStorage.getItem('mc_updated');if(t)document.getElementById('upd-note').textContent='Обновлено: '+t;}catch(e){}</script>
+<div style="height:60px"></div>
+
 <main>
 <div class="side">
  <div class="card">
