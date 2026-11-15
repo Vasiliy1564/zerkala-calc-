@@ -141,7 +141,19 @@ function start(){
 
  /* ---- полосы на картинке зеркала ---- */
  var svg=$('mirrorSvg'),drawing=false;
+ var stage=svg&&(svg.closest('.stage')||svg.parentElement);
+ var bar=document.createElement('div');bar.id='owner-sand-bar';bar.className='owner-bar';
+ var pv=svg&&svg.closest('.calc-preview');if(pv)pv.insertBefore(bar,pv.firstChild);
+ function updateBar(){
+  var m=sandNow(),t;
+  if(m==='none')t='Пескоструя нет: зеркало гладкое';
+  else if(m==='matte'){var a=$('mirror-sand-area').value;t='Сплошная матировка: вся площадь зеркала'+(a?' — '+a+' м²':'');}
+  else if(m==='pattern'){var pw=$('owner-pat-w').value,ph=$('owner-pat-h').value;t=pw&&ph?'Пескоструйный рисунок: '+pw+' × '+ph+' см':'Пескоструйный рисунок: введите ширину и высоту ниже';}
+  else t='Световые полосы: '+sideNames(sides());
+  if(bar.textContent!==t)bar.textContent=t;
+ }
  function drawStripes(){
+  updateBar();
   if(!svg||drawing)return;drawing=true;
   try{
    var old=svg.querySelector('#owner-stripes');if(old)old.remove();
@@ -163,10 +175,11 @@ function start(){
        if(sd.b)g+=rect(x0+ins,y1-ins-t,dw-2*ins,t,col);
       }
      }else if(mode==='matte'){
-      g=rect(x0,y0,dw,dh,'rgba(255,255,255,.35)');
+      g=rect(x0,y0,dw,dh,'rgba(255,255,255,.62)',' stroke="#c9a876" stroke-width="1.5" stroke-dasharray="6 4"')+'<text x="'+(x0+dw/2).toFixed(2)+'" y="'+(y0+dh/2).toFixed(2)+'" fill="#4a4036" font-size="'+(dw*0.07).toFixed(2)+'" text-anchor="middle" font-family="sans-serif">матовое</text>';
      }else{
       var pw=num($('owner-pat-w').value),ph=num($('owner-pat-h').value);
-      if(pw>0&&ph>0){var rw=Math.min(dw,pw*10*k),rh=Math.min(dh,ph*10*k);g=rect(x0+(dw-rw)/2,y0+(dh-rh)/2,rw,rh,'rgba(201,168,118,.35)',' stroke="#c9a876" stroke-width="1.2" stroke-dasharray="4 3"');}
+      if(pw>0&&ph>0){var rw=Math.min(dw,pw*10*k),rh=Math.min(dh,ph*10*k);g=rect(x0+(dw-rw)/2,y0+(dh-rh)/2,rw,rh,'rgba(201,168,118,.45)',' stroke="#c9a876" stroke-width="1.5" stroke-dasharray="4 3"');}
+      else g='<text x="'+(x0+dw/2).toFixed(2)+'" y="'+(y0+dh/2).toFixed(2)+'" fill="#f1e6d2" font-size="'+(dw*0.06).toFixed(2)+'" text-anchor="middle" font-family="sans-serif">введите размер рисунка</text>';
      }
      if(g)svg.insertAdjacentHTML('beforeend','<g id="owner-stripes" clip-path="url(#realMirrorClip)"'+(mode==='stripes'&&lightOn?' style="filter:drop-shadow(0 0 1.5px '+col+')"':'')+'>'+g+'</g>');
     }
@@ -177,7 +190,7 @@ function start(){
  if(svg&&window.MutationObserver)new MutationObserver(function(){if(!drawing&&!svg.querySelector('#owner-stripes'))setTimeout(drawStripes,0);}).observe(svg,{childList:true});
 
  function recalc(){mark();if(window.calculateMirrorInPlace)window.calculateMirrorInPlace();stripeHint();drawStripes();}
- field.addEventListener('change',function(){mark();setTimeout(function(){stripeHint();drawStripes();},0);});
+ field.addEventListener('change',function(e){mark();if(e.target&&e.target.name==='mirror-sand'&&bar.parentNode)bar.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(function(){stripeHint();drawStripes();},0);});
  $('owner-stripe-w').addEventListener('input',recalc);
  $('owner-side-preset').addEventListener('change',function(){var all=this.value==='p';$('owner-side-l').checked=true;$('owner-side-r').checked=true;$('owner-side-t').checked=all;$('owner-side-b').checked=all;recalc();});
  ['owner-side-l','owner-side-r','owner-side-t','owner-side-b'].forEach(function(id){$(id).addEventListener('change',recalc);});
