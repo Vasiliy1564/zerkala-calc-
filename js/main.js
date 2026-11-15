@@ -1026,7 +1026,10 @@
     /* Дополнительные алюминиевые опции — по расчётному периметру,
        без минимальной покупки 6 м. Ставки скрыты в клиентском интерфейсе. */
     // Профиль для ленты — только слева и справа: две высоты по 400 ₽/м.
-    if (state.ledProfile && state.light) price += 2 * (state.shape==='circle'?w:h+(state.shape.indexOf('double')!==-1?h2:0)) / 1000 * 400;
+    var profileLength = 2 * (state.shape==='circle'?w:h+(state.shape.indexOf('double')!==-1?h2:0)) / 1000;
+    // Приложение владельца может уточнить длину профиля (световые полосы по ширине или по периметру); на сайте хука нет.
+    if (window.MirrorProfileLength) profileLength = window.MirrorProfileLength(profileLength, {shape:state.shape,w:w,h:h,h2:h2});
+    if (state.ledProfile && state.light) price += profileLength * 400;
 
     // Поездка за полотном и доставка — без наценки и надбавок; установка — как в Ставрополе.
     price += purchaseTripPrice();
