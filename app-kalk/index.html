@@ -117,6 +117,8 @@ textarea{width:100%;min-height:220px;background:var(--card2);color:var(--text);b
    <div id="stripeBox" hidden class="sub-fields"><div class="grid2"><div id="stripeNBox"><label class="lab" for="stripeN">Сколько полос</label><select id="stripeN"><option>1</option><option>2</option><option>3</option><option>4</option></select></div><div><label class="lab" for="stripeW">Ширина полосы, см</label><input id="stripeW" type="number" inputmode="decimal" step="0.5" min="0"></div></div>
     <div class="field"><label class="lab" for="stripeDir">Как идут полосы</label><select id="stripeDir"><option value="h">сверху вниз, на всю высоту</option><option value="w">слева направо, на всю ширину</option><option value="p">рамкой по всему периметру</option></select></div>
     <div class="field"><label class="lab" for="stripeBill">Как посчитает поставщик</label><select id="stripeBill"><option value="mirror">за всё зеркало (дороже, с запасом)</option><option value="strips">только за сами полосы (дешевле)</option></select></div>
+    <div id="stripePreview" style="display:flex;justify-content:center;padding:12px 0 6px"></div>
+    <div class="hint" style="text-align:center">Примерный вид: пропорции зеркала и полос настоящие, отступ от края условный.</div>
     <div class="hint" id="stripeHint"></div>
    </div>
    <div id="sandBox" hidden class="sub-fields"><div class="grid2"><div><label class="lab" for="sandArea">Площадь рисунка, м²</label><input id="sandArea" type="number" inputmode="decimal" step="0.01" min="0"></div><div id="sandCxBox"><label class="lab" for="sandCx">Сложность рисунка</label><select id="sandCx"><option value="1">обычный</option><option value="1.5">сложный, +50 %</option><option value="2">особо сложный, +100 %</option></select></div></div>
@@ -742,6 +744,7 @@ function dimsText(r){
 }
 function row(a,b,cls){return '<div class="row '+(cls||'')+'"><span>'+a+'</span><span>'+b+'</span></div>';}
 function render(){
+ if(S.sand==='stripes'&&$('stripePreview')){$('stripeHint').textContent=stripeHintText();$('stripePreview').innerHTML=stripePreviewSvg();}
  var r=compute(S);last=r;
  $('err').textContent='';$('priceNote').textContent='';$('rows').innerHTML='';$('costRows').innerHTML='';
  drawShape(r);
@@ -836,6 +839,16 @@ function buildControls(){
  ['light','ledProfile','film','heat','install','delivery','carry','sandSketch'].forEach(function(id){$(id).addEventListener('change',function(){S[id]=this.checked;sync();});});
  $('showCost').addEventListener('change',function(){try{localStorage.setItem('mc_showCost',this.checked?'1':'0');}catch(e){}sync();});
 }
+function stripePreviewSvg(){
+ var r=compute(S);if(!r||!r.opts||!r.opts.mirrorW)return '';
+ var W=r.opts.mirrorW/10,H=r.opts.mirrorH/10,sw=Number(String(S.stripeW||'').replace(',','.'));if(!(W>0&&H>0&&sw>0))return '';
+ var k=Math.min(220/W,260/H),pw=W*k,ph=H*k,t=Math.max(1.5,sw*k),ins=Math.min(3*k,Math.min(pw,ph)/8),n=Number(S.stripeN)||2,g='',i,pos;
+ function bar(x,y,w,h){return '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+Math.max(0,w).toFixed(1)+'" height="'+Math.max(0,h).toFixed(1)+'" rx="1" fill="#fff3d6" filter="url(#spGlow)"/>';}
+ if(S.stripeDir==='p'){g=bar(ins,ins,pw-2*ins,t)+bar(ins,ph-ins-t,pw-2*ins,t)+bar(ins,ins,t,ph-2*ins)+bar(pw-ins-t,ins,t,ph-2*ins);}
+ else if(S.stripeDir==='w'){for(i=0;i<n;i++){pos=n===1?(ph-t)/2:ins+i*(ph-2*ins-t)/(n-1);g+=bar(ins,pos,pw-2*ins,t);}}
+ else{for(i=0;i<n;i++){pos=n===1?(pw-t)/2:ins+i*(pw-2*ins-t)/(n-1);g+=bar(pos,ins,t,ph-2*ins);}}
+ return '<svg xmlns="http://www.w3.org/2000/svg" width="'+(pw+24).toFixed(0)+'" height="'+(ph+24).toFixed(0)+'" viewBox="-12 -12 '+(pw+24).toFixed(1)+' '+(ph+24).toFixed(1)+'" role="img" aria-label="Примерный вид зеркала со световыми полосами"><defs><linearGradient id="spGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8f969c"/><stop offset=".5" stop-color="#5d646b"/><stop offset="1" stop-color="#7b8289"/></linearGradient><filter id="spGlow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect width="'+pw.toFixed(1)+'" height="'+ph.toFixed(1)+'" rx="2" fill="url(#spGlass)" stroke="#c9ced3" stroke-width="1"/>'+g+'</svg>';
+}
 function stripeHintText(){
  var r=compute(S),t='';
  if(r&&r.opts&&r.q&&!r.error){try{
@@ -860,7 +873,7 @@ function sync(){
  if(auto){var r=compute(S);$('w').value=r&&r.w?cmText(r.w):'';}
  $('sizeHint').textContent=sh==='semicircle'||sh==='semidouble'?'Ширина считается сама: половина общей высоты.':sh==='curved'?'Ширина считается сама: 8/9 высоты. Допустимая высота 40–180 см.':'Размеры от 40 см. Максимум: 321 × 225 см, у бронзы и графита 255 × 160,5 см.';
  $('decorBox').hidden=S.material!=='decorative';
- $('sandBox').hidden=S.sand!=='pattern';$('stripeBox').hidden=S.sand!=='stripes';$('stripeNBox').style.visibility=S.stripeDir==='p'?'hidden':'';if(S.sand==='stripes')$('stripeHint').textContent=stripeHintText();var sh_=SAND_HINT[S.sand];$('sandHint').hidden=!sh_;$('sandCxHint').hidden=!$('showCost').checked;$('sandHint').textContent=sh_?sh_[0]+($('showCost').checked?' '+sh_[1]:''):'';
+ $('sandBox').hidden=S.sand!=='pattern';$('stripeBox').hidden=S.sand!=='stripes';$('stripeNBox').style.visibility=S.stripeDir==='p'?'hidden':'';if(S.sand==='stripes'){$('stripeHint').textContent=stripeHintText();$('stripePreview').innerHTML=stripePreviewSvg();}var sh_=SAND_HINT[S.sand];$('sandHint').hidden=!sh_;$('sandCxHint').hidden=!$('showCost').checked;$('sandHint').textContent=sh_?sh_[0]+($('showCost').checked?' '+sh_[1]:''):'';
  $('frameBox').hidden=!(sh==='rect'||sh==='double');
  $('lightBox').hidden=!S.light;
  $('kmBox').hidden=!(S.delivery||S.install);
