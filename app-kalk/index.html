@@ -113,7 +113,12 @@ textarea{width:100%;min-height:220px;background:var(--card2);color:var(--text);b
   <div class="field"><span class="lab">Кромка</span><div class="seg" id="edge"></div></div>
   <div class="field"><span class="lab">Фацет, мм</span><div class="seg" id="facet"></div></div>
   <div class="field"><span class="lab">Пескоструйная обработка</span><div class="seg" id="sand"></div>
-   <div id="sandBox" hidden class="sub-fields"><div class="grid2"><div><label class="lab" for="sandArea">Площадь, м²</label><input id="sandArea" type="number" inputmode="decimal" step="0.01" min="0"></div><div id="sandCxBox"><label class="lab" for="sandCx">Сложность</label><select id="sandCx"><option value="1">обычный</option><option value="1.5">сложный</option><option value="2">особо сложный</option></select></div></div></div>
+   <div class="hint" id="sandHint" hidden></div>
+   <div id="sandBox" hidden class="sub-fields"><div class="grid2"><div><label class="lab" for="sandArea">Площадь рисунка, м²</label><input id="sandArea" type="number" inputmode="decimal" step="0.01" min="0"></div><div id="sandCxBox"><label class="lab" for="sandCx">Сложность рисунка</label><select id="sandCx"><option value="1">обычный</option><option value="1.5">сложный, +50 %</option><option value="2">особо сложный, +100 %</option></select></div></div>
+    <div class="hint" id="sandCxHint">Сложность назначает РИАЛ по эскизу. Логотип с надписями в заказе № 17591 прошёл как обычный.</div>
+    <div class="field"><label class="lab" for="sandPaint">Покраска рисунка с амальгамы</label><select id="sandPaint"><option value="0">нет, рисунок остаётся матовым</option><option value="1">1 цвет: золото, белый или чёрный</option><option value="2">2 цвета</option><option value="3">3 цвета</option></select></div>
+    <label class="switch"><span>Отрисовка эскиза (нет готового макета в векторе)</span><input type="checkbox" id="sandSketch"></label>
+   </div>
   </div>
   <div class="field" id="frameBox"><span class="lab">Алюминиевая рама</span><div class="seg" id="frame"></div></div>
  </div>
@@ -586,7 +591,7 @@ var FRAME_LABELS={white:'белая',black:'чёрная',gold:'золотая'}
 var FRAME_PRICES={white:396,black:373,gold:315},FRAME_DELIVERY={white:600,black:600,gold:990};
 var PRICE={ledRoll:600,ledRollLen:5,block:650,sw:500};
 var PATTERNS=['КЛАССИКА (лабиринт)','КОЛОТЫЙ ЛЕД','ФУДЖИ','ТУРКУЗАН','ЛИТЕУС','РОУЗ','КОКО','БАРОККО','АЛЛАДИН','СИТЕЦ','ВИНТАЖ','ТЕАРА','ОМУТ','ЮТА','ФЕНИКС','ФЬЮЗИ'];
-var DEFAULT={shape:'rect',material:'silver',w:'80',h:'180',h2:'80',edge:'grind',facet:'0',sand:'none',sandArea:'',sandCx:'1',decor:PATTERNS[0],frame:'none',light:true,clr:'warm',ctrl:'wave',ledProfile:false,film:false,heat:false,reinf:'auto',install:false,delivery:false,km:'',carry:false,floor:'1',carryMethod:'lift',qty:'1'};
+var DEFAULT={shape:'rect',material:'silver',w:'80',h:'180',h2:'80',edge:'grind',facet:'0',sand:'none',sandArea:'',sandCx:'1',sandPaint:'0',sandSketch:false,decor:PATTERNS[0],frame:'none',light:true,clr:'warm',ctrl:'wave',ledProfile:false,film:false,heat:false,reinf:'auto',install:false,delivery:false,km:'',carry:false,floor:'1',carryMethod:'lift',qty:'1'};
 var S=Object.assign({},DEFAULT),last=null;
 
 function $(id){return document.getElementById(id);}
@@ -598,16 +603,27 @@ function esc(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;
 
 /* ---------- копии чистых функций сайта (mirror-options.js) ---------- */
 function facetCost(o,q){var rate=({0:0,10:180,15:200,20:220})[o.facet||0];if(rate===undefined)throw Error('Выберите фацет');return q.billedMetres*rate*(q.shapeRate?1.5:1);}
+// Прайс РИАЛ от 14.10.2026, раздел «Пескоструйная обработка»: матировка всей поверхности 900 ₽/м²,
+// рисунок 1900 ₽/м² (+50 % / +100 % за сложность), покраска 1900 ₽/м² за цвет, отрисовка эскиза 1000 ₽, минимум 500 ₽.
 function sandCost(o,q){
  if(!o.sand||o.sand==='none')return 0;
- var rate=({matte:900,pattern:1900})[o.sand],area=Number(String(o.sandArea||'').replace(',','.')),cx=o.sand==='pattern'?Number(o.sandComplexity||1):1;
- if(!rate)throw Error('Выберите пескоструйную обработку');
- if(!Number.isFinite(area)||area<=0)throw Error('Укажите площадь пескоструйной обработки в м²');
- if(area>q.area+1e-8)throw Error('Площадь обработки не может быть больше площади зеркала');
+ if(o.sand==='matte')return Math.max(500,q.area*900);
+ if(o.sand!=='pattern')throw Error('Выберите пескоструйную обработку');
+ var area=Number(String(o.sandArea||'').replace(',','.')),cx=Number(o.sandComplexity||1),paint=Number(o.sandPaint||0);
+ if(!Number.isFinite(area)||area<=0)throw Error('Укажите площадь пескоструйного рисунка в м²');
+ if(area>q.area+1e-8)throw Error('Площадь рисунка не может быть больше площади зеркала');
  if([1,1.5,2].indexOf(cx)<0)throw Error('Выберите сложность рисунка');
- return Math.max(500,area*rate*cx);
+ if([0,1,2,3].indexOf(paint)<0)throw Error('Выберите покраску рисунка');
+ return Math.max(500,area*1900*cx+area*1900*paint)+(o.sandSketch?1000:0);
 }
-function sandLabel(o){if(!o.sand||o.sand==='none')return '';return (o.sand==='matte'?'Сплошная матировка':'Пескоструйный рисунок')+' · '+String(o.sandArea).replace('.',',')+' м²'+(o.sand==='pattern'&&Number(o.sandComplexity)>1?' · '+(Number(o.sandComplexity)===1.5?'сложный':'особо сложный')+' рисунок':'');}
+function sandLabel(o){
+ if(!o.sand||o.sand==='none')return '';
+ if(o.sand==='matte')return 'Пескоструйная матировка всей поверхности';
+ var c=Number(o.sandComplexity),p=Number(o.sandPaint||0);
+ return 'Пескоструйный рисунок · '+String(o.sandArea).replace('.',',')+' м²'+(c>1?' · '+(c===1.5?'сложный':'особо сложный')+' рисунок':'')+(p?' · покраска в '+p+(p===1?' цвет':' цвета'):'')+(o.sandSketch?' · отрисовка эскиза':'');
+}
+var SAND_HINT={matte:['Вся поверхность становится матовой, отражения не остаётся. Площадь берётся сама: всё зеркало.','В прайсе РИАЛ: «Пескоструйная матировка (вся поверхность)», 900 ₽/м², минимум 500 ₽.'],
+ pattern:['Матовый рисунок на зеркале: полосы, рамка, надпись, логотип, орнамент. Остальное остаётся зеркальным.','В прайсе РИАЛ: «Нанесение пескоструйного рисунка», 1 900 ₽/м²; покраска 1 900 ₽/м² за каждый цвет; отрисовка эскиза 1 000 ₽; минимум 500 ₽. В заказе № 17591 РИАЛ посчитал рисунок на всю площадь зеркала.']};
 function edgeLabel(label,o){return label+(Number(o.facet)?'; фацет '+(o.facet==='10'?'5–10':o.facet)+' мм':'');}
 
 /* ---------- алюминиевая рама (main.js) ---------- */
@@ -658,7 +674,7 @@ function compute(s){
  var frame=(shape==='rect'||shape==='double')?s.frame:'none';
  var light=!!s.light,ledProfile=light&&s.ledProfile;
  var geo=geometry(shape,w,h,h2);
- var opts={decor:s.decor,machine:'auto',facet:s.facet,sand:s.sand,sandArea:s.sandArea,sandComplexity:s.sandCx};
+ var opts={decor:s.decor,machine:'auto',facet:s.facet,sand:s.sand,sandArea:s.sandArea,sandComplexity:s.sandCx,sandPaint:s.sandPaint,sandSketch:s.sandSketch};
  var q=SP.lookup(shape,s.material,w,shape==='circle'?w:h,edge,h2,{category:'rial',cost:null,machine:'auto'});
  if(q.needsQuote)return quote('Для этой формы, материала или обработки стоимость согласуем по эскизу и прайсу поставщика.');
  var facetP,sandP;
@@ -797,16 +813,16 @@ function buildControls(){
  seg('clr',[['warm','Тёплый'],['neutral','Нейтральный'],['cold','Холодный']],'clr');
  seg('ctrl',[['wave','Взмах'],['touch','Сенсор'],['remote','Пульт'],['smart','Wi-Fi']],'ctrl');
  ['w','h','h2','sandArea','km','floor','qty'].forEach(function(id){$(id).addEventListener('input',function(){S[id]=this.value;render();});});
- ['material','decor','sandCx','carryMethod','reinf'].forEach(function(id){$(id).addEventListener('change',function(){S[id==='sandCx'?'sandCx':id]=this.value;sync();});});
- ['light','ledProfile','film','heat','install','delivery','carry'].forEach(function(id){$(id).addEventListener('change',function(){S[id]=this.checked;sync();});});
- $('showCost').addEventListener('change',function(){try{localStorage.setItem('mc_showCost',this.checked?'1':'0');}catch(e){}render();});
+ ['material','decor','sandCx','sandPaint','carryMethod','reinf'].forEach(function(id){$(id).addEventListener('change',function(){S[id==='sandCx'?'sandCx':id]=this.value;sync();});});
+ ['light','ledProfile','film','heat','install','delivery','carry','sandSketch'].forEach(function(id){$(id).addEventListener('change',function(){S[id]=this.checked;sync();});});
+ $('showCost').addEventListener('change',function(){try{localStorage.setItem('mc_showCost',this.checked?'1':'0');}catch(e){}sync();});
 }
 function sync(){
  var sh=S.shape;
  pressed('shapes',sh);$('shapes').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.v===sh));});
  ['edge','facet','sand','frame','clr','ctrl'].forEach(function(k){pressed(k,S[k]);});
- $('material').value=S.material;$('decor').value=S.decor;$('sandCx').value=S.sandCx;$('carryMethod').value=S.carryMethod;$('reinf').value=S.reinf||'auto';
- ['light','ledProfile','film','heat','install','delivery','carry'].forEach(function(id){$(id).checked=!!S[id];});
+ $('material').value=S.material;$('decor').value=S.decor;$('sandCx').value=S.sandCx;$('sandPaint').value=S.sandPaint||'0';$('carryMethod').value=S.carryMethod;$('reinf').value=S.reinf||'auto';
+ ['light','ledProfile','film','heat','install','delivery','carry','sandSketch'].forEach(function(id){$(id).checked=!!S[id];});
  ['w','h','h2','sandArea','km','floor','qty'].forEach(function(id){if(document.activeElement!==$(id))$(id).value=S[id];});
  var two=sh==='double'||sh==='semidouble',auto=sh==='semicircle'||sh==='semidouble'||sh==='curved';
  $('h2Box').hidden=!two;$('wLab').textContent=sh==='circle'?'Диаметр':'Ширина';$('hLab').textContent=two?'Высота первой части':(sh==='semicircle'?'Высота (диаметр)':'Высота');
@@ -815,7 +831,7 @@ function sync(){
  if(auto){var r=compute(S);$('w').value=r&&r.w?cmText(r.w):'';}
  $('sizeHint').textContent=sh==='semicircle'||sh==='semidouble'?'Ширина считается сама: половина общей высоты.':sh==='curved'?'Ширина считается сама: 8/9 высоты. Допустимая высота 40–180 см.':'Размеры от 40 см. Максимум: 321 × 225 см, у бронзы и графита 255 × 160,5 см.';
  $('decorBox').hidden=S.material!=='decorative';
- $('sandBox').hidden=S.sand==='none';$('sandCxBox').hidden=S.sand!=='pattern';
+ $('sandBox').hidden=S.sand!=='pattern';var sh_=SAND_HINT[S.sand];$('sandHint').hidden=!sh_;$('sandCxHint').hidden=!$('showCost').checked;$('sandHint').textContent=sh_?sh_[0]+($('showCost').checked?' '+sh_[1]:''):'';
  $('frameBox').hidden=!(sh==='rect'||sh==='double');
  $('lightBox').hidden=!S.light;
  $('kmBox').hidden=!(S.delivery||S.install);
