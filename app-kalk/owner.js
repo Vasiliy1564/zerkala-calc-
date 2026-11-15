@@ -19,11 +19,8 @@ function start(){
  var box=document.createElement('div');box.id='owner-stripe-box';
  box.innerHTML='<p class="owner-hint">Светящиеся полосы на лице зеркала: на полосе зеркальный слой снимают, она становится матовой, и лента за ней светит сквозь стекло.</p>'+
   '<label for="owner-stripe-w">Ширина полосы, см</label><input class="mirror-option-select" id="owner-stripe-w" type="text" inputmode="decimal" value="3">'+
-  '<div class="owner-sides"><span>Где ставить полосы (можно несколько):</span>'+
-  '<label><input type="checkbox" id="owner-side-l" checked> слева</label>'+
-  '<label><input type="checkbox" id="owner-side-r" checked> справа</label>'+
-  '<label><input type="checkbox" id="owner-side-t"> сверху</label>'+
-  '<label><input type="checkbox" id="owner-side-b"> снизу</label></div>'+
+  '<label for="owner-side-preset">Где ставить полосы</label><select class="mirror-option-select" id="owner-side-preset"><option value="p">по всему периметру: слева, справа, сверху и снизу</option><option value="lr">две полосы: слева и справа</option></select>'+
+  '<div class="owner-sides" hidden><label><input type="checkbox" id="owner-side-l" checked> слева</label><label><input type="checkbox" id="owner-side-r" checked> справа</label><label><input type="checkbox" id="owner-side-t" checked> сверху</label><label><input type="checkbox" id="owner-side-b" checked> снизу</label></div>'+
   '<label for="owner-stripe-bill">Как посчитает поставщик</label><select class="mirror-option-select" id="owner-stripe-bill"><option value="mirror">за всё зеркало (дороже, с запасом)</option><option value="strips">только за сами полосы (дешевле)</option></select>'+
   '<p class="owner-hint" id="owner-stripe-hint"></p>';
  var details=$('mirror-sand-details');details.after(box);
@@ -71,7 +68,7 @@ function start(){
  O.read=function(){syncArea();var o=read();o.stripeW=$('owner-stripe-w').value;o.sides=sides();o.stripeBill=$('owner-stripe-bill').value;o.sandPaint=$('owner-sand-paint').value;o.sandSketch=$('owner-sand-sketch').value==='1';return o;};
  O.restore=function(o){o=o||{};restore(o);
   if(o.sand==='stripes'){var r=field.querySelector('input[value="stripes"]');if(r)r.checked=true;}
-  $('owner-stripe-w').value=o.stripeW||'3';var sd=o.sides||{l:true,r:true,t:false,b:false};$('owner-side-l').checked=!!sd.l;$('owner-side-r').checked=!!sd.r;$('owner-side-t').checked=!!sd.t;$('owner-side-b').checked=!!sd.b;$('owner-stripe-bill').value=o.stripeBill||'mirror';
+  $('owner-stripe-w').value=o.stripeW||'3';var sd=o.sides||{l:true,r:true,t:true,b:true};$('owner-side-l').checked=!!sd.l;$('owner-side-r').checked=!!sd.r;$('owner-side-t').checked=!!sd.t;$('owner-side-b').checked=!!sd.b;$('owner-side-preset').value=(sd.t&&sd.b)?'p':'lr';$('owner-stripe-bill').value=o.stripeBill||'mirror';
   $('owner-sand-paint').value=String(o.sandPaint||'0');$('owner-sand-sketch').value=o.sandSketch?'1':'0';mark();};
  O.facetCost=function(o,q){var v=facetCost(o,q);last.facet=v;return v;};
  O.sandCost=function(o,q){
@@ -182,6 +179,7 @@ function start(){
  function recalc(){mark();if(window.calculateMirrorInPlace)window.calculateMirrorInPlace();stripeHint();drawStripes();}
  field.addEventListener('change',function(){mark();setTimeout(function(){stripeHint();drawStripes();},0);});
  $('owner-stripe-w').addEventListener('input',recalc);
+ $('owner-side-preset').addEventListener('change',function(){var all=this.value==='p';$('owner-side-l').checked=true;$('owner-side-r').checked=true;$('owner-side-t').checked=all;$('owner-side-b').checked=all;recalc();});
  ['owner-side-l','owner-side-r','owner-side-t','owner-side-b'].forEach(function(id){$(id).addEventListener('change',recalc);});
  $('owner-pat-w').addEventListener('input',recalc);$('owner-pat-h').addEventListener('input',recalc);
  document.addEventListener('change',function(e){if(e.target&&(e.target.name==='light'||e.target.name==='clr'||e.target.name==='option'))setTimeout(function(){stripeHint();drawStripes();},0);});

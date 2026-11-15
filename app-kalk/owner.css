@@ -21,7 +21,6 @@ body{padding-bottom:0!important}
 .owner-btn:disabled{opacity:.6}
 
 #mirror-sand-details>label[for="mirror-sand-area"],#mirror-sand-area{display:none!important}
-.mirror-reflection{display:none!important}
 .owner-guide{font-size:14px;line-height:1.45;color:#ddd3c3;margin:8px 0 12px;padding:10px 12px;border:1px solid #3d342a;border-radius:10px;background:#241e18}
 .owner-guide ul{margin:6px 0 0;padding-left:18px}
 .owner-guide li{margin:4px 0}
