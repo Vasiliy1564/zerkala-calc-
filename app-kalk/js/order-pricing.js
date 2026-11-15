@@ -1,0 +1,98 @@
+/* Shared order rules: one supplier trip, one customer delivery and installation per mirror. */
+(function(root){
+'use strict';
+function bounded(value,min,max,fallback){var n=Number(value);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback;}
+function maxSide(m){var w=Number(m.width)||0,h=m.shape==='circle'?w:Number(m.height)||0;if(m.shape==='double'||m.shape==='semidouble')h+=Number(m.height2)||0;return Math.max(w,h);}
+function tripPrice(mm){return mm<=1800?500:mm<=2000?1400:mm<=2500?2100:2600;}
+function deliveryRate(mm,km){return (mm<=1800?30:mm<=2000?38:mm<=2500?42:52)+(Number(km)>10?15:0);}
+function route(){return root.MirrorDelivery?root.MirrorDelivery.getRoute():null;}
+function deliveryBase(){return 0;}
+// Потолок доставки: с установкой — 1 500 ₽, без установки — 1 980 ₽.
+function deliveryPrice(mm,km,requested,installed){return !requested||!Number.isFinite(km)||km<0?0:Math.min(installed?1500:1980,Math.max(500,Math.round(km*deliveryRate(mm,km))));}
+
+function carryPrice(mm,options){
+ var o=options||{};if(!o.enabled)return {requested:false,amount:0,pending:false};
+ var floor=Number(o.floor),band=mm<=1800?0:mm<=2000?1:2;
+ if(!Number.isInteger(floor)||floor<1||floor>999||['lift','stairs'].indexOf(o.method)<0)return {requested:true,amount:0,pending:true,invalid:true};
+ if(floor===1)return {requested:true,amount:0,pending:false};
+ if(o.method==='lift')return {requested:true,amount:[300,450,600][band],pending:false};
+ if(floor>20)return {requested:true,amount:0,pending:true};
+ return {requested:true,amount:floor<=10?(floor-1)*[150,200,300][band]:floor<=15?[2000,3000,4500][band]:[3000,4000,6000][band],pending:false};
+}
+
+function refreshServices(data){
+ if(root.MirrorSupplierPricing)data=root.MirrorSupplierPricing.refreshCleanCalculation(data);
+ if(!data||!data.mirror||!Array.isArray(data.rows))return data;
+ var m=data.mirror,w=Number(m.width),h=m.shape==='circle'?w:Number(m.height);
+ if(m.shape==='double'||m.shape==='semidouble')h+=Number(m.height2)||0;
+ if(!(w>0&&h>0))return data;
+ var area=w*h/1000000,installation=m.install?(function(b){return m.light?Math.max(2500,b+500):b;})(area<=2?Math.max(2000,area*1300):area*1500)*(1.06*1.02*(m.shape==='rounded'?1.15:m.shape==='double'?1+2000/16469.75:m.shape==='semidouble'?1.2:1))+300+area*150:0;
+ var trip=tripPrice(Math.max(w,h)),r=route();
+ var delivery=deliveryPrice(Math.max(w,h),r?r.km:null,m.delivery||m.install,m.install);
+ var carry=carryPrice(maxSide(m),m.carry);
+ var total=data.total,hasTrip=false,hasDelivery=false,hasCarry=false;
+ var rows=data.rows.map(function(row){
+  var sale=row.sale,cost=row.cost;
+  if(row.key==='mirror'&&m.light&&m.lightSurcharge!==400)sale=row.sale+400;
+  if(row.key==='installation')sale=installation;
+  if(row.key==='carry'){sale=carry.amount;hasCarry=true;}
+  if(row.key==='purchase-trip'){sale=trip;cost=trip;hasTrip=true;}
+  if(row.key==='customer-delivery'){sale=delivery;hasDelivery=true;}
+  total+=sale-row.sale;
+  return Object.assign({},row,{sale:sale,cost:cost});
+ });
+ if(!hasTrip){rows.push({key:'purchase-trip',name:'Поездка с зеркалами',sale:trip,cost:trip});total+=trip;}
+ if(!hasDelivery&&delivery){rows.push({key:'customer-delivery',name:'Доставка клиенту',sale:delivery,cost:null,expense:'delivery'});total+=delivery;}
+ if(!hasCarry&&carry.requested){rows.push({key:'carry',name:'Подъём до квартиры',sale:carry.amount,cost:null,expense:'carry'});total+=carry.amount;}
+ return Object.assign({},data,{rows:rows,total:total,mirror:m.light?Object.assign({},m,{lightSurcharge:400}):m});
+}
+function calculate(items,settings){
+ settings=settings||{};
+ var goods=0,trip=0,delivery=0,install=0,count=0,installedCount=0,needsQuote=false,regions={},known=0,missing={},longest=0,requested=false,carry=0,carryRequested=false,carryPending=false;
+ items.forEach(function(item){
+  var qty=Math.floor(bounded(item.qty,1,999,1)),data=refreshServices(item.data);
+  if(!data||!data.mirror||!Number.isFinite(data.total))throw Error('Некорректная позиция заказа');
+  count+=qty;goods+=data.total*qty;
+  var mirror=data.mirror,carrying=carryPrice(maxSide(mirror),mirror.carry);carryRequested=carryRequested||carrying.requested;carryPending=carryPending||carrying.pending;
+  if(mirror.install)installedCount+=qty;
+  if(mirror.shape==='curved'&&mirror.supplierCategory==='quoted'&&!(Number(mirror.supplierCost)>0))needsQuote=true;
+  longest=Math.max(longest,maxSide(mirror));if(mirror.delivery||mirror.install)requested=true;
+  data.rows.forEach(function(row){
+   if(row.key==='purchase-trip'){goods-=row.sale*qty;trip=Math.max(trip,row.sale);return;}
+   if(row.key==='customer-delivery'){goods-=row.sale*qty;return;}
+   if(row.key==='installation')install+=row.sale*qty;
+   if(row.key==='carry')carry+=row.sale*qty;
+   if(row.cost===null)missing[row.expense||row.name]=true;else known+=row.cost*qty;
+  });
+ });
+ var r=route();delivery=deliveryPrice(longest,r?r.km:null,requested,installedCount>0);
+ var mixedRegions=Object.keys(regions).length>1;
+ if(settings.trip!==''&&settings.trip!==null&&settings.trip!==undefined)trip=bounded(settings.trip,0,1000000,trip);
+ 
+ var discountRate=installedCount>2?20:0,discount=install*discountRate/100;
+ var total=Math.round(goods+trip+delivery-discount);
+ var taxRate=bounded(settings.tax===undefined?8:settings.tax,0,100,8),tax=total*taxRate/100;
+ known+=trip;
+ if(delivery>0)missing.delivery=true;
+ var expenses=settings.expenses||{};
+ Object.keys(missing).forEach(function(key){
+  if(expenses[key]!==''&&expenses[key]!==null&&expenses[key]!==undefined){known+=bounded(expenses[key],0,100000000,0);delete missing[key];}
+ });
+ known+=bounded(settings.other||0,0,100000000,0);
+ return {deliveryBase:deliveryBase(requested,installedCount>0),deliveryExtra:Math.max(0,delivery-deliveryBase(requested,installedCount>0)),carry:carry,carryRequested:carryRequested,carryPending:carryPending,count:count,installedCount:installedCount,needsQuote:needsQuote,total:total,goods:goods,trip:trip,delivery:delivery,installation:install,discount:discount,discountRate:discountRate,installationAfterDiscount:install-discount,known:known,tax:tax,profit:total-known-tax,missing:Object.keys(missing),mixedRegions:false,externalDelivery:requested&&!r,deliveryPending:requested&&!r,deliveryRequested:requested,deliveryRate:deliveryRate(longest),deliveryKm:r?r.km:null,deliveryAddress:r?r.address:'',deliveryOrigin:r?r.origin:'Мурино, улица Шувалова, 16/9'};
+}
+function selection(data,quantity){
+ var qty=Math.floor(bounded(quantity,1,999,1));data=refreshServices(data);
+ if(!data||!data.mirror)return data;
+ var totals=calculate([{qty:qty,data:data}],{});
+ var rows=data.rows.map(function(row){
+  var once=row.key==='purchase-trip'||row.key==='customer-delivery';
+  var sale=row.key==='customer-delivery'?totals.delivery:row.sale*(once?1:qty);
+  return Object.assign({},row,{sale:sale,cost:row.cost===null?null:row.cost*(once?1:qty)});
+ });
+ if(totals.discount)rows.push({key:'installation-discount',name:'Скидка 20% на установку',sale:-totals.discount,cost:0,note:'При установке от трёх зеркал'});
+ return {rows:rows,total:rows.reduce(function(sum,row){return sum+row.sale;},0),mirror:data.mirror,quantity:qty};
+}
+var api={deliveryBase:deliveryBase,carryPrice:carryPrice,maxSide:maxSide,tripPrice:tripPrice,deliveryRate:deliveryRate,deliveryPrice:deliveryPrice,refreshServices:refreshServices,calculate:calculate,selection:selection};if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorOrderPricing=api;
+})(typeof window==='object'?window:globalThis);
+
