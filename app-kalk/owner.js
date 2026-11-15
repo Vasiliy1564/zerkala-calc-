@@ -74,7 +74,7 @@ function start(){
  /* ---- блок владельца ---- */
  var panel=document.createElement('div');panel.id='owner-panel';
  panel.innerHTML='<h3>Только для меня</h3><label class="otoggle"><span>Показать закупку и наценку</span><input type="checkbox" id="owner-show-cost"></label><div id="owner-rows"></div><button type="button" id="owner-update" class="owner-btn">Обновить приложение</button><p class="owner-hint" id="owner-update-note"></p><p class="owner-hint"><a href="/app-kalk/classic.html">Открыть прежний калькулятор</a></p>';
- var res=$('calc-result');(res&&res.parentNode?res:field.closest('form')||field).after(panel);
+ var res=$('calc-result');(res&&res.parentNode?res:field.closest('form')||field).before(panel);
  $('owner-show-cost').checked=showCost;
  $('owner-show-cost').addEventListener('change',function(){showCost=this.checked;try{localStorage.setItem('mc_showCost',showCost?'1':'0');}catch(e){}renderOwner();stripeHint();});
  /* Обновление: приложение открывается из сохранённой копии, кнопка скачивает свежую версию и перезапускает экран. */
