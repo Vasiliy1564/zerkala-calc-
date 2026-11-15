@@ -7,10 +7,8 @@
 <title>Калькулятор зеркал</title>
 </head>
 <body style="margin:0;background:#1f1a16;color:#ece4d6;font:17px system-ui,sans-serif">
-<div style="padding:40px 24px"><p id="st">Загружаю калькулятор…</p></div>
+<div id="app"></div>
 <script>
-/* Приложение показывает калькулятор сайта как есть: берёт главную страницу сайта,
-   оставляет на экране только калькулятор и добавляет личный блок владельца (owner.js). */
 (async function(){
  try{
   if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='127.0.0.1')){
@@ -19,14 +17,13 @@
   }
  }catch(e){}
  try{
-  var r=await fetch('https://zerkalo-pro-spb.ru/index.html',{cache:'no-store'});if(!r.ok)throw Error('код '+r.status);
+  var r=await fetch('./classic.html',{cache:'no-store'});if(!r.ok)throw Error('код '+r.status);
   var h=await r.text();
-  h=h.replace(/<script[^>]*analytics-consent[^>]*><\/script>/,'');
-  h=h.replace(/<head[^>]*>/,function(m){return m+'<base href="/"><meta name="robots" content="noindex"><link rel="stylesheet" href="/app-kalk/owner.css">';});
+  h=h.replace('</head>','<link rel="stylesheet" href="/app-kalk/owner.css"></head>');
   h=h.replace('</body>','<script src="/app-kalk/owner.js"><\/script></body>');
   document.open();document.write(h);document.close();
  }catch(e){
-  document.getElementById('st').innerHTML='Не удалось загрузить калькулятор ('+String(e.message||e).replace(/[<>&]/g,'')+'). <a href="./" style="color:#c9a876">Повторить</a> · <a href="classic.html" style="color:#c9a876">Открыть прежний калькулятор</a>';
+  document.getElementById('app').innerHTML='<div style="padding:40px 24px"><p>Ошибка: '+String(e.message||e).replace(/[<>&]/g,'')+'</p><p><a href="./" style="color:#c9a876">Повторить</a></p></div>';
  }
 })();
 </script>
