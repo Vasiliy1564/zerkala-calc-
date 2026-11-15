@@ -5,12 +5,7 @@ import android.os.Bundle;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
-/** Оболочка для https://zerkalo-pro-spb.ru/app-kalk/ : страница сама сохраняет себя для работы без интернета и обновляется с сайта. */
 public class MainActivity extends Activity {
-    static final String HOST = "zerkalo-pro-spb.ru";
-    static final String PATH = "/app-kalk/";
-    static final String START = "https://" + HOST + PATH;
-
     private WebView web;
 
     @Override
@@ -22,20 +17,8 @@ public class MainActivity extends Activity {
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
-        s.setDatabaseEnabled(true);
-        s.setSupportMultipleWindows(false);
-        s.setAllowFileAccess(false);
-        s.setAllowContentAccess(false);
-
-        web.setWebViewClient(new CalcClient(this));
-
-        if (state == null || web.restoreState(state) == null) web.loadUrl(START);
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle out) {
-        super.onSaveInstanceState(out);
-        web.saveState(out);
+        s.setAllowFileAccess(true);
+        web.loadUrl("file:///android_asset/index.html");
     }
 
     @Override
