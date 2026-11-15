@@ -8,7 +8,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
-import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -21,7 +20,6 @@ public class MainActivity extends Activity {
     private WebView web;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean loaded;
-    private boolean progressed;
     private boolean usingBundled;
 
     @Override
@@ -58,18 +56,11 @@ public class MainActivity extends Activity {
             }
         });
 
-        web.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public void onProgressChanged(WebView view, int progress) {
-                progressed = true;
-            }
-        });
-
         web.loadUrl(LIVE);
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (!loaded && !progressed) useBundled();
+                if (!loaded) useBundled();
             }
         }, WAIT_MS);
     }
