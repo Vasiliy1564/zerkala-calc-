@@ -124,19 +124,55 @@ function markup(light,shape){return light?(rectangular(shape)?1.5:1.15):1;}
 function purchasingTrip(width,height){
  var mm=Math.max(Number(width),Number(height));return mm<=1800?500:mm<=2000?1400:mm<=2500?2100:2600;
 }
-// Усиление сзади (опция): уголок 20×20×1,5 — 141 ₽/м, труба 20×20×2 — 366,5 ₽/м, плюс 300 ₽ за поездку.
-var REINF={angle:{label:'уголок 20×20×1,5 мм',rate:141},tube:{label:'труба 20×20×2 мм',rate:366.5}};
+// Обязательное усиление и крепления, правила владельца от 17.11.2026.
+var REINF={angle:{label:'уголок 20×20×1,5 мм',rate:170},tube:{label:'труба 20×20×2 мм',rate:370}};
 function rearProfile(kind,shape,width,height,height2){
- var t=REINF[kind];if(!t)return {metres:0,cost:0};
  var w=Number(width),h=shape==='circle'?w:Number(height);
  if(shape==='double'||shape==='semidouble')h+=Number(height2||0);
+ kind=Math.max(w,h)>2500?'tube':'angle';
  var metres=2*(w+h)/1000;
- return {metres:metres,cost:Math.round(metres*t.rate+300)};
+ return {metres:metres,cost:metres*REINF[kind].rate,kind:kind};
 }
 function reinforcementKind(choice,shape,width,height,height2){
  var w=Number(width),h=shape==='circle'?w:Number(height);
  if(shape==='double'||shape==='semidouble')h+=Number(height2||0);
- return (choice==='angle'||choice==='tube')?choice:(Math.max(w,h)>2600?'tube':Math.max(w,h)>1800?'angle':'none');
+ return Math.max(w,h)>2500?'tube':'angle';
+}
+function rearMounts(shape,width,height,height2){
+ var w=Number(width),h=shape==='circle'?w:Number(height);
+ if(shape==='double'||shape==='semidouble')h+=Number(height2||0);
+ var count=Math.max(w,h)>1700?4:2;
+ return {count:count,cost:count*130};
+}
+function frameStock(shape,width,height,height2){
+ var sides=shape==='double'?[width,width,height,height,width,width,height2,height2]:[width,width,height,height],pieces=[];
+ sides.forEach(function(side){while(side>2700){pieces.push(2700);side-=2700;}if(side>0)pieces.push(side);});
+ pieces.sort(function(a,b){return b-a;});var best=pieces.length,bins=[];
+ function pack(i){if(i===pieces.length){best=Math.min(best,bins.length);return;}if(bins.length>=best)return;
+  var seen={};for(var j=0;j<bins.length;j++){if(seen[bins[j]]||bins[j]+pieces[i]>2700)continue;seen[bins[j]]=true;bins[j]+=pieces[i];pack(i+1);bins[j]-=pieces[i];}
+  bins.push(pieces[i]);pack(i+1);bins.pop();}
+ pack(0);return {bars:best,metres:best*2.7};
+}
+function faceFrame(shape,width,height,height2,color){
+ if(!color||color==='none')return {metres:0,cost:0};
+ var w=Number(width),h=Number(height),h2=Number(height2)||0;
+ var metres=2*(w+h+(shape==='double'?w+h2:0))/1000;
+ return {metres:metres,cost:metres*(color==='gold'?400:300),stock:frameStock(shape,w,h,h2)};
+}
+// Migrate saved carts once; keep old frame procurement and old reinforcement out of the new sale price.
+function refreshHardwareCalculation(data){
+ if(!data||!data.mirror||!Array.isArray(data.rows)||data.mirror.hardwareTariffVersion===1)return data;
+ var m=data.mirror,w=Number(m.width),h=m.shape==='circle'?w:Number(m.height),h2=Number(m.height2)||0;
+ if(!(w>0&&h>0))return data;
+ var totalH=h+(/double/.test(m.shape)?h2:0),side=Math.max(w,totalH),per=2*(w+totalH)/1000;
+ var oldKind=m.reinf||((side>2600)?'tube':side>1800?'angle':'none');
+ var oldRear=oldKind==='none'?0:Math.round(per*(oldKind==='tube'?366.5:141)+300);
+ var oldFrame=0;
+ if(m.faceFrame&&m.faceFrame!=='none')oldFrame=frameStock(m.shape,w,h,h2).bars*({white:396,black:373,gold:315}[m.faceFrame]||0)+({white:600,black:600,gold:990}[m.faceFrame]||0);
+ var rear=rearProfile(null,m.shape,w,h,h2),mounts=rearMounts(m.shape,w,h,h2),frame=faceFrame(m.shape,w,h,h2,m.faceFrame);
+ var delta=rear.cost+mounts.cost+frame.cost-oldRear-oldFrame;
+ var rows=data.rows.map(function(row){return row.key==='mirror'?Object.assign({},row,{sale:row.sale+delta}):Object.assign({},row);});
+ return Object.assign({},data,{rows:rows,total:data.total+delta,mirror:Object.assign({},m,{hardwareTariffVersion:1,reinf:rear.kind})});
 }
 function reinforcement(shape,width,height,height2){
  var w=Number(width),h=shape==='circle'?w:Number(height);
@@ -312,7 +348,7 @@ function refreshCleanCalculation(data){
 }
 
 
-var api={materials:materials,agreedLookup:agreedLookup,refreshCleanCalculation:refreshCleanCalculation,tariffs:{supplier:"RIAL",date:"2026-11-02",silver:1568,special:2800,straightGrind:80,straightPolish:80,curvedGrind:120,curvedPolish:120,cnc:270,curvedCnc:405,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement,rearProfile:rearProfile,reinforcementKind:reinforcementKind,REINF:REINF};
+var api={materials:materials,agreedLookup:agreedLookup,refreshCleanCalculation:refreshCleanCalculation,tariffs:{supplier:"RIAL",date:"2026-11-02",silver:1568,special:2800,straightGrind:80,straightPolish:80,curvedGrind:120,curvedPolish:120,cnc:270,curvedCnc:405,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement,rearProfile:rearProfile,rearMounts:rearMounts,faceFrame:faceFrame,frameStock:frameStock,refreshHardwareCalculation:refreshHardwareCalculation,reinforcementKind:reinforcementKind,REINF:REINF};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);
 

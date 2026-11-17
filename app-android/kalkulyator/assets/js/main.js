@@ -229,56 +229,6 @@
   };
 
   var FACE_FRAME_LABELS = { white: 'белая', black: 'чёрная', gold: 'золотая' };
-  var FACE_FRAME_PRICES = {white:396, black:373, gold:315};
-  var FACE_FRAME_DELIVERY = {white:600, black:600, gold:990};
-  function faceFramePerimeter(shape, w, h, h2) {
-  var totalH = h + (shape.indexOf('double') !== -1 ? h2 : 0);
-  if (shape === 'circle') return Math.PI * w / 1000;
-  if (shape === 'capsule') {
-    var shortSide = Math.min(w, h), longSide = Math.max(w, h);
-    return (Math.PI * shortSide + 2 * (longSide - shortSide)) / 1000;
-  }
-  if (shape === 'oval') {
-    var a = w / 2, b = h / 2, q = Math.pow(a - b, 2) / Math.pow(a + b, 2);
-    return Math.PI * (a + b) * (1 + 3 * q / (10 + Math.sqrt(4 - 3 * q))) / 1000;
-  }
-  if (shape === 'semicircle' || shape === 'semidouble') {
-    var r = totalH / 2;
-    var perimeter = Math.PI * r + totalH;
-    if (shape === 'semidouble') perimeter += 2 * (r + Math.sqrt(Math.max(0, r * r - Math.pow(h - r, 2))));
-    return perimeter / 1000;
-  }
-  return 2 * (w + totalH + (shape === 'double' ? w : 0)) / 1000;
-}
-
-  function faceFrameStock(shape, w, h, h2) {
-  var barLength = 2700, billedLength = 2.7, bars;
-  if (shape === 'rect' || shape === 'double') {
-    var sides = shape === 'double' ? [w,w,h,h,w,w,h2,h2] : [w,w,h,h];
-    var pieces = [];
-    sides.forEach(function (side) {
-      while (side > barLength) { pieces.push(barLength); side -= barLength; }
-      if (side > 0) pieces.push(side);
-    });
-    pieces.sort(function (a,b) { return b-a; });
-    var best = pieces.length, bins = [];
-    function pack(i) {
-      if (i === pieces.length) { best = Math.min(best,bins.length); return; }
-      if (bins.length >= best) return;
-      var seen = {};
-      for (var j=0;j<bins.length;j++) {
-        if (seen[bins[j]] || bins[j]+pieces[i]>barLength) continue;
-        seen[bins[j]]=true; bins[j]+=pieces[i]; pack(i+1); bins[j]-=pieces[i];
-      }
-      bins.push(pieces[i]); pack(i+1); bins.pop();
-    }
-    pack(0); bars=best;
-  } else {
-    bars = Math.ceil((faceFramePerimeter(shape,w,h,h2)*1000-0.000001)/barLength);
-  }
-  return { bars:bars, metres:bars*billedLength };
-}
-
   var SHAPE_NAMES = {
     rect: 'Прямоугольник',
     arch: 'Арочное',
@@ -1035,15 +985,14 @@
     price += purchaseTripPrice();
     var reinfKind = window.MirrorSupplierPricing.reinforcementKind(state.reinf, state.shape, w, h, h2);
     price += window.MirrorSupplierPricing.rearProfile(reinfKind, state.shape, w, h, h2).cost;
+    price += window.MirrorSupplierPricing.rearMounts(state.shape, w, h, h2).cost;
+    var profileTrip = 500;
+    price += profileTrip;
     if (state.install) price += installationPrice(area, state.light, state.shape);
     price += clientDeliveryPrice();
 
     if (state.faceFrame !== 'none') {
-      var frameBars = faceFrameStock(state.shape, w, h, window.MirrorSize.read(document.getElementById('height2')) || 0).bars;
-      var frameUnitPrice = FACE_FRAME_PRICES[state.faceFrame];
-      var framePurchase = frameBars * frameUnitPrice;
-      var frameDelivery = FACE_FRAME_DELIVERY[state.faceFrame];
-      price += framePurchase + frameDelivery;
+      price += window.MirrorSupplierPricing.faceFrame(state.shape,w,h,h2,state.faceFrame).cost;
     }
 
     // General RIAL list: shaped material and processing each carry their own 50% surcharge.
@@ -1069,11 +1018,12 @@
       var orderTrip=purchaseTripPrice(),orderDelivery=clientDeliveryPrice();
       var orderInstall=state.install?installationPrice(area,state.light,state.shape):0;
       window.onPersonalCalculation({total:price,rows:[
-        {key:'mirror',sale:price-orderTrip-orderDelivery-orderInstall,cost:null,expense:'mirror'},
+        {key:'mirror',sale:price-orderTrip-profileTrip-orderDelivery-orderInstall,cost:null,expense:'mirror'},
         {key:'purchase-trip',sale:orderTrip,cost:orderTrip},
+        {key:'profile-trip',name:'Поездка за уголком',sale:profileTrip,cost:profileTrip},
         {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
         {key:'installation',sale:orderInstall,cost:null,expense:'install'}
-      ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:2,mirrorOptions:mirrorOptions,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:3,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
+      ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:2,hardwareTariffVersion:1,mirrorOptions:mirrorOptions,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:3,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
         size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),material:state.material,
         materialLabel:window.MirrorSupplierPricing.materials[state.material].label+(state.material==='decorative'?' · '+mirrorOptions.decor:''),
         edge:state.edge,edgeLabel:window.MirrorCalcOptions.edgeLabel(EDGE_LABELS[state.edge],mirrorOptions,supplierQuote),light:state.light,ctrl:state.ctrl,clr:state.clr,
@@ -1116,7 +1066,8 @@
 
     inc += row('Доставка', deliveryDescription());
     if (state.ledProfile) inc += row('Светодиодная лента в профиле', 'да');
-    if (reinfKind !== 'none') inc += row('Усиление сзади', window.MirrorSupplierPricing.REINF[reinfKind].label);
+    inc += row('Усиление сзади', window.MirrorSupplierPricing.REINF[reinfKind].label+' · включено');
+    inc += row('Задние крепления',window.MirrorSupplierPricing.rearMounts(state.shape,w,h,h2).count+' шт. · включены');
     if (state.faceFrame !== 'none') inc += row('Алюминиевая рама', FACE_FRAME_LABELS[state.faceFrame]);
     if (supplierQuote.estimate) inc += '<p class="figure-price-note">Точная стоимость после согласования контура и заготовки. Установка и доставка — по выбранным условиям.</p>';
     document.getElementById('r-inc').innerHTML = inc;

@@ -123,6 +123,15 @@ function start(){
   if(last.sand)c+=orow('Закупка пескоструя',money(last.sand));
   c+=orow('Закупка всего',money(buy),'total')+orow('Наценка на полотно и обработку ×'+(mk*100).toFixed(0)+'%',money(buy*mk),'sub');
   if(trip)c+=orow('Поездка за полотном',money(trip),'sub');
+  var rear=P.rearProfile(null,m.shape,m.width,m.height,m.height2),mounts=P.rearMounts(m.shape,m.width,m.height,m.height2);
+  c+=orow('Обязательное усиление · '+rear.metres.toFixed(2)+' м',money(rear.cost),'sub');
+  c+=orow('Крепления · '+mounts.count+' шт.',money(mounts.cost),'sub');
+  c+=orow('Поездка за уголком',money(500),'sub');
+  if(m.faceFrame&&m.faceFrame!=='none'){
+   var frame=P.faceFrame(m.shape,m.width,m.height,m.height2,m.faceFrame);
+   c+=orow('Рама клиенту · '+frame.metres.toFixed(2)+' м',money(frame.cost),'sub');
+   c+=orow('Закупка профиля · планки по 2,7 м',frame.stock.bars+' шт.','sub');
+  }
   box.innerHTML=c;
  }
  var prior=window.onPersonalCalculation;

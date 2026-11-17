@@ -18,7 +18,7 @@ function describe(){
  if(!route)return 'укажите адрес';
  return (base?extra:total).toLocaleString('ru-RU')+' ₽';
 }
-function updatePrice(){if(route)status.textContent='Доставка: '+describe()+' ('+String(route.km).replace('.',',')+' км)'+(route.approx?' — до центра населённого пункта, уточним при согласовании':'');}
+function updatePrice(){if(route)status.textContent='Ориентировочная доставка: '+describe()+' ('+String(route.km).replace('.',',')+' км)'+(route.approx?' — до центра населённого пункта, уточним при согласовании':'');}
 function emit(){updatePrice();window.dispatchEvent(new Event('mirror-delivery-change'));}
 function warmAddresses(){if(window.MirrorAddressFallback&&window.MirrorAddressFallback.preload)window.MirrorAddressFallback.preload();}
 function visibility(){panel.hidden=!option.checked;if(option.checked)warmAddresses();}

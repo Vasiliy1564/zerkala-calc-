@@ -499,7 +499,8 @@ body{padding-bottom:0!important}
 </div>
 <div class="field" id="reinfOpt">
 <label for="reinf">Усиление сзади</label>
-<select id="reinf"><option value="auto">Авто (уголок выше 180 см, труба выше 260 см)</option><option value="angle">Уголок 20×20×1,5 мм</option><option value="tube">Труба 20×20×2 мм</option></select>
+<select id="reinf" disabled aria-label="Обязательное усиление сзади"><option value="auto">Обязательно · подбирается по размеру</option></select>
+<p class="form-hint">Заднее усиление и крепления включены в стоимость каждого зеркала.</p>
 </div>
 <div class="field" id="faceFrameOpt">
 <label>Алюминиевая рама</label>
@@ -530,7 +531,7 @@ body{padding-bottom:0!important}
 <svg aria-hidden="true" fill="none" viewbox="0 0 20 20"><path d="M10 2c-3 0-5 2-5 5 0 2.3 1.5 4.3 3.5 5l-.7 4.5L10 15.5l2.2 1-1-4.5C13.5 11.3 15 9.3 15 7c0-3-2-5-5-5zm-2 5a2 2 0 1 1 4 0 2 2 0 0 1-4 0z" fill="currentColor"></path></svg>
               Наше объявление на Авито
             </a>
-<p class="form-disclaimer">Стоимость зеркала, установки и доставки показана отдельно. Доставка рассчитывается по адресу.</p>
+<p class="form-disclaimer">Стоимость зеркала, установки и доставки показана отдельно. Ориентировочная доставка рассчитывается по адресу. Фактическую стоимость согласуем при заказе.</p>
 <p class="calc-call-line">Не уверены в расчёте? <a href="tel:+79340298528">Позвоните: +7 (934) 029-85-28</a></p>
 </form>
 </div>
@@ -900,8 +901,8 @@ body{padding-bottom:0!important}
       <svg fill="none" viewbox="0 0 20 20"><path d="M3 10h13M11 4l6 6-6 6" stroke="currentColor" stroke-width="1.5"></path></svg>
 </a>
 </div>
-<script defer="" src="js/supplier-pricing.js?v=sides-20261114"></script><script defer="" src="js/size-units.js?v=delivery-4.30"></script><script defer="" src="js/mirror-options.js?v=automatic-edge-20261102"></script><script defer="" src="js/order-pricing.js?v=cap2-20261114"></script><script defer="" src="js/delivery-local.js?v=parallel-20261104"></script><script defer="" src="js/delivery-route.js?v=map-20261106"></script><script defer="" src="js/delivery-map.js?v=20261106-2"></script><script defer="" src="js/carry.js?v=installed-delivery-20261103"></script><script defer="" src="js/main.js?v=sides-20261114"></script><script defer="" src="js/studio.js?v=material-preview-20261102"></script>
-<script defer="" src="js/quote-details.js?v=delivery-label-20261103"></script><script defer="" src="js/order.js?v=max-bot-20261105"></script>
+<script defer="" src="js/supplier-pricing.js?v=pricing-20261117-1"></script><script defer="" src="js/size-units.js?v=delivery-4.30"></script><script defer="" src="js/mirror-options.js?v=automatic-edge-20261102"></script><script defer="" src="js/order-pricing.js?v=pricing-20261117-1"></script><script defer="" src="js/delivery-local.js?v=parallel-20261104"></script><script defer="" src="js/delivery-route.js?v=pricing-20261117-1"></script><script defer="" src="js/delivery-map.js?v=20261106-2"></script><script defer="" src="js/carry.js?v=installed-delivery-20261103"></script><script defer="" src="js/main.js?v=pricing-20261117-1"></script><script defer="" src="js/studio.js?v=material-preview-20261102"></script>
+<script defer="" src="js/quote-details.js?v=pricing-20261117-1"></script><script defer="" src="js/order.js?v=pricing-20261117-1"></script>
 <script defer="" src="js/comfort.js?v=installed-delivery-20261103-motion2"></script><script defer="" src="js/copy-calculation.js?v=cm-input-20261029-v3"></script><script defer="" src="js/keyboard.js?v=keyboard-resize-20261029"></script> <script defer="" src="js/client-tools.js?v=contact-20261103"></script>
 <script defer="True" src="js/motion-site.js?v=20261105-2"></script><script defer="True" src="js/motion-scene.js?v=20261105-1"></script><script defer src="js/max-bot-contact.js?v=20261105-1"></script>
 <script defer src="js/showroom.js?v=20261106-2"></script>
@@ -1036,6 +1037,15 @@ function start(){
   if(last.sand)c+=orow('Закупка пескоструя',money(last.sand));
   c+=orow('Закупка всего',money(buy),'total')+orow('Наценка на полотно и обработку ×'+(mk*100).toFixed(0)+'%',money(buy*mk),'sub');
   if(trip)c+=orow('Поездка за полотном',money(trip),'sub');
+  var rear=P.rearProfile(null,m.shape,m.width,m.height,m.height2),mounts=P.rearMounts(m.shape,m.width,m.height,m.height2);
+  c+=orow('Обязательное усиление · '+rear.metres.toFixed(2)+' м',money(rear.cost),'sub');
+  c+=orow('Крепления · '+mounts.count+' шт.',money(mounts.cost),'sub');
+  c+=orow('Поездка за уголком',money(500),'sub');
+  if(m.faceFrame&&m.faceFrame!=='none'){
+   var frame=P.faceFrame(m.shape,m.width,m.height,m.height2,m.faceFrame);
+   c+=orow('Рама клиенту · '+frame.metres.toFixed(2)+' м',money(frame.cost),'sub');
+   c+=orow('Закупка профиля · планки по 2,7 м',frame.stock.bars+' шт.','sub');
+  }
   box.innerHTML=c;
  }
  var prior=window.onPersonalCalculation;
