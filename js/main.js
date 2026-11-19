@@ -93,7 +93,7 @@
   function $(sel, ctx) { return (ctx || document).querySelector(sel); }
   function $all(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
 
-  var MAX_URL = 'https://max.ru/id262308371005_bot';
+  var MAX_URL = 'https://max.ru/u/f9LHodD0cOLbb_I_NfS4ans5ICo43Baa1UqtWuFJuR82JHYzk0Y3OhzIpvI';
 
   /* ---------- Fallback для битых картинок ---------- */
   document.addEventListener('error', function (e) {
@@ -338,8 +338,7 @@
 
   function updateEdgeAvailability() {
     var curved = state.shape !== 'rect' && state.shape !== 'double';
-    var selected = $('input[name="edge"]:checked');
-    var treatment = selected && selected.value === 'grind' ? 'grind' : 'polish';
+    var treatment = 'polish';
     state.edge = (curved ? 'curved-' : '') + treatment;
     $all('input[name="edge"]').forEach(function (radio) {
       radio.disabled = false;
@@ -370,7 +369,7 @@
     var cl = $('input[name="clr"]:checked');
     if (cl) state.clr = cl.value;
     var f = $('input[name="edge"]:checked');
-    if (f) state.edge = f.value;
+    if (f) state.edge = 'polish';
     function opt(v) {
       var o = $('input[name="option"][value="' + v + '"]');
       return !!(o && o.checked);
@@ -416,7 +415,7 @@
     var h2El = document.getElementById('height2');
     if (hEl && wEl) {
       var totalHeight = window.MirrorSize.read(hEl) || 0;
-      if (state.shape === 'semidouble') totalHeight += h2El ? (window.MirrorSize.read(h2El) || 0) : 0;
+      if (state.shape === 'semidouble') { if(h2El)window.MirrorSize.write(h2El,totalHeight); totalHeight *= 2; }
       window.MirrorSize.write(wEl, totalHeight / 2);
     }
   }
@@ -429,7 +428,8 @@
     if (state.shape === 'circle') hEl.value = wEl.value;
     syncSemicircleSize();
     var rowH2 = document.getElementById('rowH2');
-    if (rowH2) rowH2.classList.toggle('hidden', state.shape !== 'double' && state.shape !== 'semidouble');
+    if (rowH2) rowH2.classList.toggle('hidden', state.shape !== 'double');
+    var semiNote=document.getElementById('semidouble-note');if(semiNote)semiNote.hidden=state.shape!=='semidouble';
     updPreview();
     var result = document.getElementById('calc-result');
     if (result && result.classList.contains('show')) calc(false);
@@ -722,8 +722,8 @@
       bodies.forEach(function (body) {
         var frame = body.cloneNode(true);
         frame.setAttribute('fill', 'none');
-        frame.setAttribute('stroke', {white:'#f7f7f4',black:'#171717',gold:'#c5a34d'}[state.faceFrame]);
-        frame.setAttribute('stroke-width', '5');
+        frame.setAttribute('stroke', {white:'#fffefa',black:'#090909',gold:'#e2b65b'}[state.faceFrame]);
+        frame.setAttribute('stroke-width', '8');
         frame.setAttribute('clip-path', 'url(#realMirrorClip)');
         frame.setAttribute('class', 'mirror-face-frame');
         edges += frame.outerHTML;
@@ -777,7 +777,7 @@
     } else if (shape === 'semidouble') {
       fieldH.classList.remove('hidden');
       labelW.textContent = 'Ширина = ½ общей высоты, см';
-      labelH.textContent = 'Высота верхней части, см';
+      labelH.textContent = 'Высота каждой части, см';
     } else {
       fieldH.classList.remove('hidden');
       labelW.textContent = shape === 'curved' ? 'Ширина автоматически, см' : 'Ширина, см';
@@ -833,7 +833,7 @@
     readState();
     renderMirrorSvg();
     var result = document.getElementById('calc-result');
-    if (result && result.classList.contains('show')) calc();
+    if (result && result.classList.contains('show')) calc(false);
   }
 
   function calcGeometry() {
@@ -1140,8 +1140,7 @@
       // The embedded calculator updates its mirror in place; opening the
       // separate frame gallery would unexpectedly scroll the parent page.
       if (window.parent !== window) return;
-      if (r.value === 'none') window.hideFrameExample();
-      else window.showFrameExample(r.value, r);
+      window.hideFrameExample();
     });
   });
 
