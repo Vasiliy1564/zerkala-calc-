@@ -3764,10 +3764,11 @@
   </script>
   <script>
     window.addEventListener('error', function(e) {
+      if (window.parent !== window) window.parent.postMessage({type:'zp3d:error'}, location.origin);
       var sub = document.querySelector('.loader-sub');
       var loader = document.getElementById('stage-loader');
       if (loader && !loader.classList.contains('hidden') && sub) {
-        sub.textContent = 'Требуется подключение к интернету для загрузки Three.js WebGL';
+        sub.textContent = /WebGL context/i.test(String(e.message)) ? 'WebGL недоступен в этом браузере' : 'Не удалось загрузить 3D-сцену';
         sub.style.color = '#d6be9b';
       }
     });
