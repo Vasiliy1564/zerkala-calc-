@@ -11,7 +11,7 @@
   const height=window.MirrorSize.read(document.getElementById('height'));
   const height2=window.MirrorSize.read(document.getElementById('height2'))||0;
   const supplier=window.MirrorSupplierPricing.selectSupplier(shape,width,height,height2);
-  document.getElementById('supplier-status').textContent=(supplier==='arsenal'?'Арсенал Стекло · изготовление до 10 дней':'Риал Стекло · изготовление до 12 дней');
+  document.getElementById('supplier-status').textContent='Изготовление до '+(supplier==='arsenal'?10:13)+' дней';
  }
  form.addEventListener('input',sync);form.addEventListener('change',sync);sync();
 })();
