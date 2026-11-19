@@ -90,9 +90,16 @@ var materials={
  satinGraphite:{label:'Сатинат графит, 4 мм',rate:4000,sheet:2080,w:3210,h:2550},
  decorative:{label:'Декоративное зеркало, 4 мм',rate:4320,sheet:3600,w:2550,h:1605}
 };
+// Shaped processing uses the RIAL tariff. For straight rectangles the
+// Arsenal processing tariff doubles above 2400 mm; check split pieces separately.
+function selectSupplier(shape,width,height,height2){
+ var w=Number(width),h=shape==='circle'?w:Number(height),h2=Number(height2||0);
+ var parts=/double/.test(shape)?[h,h2]:[h];
+ return !rectangular(shape)||Math.max.apply(null,[w].concat(parts))>2400?'rial':'arsenal';
+}
 function lookup(shape,material,width,height,edge,height2,options){
  options=options||{};
- if(options.supplier==='arsenal')return arsenalLookup(shape,material,width,height,edge,height2,options);
+ if((options.supplier||selectSupplier(shape,width,height,height2))==='arsenal')return Object.assign(arsenalLookup(shape,material,width,height,edge,height2,options),{supplier:'arsenal',productionDays:10});
  var missing={cost:null,includesPackaging:false,estimate:false,needsQuote:true};
  var stock=materials[material],w=Number(width),h=shape==='circle'?w:Number(height),h2=Number(height2||0);
  if(!stock||!Number.isFinite(w)||!Number.isFinite(h)||!(w>0&&h>0))return missing;
@@ -115,7 +122,7 @@ function lookup(shape,material,width,height,edge,height2,options){
   materialCost=quoted;shapeCost=0;edgeCost=0;shapeRate=0;
  }
  return {cost:materialCost+shapeCost+edgeCost,materialCost:materialCost,shapeCost:shapeCost,edgeCost:edgeCost,
-  packagingCost:0,includesPackaging:false,estimate:shape==='curved'&&options.category!=='quoted',needsQuote:false,
+  supplier:'rial',productionDays:13,packagingCost:0,includesPackaging:false,estimate:shape==='curved'&&options.category!=='quoted',needsQuote:false,
   pricingMode:shape==='curved'&&options.category==='quoted'?'quoted':'rial-list',billedMetres:billedMetres,edgeRate:edgeRate,
   shapeRate:shapeRate,sizeSurcharge:0,splitFactor:1,roundedFactor:1,area:area,perimeter:perimeter,maxSide:Math.max.apply(null,[w].concat(parts)),minSide:Math.min.apply(null,[w].concat(parts))};
 }
@@ -337,8 +344,8 @@ function refreshAutomaticProcessing(data){
  var options=m.mirrorOptions||{},oldMethod=options.machine||'auto';
  var cleanLabel=String(m.edgeLabel||'').replace(/\s*\(ЧПУ\)/g,'');
  if(oldMethod==='auto'&&cleanLabel===m.edgeLabel)return data;
- var oldQuote=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost,machine:oldMethod});
- var quote=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost,machine:'auto'});
+ var oldQuote=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost,machine:oldMethod,supplier:m.supplier});
+ var quote=lookup(m.shape,m.material,m.width,m.height,m.edge,m.height2,{category:m.supplierCategory,cost:m.supplierCost,machine:'auto',supplier:m.supplier});
  if(oldQuote.needsQuote||quote.needsQuote)return data;
  var diff=quote.cost-oldQuote.cost,factor=1+markup(m.light,m.shape),delta=diff*factor;
  var rows=data.rows.map(function(row){var r=Object.assign({},row);
@@ -372,7 +379,7 @@ function refreshCleanCalculation(data){
 }
 
 
-var api={materials:materials,agreedLookup:agreedLookup,refreshCleanCalculation:refreshCleanCalculation,tariffs:{supplier:"RIAL",date:"2026-11-02",silver:1568,special:2800,straightGrind:80,straightPolish:80,curvedGrind:120,curvedPolish:120,cnc:270,curvedCnc:405,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement,rearProfile:rearProfile,rearMounts:rearMounts,faceFrame:faceFrame,frameStock:frameStock,refreshHardwareCalculation:refreshHardwareCalculation,reinforcementKind:reinforcementKind,REINF:REINF};
+var api={materials:materials,agreedLookup:agreedLookup,refreshCleanCalculation:refreshCleanCalculation,tariffs:{supplier:"RIAL",date:"2026-11-02",silver:1568,special:2800,straightGrind:80,straightPolish:80,curvedGrind:120,curvedPolish:120,cnc:270,curvedCnc:405,round:0.5},refreshComponentCalculation:refreshComponentCalculation,refreshCircleCalculation:refreshCircleCalculation,lookup:lookup,selectSupplier:selectSupplier,markup:markup,purchasingTrip:purchasingTrip,reinforcement:reinforcement,rearProfile:rearProfile,rearMounts:rearMounts,faceFrame:faceFrame,frameStock:frameStock,refreshHardwareCalculation:refreshHardwareCalculation,reinforcementKind:reinforcementKind,REINF:REINF};
 if(typeof module==='object'&&module.exports)module.exports=api;else root.MirrorSupplierPricing=api;
 })(typeof window==='object'?window:globalThis);
 
