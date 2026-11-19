@@ -1,6 +1,5 @@
 .calculator .calc-preview.zp3d-enabled {position:relative;min-height:420px}
 .calculator .calc-preview.zp3d-enabled > :not(.zp3d-shell) {display:none!important}
-.calculator .calc-preview.zp3d-enabled.zp3d-failed > :not(.zp3d-shell) {display:initial!important}
 .calculator .calc-preview.zp3d-failed .zp3d-shell {display:none!important}
 .zp3d-shell {position:relative;width:100%;height:420px;background:#0e0f11;border-radius:18px;overflow:hidden}
 .zp3d-shell iframe {width:100%;height:100%;border:0;display:block;background:#0e0f11}
