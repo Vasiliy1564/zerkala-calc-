@@ -66,6 +66,7 @@
   window.addEventListener('message', event => {
     if (event.origin === location.origin && event.source === frame.contentWindow && event.data?.type === 'zp3d:error') {
       preview.classList.add('zp3d-failed');
+      preview.classList.remove('zp3d-enabled');
       shell.classList.remove('zp3d-expanded');
       document.body.classList.remove('zp3d-open');
       return;
