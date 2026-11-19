@@ -1,0 +1,8 @@
+/* Match the vivid warm app palette across the site, especially on mobile. */
+:root{--black:#171414;--raised:#29231e;--milk:#f8f4ed;--alabaster:#efe8de;--gold:#caaa7c;--sapphire:#211c1b;--line:#caaa7c55}
+.hero{background:radial-gradient(circle at 75% 55%,#30261f 0,#211c1c 48%,#141314 100%)}
+.hero:before{background:repeating-linear-gradient(90deg,transparent 0 28px,#caaa7c0a 29px 30px)}
+.hero .lead{color:#e0dad3}.hero .eyebrow{color:#d1ac7c}.hero h1{color:#faf7f2}.hero h1 em{color:#d6b383}
+.btn.gold,.dock a:nth-child(2){background:#caaa7c;color:#1c1815}.btn.gold:hover{background:#e0c498}
+.configurator{background:#211c18;color:#f6f0e9}.configurator .eyebrow.dark,.configurator h2 em{color:#caaa7c}.configurator .section-intro>p{color:#d5c9bb}.calculator-shell,.calculator-shell iframe{background:#211c18;border-color:#78654e}.calculator-shell{box-shadow:0 28px 70px #0006}
+@media(max-width:700px){.hero h1{font-size:clamp(57px,12vw,78px);line-height:1.04;letter-spacing:-.025em}.hero .lead{font-size:16px;line-height:1.72}.hero .eyebrow{font-size:11px}.hero-actions .btn{min-height:60px}.dock{background:#211c18;border-color:#79644b}.dock a{background:#302a24}.calculator-shell{margin-inline:-9px;border:0}.configurator{padding-bottom:75px}}

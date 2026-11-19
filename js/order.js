@@ -56,7 +56,7 @@ function resetEdit(){editing=-1;$('order-add').textContent='Добавить в 
 function edit(index){
  var item=items[index],m=item.data.mirror;if(window.MirrorCarry)window.MirrorCarry.restore(m.carry);
  function radio(name,value){var el=form.querySelector('input[name="'+name+'"][value="'+value+'"]');if(el){el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));}}
- radio('shape',m.shape);radio('material',m.material);radio('light',m.light?'on':'off');radio('facet',m.edge);radio('edge',m.edge&&m.edge.indexOf('grind')!==-1?'grind':'polish');radio('clr',m.clr);radio('ctrl',m.ctrl);radio('face-frame',m.faceFrame);
+ radio('shape',m.shape);radio('mount-method',m.mountMethod==='glue'?'glue':'fixings');radio('material',m.material);radio('light',m.light?'on':'off');radio('facet',m.edge);radio('edge',m.edge&&m.edge.indexOf('grind')!==-1?'grind':'polish');radio('clr',m.clr);radio('ctrl',m.ctrl);radio('face-frame',m.faceFrame);
  ['width','height','height2'].forEach(function(id){var el=$(id);if(el)window.MirrorSize.write(el,m[id]||0);});
  [['install',m.install],['delivery',m.delivery],['film',m.film],['heat',m.heat],['alu-frame',m.aluFrame],['led-profile',m.ledProfile]].forEach(function(pair){var el=form.querySelector('input[name="option"][value="'+pair[0]+'"]');if(el)el.checked=!!pair[1];});
  if($('delivery-region'))$('delivery-region').value=m.region;

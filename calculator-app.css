@@ -1,0 +1,25 @@
+/* Only website-specific additions. The primary calculator CSS is from the app. */
+#zp-calculator-document{background:#1f1a16!important;color:#ece4d6!important}
+#zp-calculator-document #calculator{background:#1f1a16!important}
+#zp-calculator-document .calc-form{background:#2a251e!important}
+#zp-calculator-document #quote-form .field label,#zp-calculator-document #quote-form .field legend{color:#ece4d6!important}
+#zp-calculator-document #quote-form .options label,#zp-calculator-document #quote-form .options label span{border-radius:9px!important;border-width:1px!important}
+#zp-calculator-document #quote-form .options label:has(input:checked),#zp-calculator-document #quote-form .options label:has(input:checked) span{background:#4e4230!important;border-color:#ccb797!important;color:#d0b28b!important}
+#zp-calculator-document .atelier-size-slider{display:block;width:100%;height:20px;margin:12px 0 4px;accent-color:#c9a876!important;cursor:pointer}
+#zp-calculator-document .atelier-size-slider[hidden],#zp-calculator-document .atelier-size-slider:disabled,#zp-calculator-document #mount-method-field[hidden],#zp-calculator-document #atelier-stripes[hidden],#zp-calculator-document #reinfOpt[hidden]{display:none!important}
+#zp-calculator-document .atelier-size-hint{font-size:11px;color:#b9ae9d;text-align:right}
+#zp-calculator-document #quote-form .options--checks #mount-method-field{grid-column:1/-1;width:100%;min-width:0;box-sizing:border-box;border:1px solid #6b5a3c;border-radius:10px;background:#241e18;padding:15px;margin:8px 0 14px}
+#zp-calculator-document #mount-method-field legend{font-size:15px!important;font-weight:600!important;padding:0 6px}
+#zp-calculator-document #mount-method-field .options{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
+#zp-calculator-document #mount-method-field .options label{min-width:0;width:100%}
+#zp-calculator-document #mount-method-field .options span{font-size:14px!important;white-space:normal!important;overflow-wrap:anywhere!important;text-align:center}
+#zp-calculator-document #mount-method-field .form-hint{font-size:12px;color:#c9c0b4!important;margin:12px 0 0}
+#zp-calculator-document #atelier-stripes{padding:14px;border:1px solid #6b5a3c;border-radius:10px;background:#241e18;color:#ece4d6}
+#zp-calculator-document #atelier-stripes>label{display:block;margin:12px 0 6px;color:#ece4d6;font-weight:600}
+#zp-calculator-document #atelier-stripes input,#zp-calculator-document #atelier-stripes select{background:#312d27!important;border:1px solid #665f55!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
+#zp-calculator-document #calc-result,#zp-calculator-document #mirror-order{background:#332f29!important;color:#ece4d6!important;border-color:#8d795e!important}
+#zp-calculator-document #calc-result *:not(.calc-btn),#zp-calculator-document #mirror-order *{color:#ece4d6!important;opacity:1!important}
+#zp-calculator-document #calc-result #r-sum,#zp-calculator-document #mirror-order .order-final strong{color:#d4b78d!important}
+#zp-calculator-document .calc-shape-icon,#zp-calculator-document .calc-shape-icon:before,#zp-calculator-document .calc-shape-icon:after{border-width:1px!important}
+#zp-calculator-document .stepper-btn{font-weight:300!important}
+@media(max-width:800px){#zp-calculator-document #calculator>.container{width:100%!important;padding:0 16px!important}#zp-calculator-document .calc-form{padding:14px!important}}
