@@ -944,7 +944,7 @@ function start(){
   '<label for="owner-sand-sketch">Эскиз рисунка</label><select class="mirror-option-select" id="owner-sand-sketch"><option value="0">есть готовый макет в векторе</option><option value="1">нужна отрисовка эскиза</option></select>';
  details.appendChild(extra);
  var guide=document.createElement('div');guide.id='owner-sand-guide';guide.className='owner-guide';
- guide.innerHTML='<b>Что выбрать (цены по прайсу РИАЛ от 14.10.2026):</b><ul>'+
+ guide.innerHTML='<b>Подсказка: до 240 см — Арсенал Стекло, от 240 см — Риал Стекло. Цены ниже указаны для Риал:</b><ul>'+
   '<li><b>Без пескоструя</b> — зеркало гладкое, ничего не делаем.</li>'+
   '<li><b>Сплошная матировка</b> — всё зеркало становится матовым, как матовое стекло. Считается на всю площадь зеркала: 900 ₽ за м².</li>'+
   '<li><b>Пескоструйный рисунок</b> — рисунок, логотип или надпись на стекле. Нужны ширина и высота рисунка. 1 900 ₽ за м² рисунка. Сложный рисунок +50 %, особо сложный +100 %. Минимум 500 ₽.</li>'+
@@ -988,8 +988,8 @@ function start(){
  O.facetCost=function(o,q){var v=facetCost(o,q);last.facet=v;return v;};
  O.sandCost=function(o,q){
   var v;
-  if(o.sand==='stripes'){var own=stripeOwn(o,last.dims||{w:0,h:0});if(own>q.area+1e-8)throw Error('Полосы не помещаются на зеркале');v=Math.max(500,(o.stripeBill==='strips'?own:q.area)*1900);}
-  else{v=sandCost(o,q);if(o.sand==='pattern'){var paint=Number(o.sandPaint||0);if([0,1,2,3].indexOf(paint)<0)throw Error('Выберите покраску рисунка');v+=num(o.sandArea)*1900*paint+(o.sandSketch?1000:0);}}
+  if(o.sand==='stripes'){var own=stripeOwn(o,last.dims||{w:0,h:0});if(own>q.area+1e-8)throw Error('Полосы не помещаются на зеркале');v=Math.max(q.supplier==='arsenal'?1250:500,(o.stripeBill==='strips'?own:q.area)*(q.supplier==='arsenal'?2500:1900));}
+  else{v=sandCost(o,q);if(o.sand==='pattern'){var paint=Number(o.sandPaint||0);if([0,1,2,3].indexOf(paint)<0)throw Error('Выберите покраску рисунка');v+=num(o.sandArea)*(q.supplier==='arsenal'?2000:1900)*paint+(o.sandSketch?(q.supplier==='arsenal'?500:1000):0);}}
   last.sand=v;return v;
  };
  O.sandLabel=function(o){
