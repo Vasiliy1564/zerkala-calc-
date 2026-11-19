@@ -1223,7 +1223,7 @@
         <div class="camera-dock" role="group" aria-label="Ракурсы камеры">
           <button class="cam-btn active" data-cam="front">Фронт</button>
           <button class="cam-btn" data-cam="threeQuarter">Ракурс 3/4</button>
-          <button class="cam-btn" data-cam="edge">Кромка 5 мм</button>
+          <button class="cam-btn" data-cam="edge">Кромка 4 мм</button>
           <button class="cam-btn" data-cam="room">Интерьер</button>
         </div>
 
@@ -1246,7 +1246,7 @@
       <div class="panel-header">
         <div>
           <h1 class="panel-heading">Конфигуратор</h1>
-          <p class="panel-subheading">Стекло 5 мм · Еврокромка · PBR-отражения</p>
+          <p class="panel-subheading">Стекло 4 мм · Еврокромка · PBR-отражения</p>
         </div>
         <button class="reset-link" id="btn-reset">Сбросить</button>
       </div>
@@ -1512,7 +1512,7 @@
           </div>
           <div class="spec-pill">
             <div class="spec-k">Толщина</div>
-            <div class="spec-v">5 мм + 20 мм</div>
+            <div class="spec-v">4 мм + 20 мм</div>
           </div>
         </div>
 
@@ -1698,7 +1698,7 @@
             shapeLabel: SHAPE_LABELS[state.shape],
             widthMm: state.widthMm,
             heightMm: state.heightMm,
-            glassThicknessMm: 5,
+            glassThicknessMm: 4,
             tint: state.tint,
             frame: state.frame,
             ledMode: state.ledMode,
@@ -3057,7 +3057,7 @@
         mirrorPartsGroup.add(tubeMesh);
       });
 
-      // 4. 5mm Architectural Glass Slab with Polished 45° Euro-Edge Bevel
+      // 4. 4mm Architectural Glass Slab with Polished 45° Euro-Edge Bevel
       const glassEdgeMat = new THREE.MeshPhysicalMaterial({
         color: tintCfg.edge,
         roughness: 0.05,
