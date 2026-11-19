@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#171919">
+<meta name="robots" content="noindex,nofollow"><title>Зеркало Pro — настоящий 3D-конструктор</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#ede9e3;background:#141717}
+*{box-sizing:border-box}body{margin:0}button,input{font:inherit}button{cursor:pointer}
+header{height:68px;border-bottom:1px solid #353939;display:flex;justify-content:space-between;align-items:center;padding:0 5vw;gap:16px;background:#181c1c}
+.brand{font:30px Georgia,serif;letter-spacing:.06em}.brand span{color:#d4b68b}
+.pill{font-size:11px;color:#d8c0a0;border:1px solid #6d6254;padding:8px 11px;border-radius:30px;letter-spacing:.07em}
+main{display:grid;grid-template-columns:minmax(0,1fr) 368px;min-height:calc(100svh - 68px)}
+.stage{position:relative;min-height:610px;overflow:hidden;background:#242626}
+#viewport{position:absolute;inset:0;touch-action:none}canvas{display:block;width:100%;height:100%}
+.stage-head{pointer-events:none;position:absolute;top:22px;left:24px;z-index:2}.eyebrow{text-transform:uppercase;color:#cfb48c;font-size:10px;font-weight:bold;letter-spacing:.2em}.stage-head h1{font:normal clamp(28px,4vw,52px)/1.08 Georgia,serif;margin:10px 0}.hint{font-size:12px;color:#ddd7ce;background:rgba(22,24,24,.65);padding:10px 13px;max-width:300px;border-radius:3px}
+.stage-bottom{position:absolute;bottom:18px;left:18px;right:18px;display:flex;align-items:center;justify-content:space-between;gap:10px;pointer-events:none;z-index:2}.stage-bottom>*{pointer-events:auto}
+.floating{background:#222928dc;color:#f2eee6;border:1px solid #5c6461;border-radius:5px;display:flex;gap:4px;padding:5px}
+.floating button{color:#eee;border:0;background:transparent;padding:9px 12px;font-size:12px;border-radius:3px}.floating button[aria-pressed=true]{background:#cbb08c;color:#17191a}
+.side{padding:26px 22px 34px;background:#181c1d;border-left:1px solid #3c4141;overflow-y:auto}
+.side h2{font:normal 34px Georgia,serif;margin:5px 0 6px}.sub{color:#adb4b1;font-size:12px;line-height:1.6;margin:0 0 20px}
+.setting{padding:15px 0;border-top:1px solid #363c3b}.label{display:block;color:#cbd0cc;font-size:11px;letter-spacing:.07em;margin-bottom:12px}
+.opts{display:flex;gap:7px;flex-wrap:wrap}
+.opts button{background:#222727;color:#edece7;border:1px solid #555f5b;border-radius:3px;padding:11px 12px;font-size:12px;min-height:40px}
+.opts button[aria-pressed=true]{background:#c9aa81;color:#161919;border-color:#c9aa81;font-weight:bold}
+.dims{display:grid;grid-template-columns:1fr 1fr;gap:12px}.dims label{font-size:11px;color:#b5bdba}.dims input{width:100%;margin-top:7px;background:#222829;border:1px solid #58615e;color:white;padding:11px 12px;border-radius:4px;font-size:16px}
+.primary{display:block;width:100%;margin-top:18px;background:#cfb48e;color:#151919;border:0;border-radius:4px;padding:17px;font-weight:bold;text-decoration:none;text-align:center;font-size:13px}
+.note{margin-top:12px;font-size:11px;color:#9fa9a3;line-height:1.6}.status{font-size:12px;color:#deccb3;margin-top:12px}.back{color:#aaa;font-size:12px;text-decoration:none}
+select{background:#252a29;color:#eee;border:1px solid #59615f;padding:11px;width:100%;border-radius:3px}
+@media(max-width:900px){main{display:block}.stage{height:65svh;min-height:420px}.side{border:0;padding:22px 18px}.stage-head h1{font-size:34px}}
+@media(max-width:540px){header{height:58px;padding:0 15px}.brand{font-size:21px}.pill{font-size:9px;padding:6px}.stage{height:58svh;min-height:390px}.stage-head{top:12px;left:14px}.stage-head h1{font-size:29px;margin:5px 0}.hint{font-size:10px;padding:7px;max-width:220px}.stage-bottom{left:8px;right:8px;bottom:10px}.floating button{padding:8px 9px;font-size:11px}.side h2{font-size:30px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style></head>
+<body><header><div class="brand">ЗЕРКАЛО <span>PRO</span></div><div class="pill">3D · ПЕРВАЯ РАБОЧАЯ ВЕРСИЯ</div></header>
+<main><section class="stage" aria-label="Трёхмерная сцена зеркала"><div id="viewport"></div>
+<div class="stage-head"><div class="eyebrow">Интерактивная модель</div><h1>Ваше зеркало<br>в объёме.</h1><div class="hint">Проведите пальцем — повернуть. Два пальца — приблизить.</div></div>
+<div class="stage-bottom"><div class="floating" aria-label="Режим камеры"><button id="front" aria-pressed="true">Спереди</button><button id="angle" aria-pressed="false">Сбоку</button><button id="reset">Сброс</button></div><div class="floating"><button id="roomButton">Интерьер</button></div></div></section>
+<aside class="side"><div class="eyebrow">Конструктор · Зеркало Pro СПб</div><h2>Создайте своё</h2><p class="sub">Настоящая интерактивная WebGL-модель. Свет, толщина, форма и поворот в 3D.</p>
+<div class="setting"><span class="label">Форма зеркала</span><div class="opts" data-key="shape"><button data-value="rect" aria-pressed="false">Прямоугольник</button><button data-value="round" aria-pressed="false">Круг</button><button data-value="arch" aria-pressed="true">Арка</button><button data-value="oval" aria-pressed="false">Овал</button><button data-value="wave" aria-pressed="false">Волна</button><button data-value="cloud" aria-pressed="false">Облако</button></div></div>
+<div class="setting"><span class="label">Размеры, сантиметры</span><div class="dims"><label>Ширина<input type="number" id="width" value="80" min="30" max="240" step="1"></label><label>Высота<input type="number" id="height" value="180" min="30" max="320" step="1"></label></div></div>
+<div class="setting"><span class="label">Подсветка</span><div class="opts" data-key="light"><button data-value="on" aria-pressed="true">Включена</button><button data-value="off" aria-pressed="false">Выключена</button></div></div>
+<div class="setting"><span class="label">Температура света</span><div class="opts" data-key="tone"><button data-value="warm" aria-pressed="true">Тёплый</button><button data-value="neutral" aria-pressed="false">Нейтральный</button><button data-value="cool" aria-pressed="false">Холодный</button></div></div>
+<div class="setting"><span class="label">Цвет рамы</span><div class="opts" data-key="frame"><button data-value="none" aria-pressed="true">Без рамы</button><button data-value="black" aria-pressed="false">Чёрная</button><button data-value="white" aria-pressed="false">Белая</button><button data-value="gold" aria-pressed="false">Золотая</button></div></div>
+<div class="setting"><span class="label">Полотно</span><div class="opts" data-key="finish"><button data-value="silver" aria-pressed="true">Серебро</button><button data-value="graphite" aria-pressed="false">Графит</button><button data-value="bronze" aria-pressed="false">Бронза</button></div></div>
+<div class="setting"><span class="label">Помещение</span><div class="opts" data-key="room"><button data-value="bath" aria-pressed="true">Ванная</button><button data-value="hall" aria-pressed="false">Прихожая</button><button data-value="bed" aria-pressed="false">Спальня</button></div></div>
+<div class="setting"><span class="label">Пескоструйные световые полосы</span><div class="opts" data-key="stripes"><button data-value="off" aria-pressed="true">Без полос</button><button data-value="on" aria-pressed="false">С полосами</button></div></div>
+<a class="primary" href="https://zerkalo-pro-spb.ru/#calculator">Перейти к расчёту стоимости ↗</a>
+<div id="status" class="status" role="status">Загрузка 3D-движка…</div>
+<p class="note">В этой версии цена не вычисляется: рабочий калькулятор и прайс основного сайта не изменены. Для рендера требуется интернет и поддержка WebGL.</p>
+<a class="back" href="https://zerkalo-pro-spb.ru/">← Действующий сайт Зеркало Pro</a></aside></main>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
+import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/controls/OrbitControls.js';
+import {Reflector} from 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/objects/Reflector.js';
+const root=document.getElementById('viewport'),status=document.getElementById('status');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(root.clientWidth,root.clientHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;root.appendChild(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#d3ccc0');
+const camera=new THREE.PerspectiveCamera(40,root.clientWidth/root.clientHeight,.01,100);camera.position.set(1.5,2.05,5.7);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1.55,0);controls.enableDamping=true;controls.dampingFactor=.075;controls.minDistance=2.6;controls.maxDistance=9;controls.minPolarAngle=.18;controls.maxPolarAngle=1.85;
+scene.add(new THREE.HemisphereLight('#ffffff','#a5a09b',2));
+const key=new THREE.DirectionalLight('#fff4e9',2.8);key.position.set(-1,5,4);key.castShadow=true;key.shadow.mapSize.set(1024,1024);scene.add(key);
+const fill=new THREE.PointLight('#ffffff',60,12,2);fill.position.set(2,2.8,3);scene.add(fill);
+const wallMat=new THREE.MeshStandardMaterial({color:'#d5d0c8',roughness:.94});
+const floorMat=new THREE.MeshStandardMaterial({color:'#a9947e',roughness:.66});
+const wall=new THREE.Mesh(new THREE.BoxGeometry(12,7,.12),wallMat);wall.position.set(0,3.2,-.16);wall.receiveShadow=true;scene.add(wall);
+const floor=new THREE.Mesh(new THREE.BoxGeometry(12,.14,12),floorMat);floor.position.set(0,-.07,1.3);floor.receiveShadow=true;scene.add(floor);
+const skirting=new THREE.Mesh(new THREE.BoxGeometry(12,.12,.12),new THREE.MeshStandardMaterial({color:'#eee6dc'}));skirting.position.set(0,.06,-.05);scene.add(skirting);
+const decorative=new THREE.Group();scene.add(decorative);
+function box(w,h,d,mat,x,y,z,parent=decorative){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
+const wood=new THREE.MeshStandardMaterial({color:'#85715f',roughness:.66}),stone=new THREE.MeshStandardMaterial({color:'#ede7df',roughness:.28}),metal=new THREE.MeshStandardMaterial({color:'#292d2b',metalness:.7,roughness:.28}),green=new THREE.MeshStandardMaterial({color:'#5d715c',roughness:.85});
+function setupRoom(kind){
+while(decorative.children.length){const o=decorative.children[0];decorative.remove(o);o.geometry?.dispose()}
+wallMat.color.set(kind==='bath'?'#d7d2ca':kind==='hall'?'#c8cbc6':'#d4c3b4');floorMat.color.set(kind==='bath'?'#aba398':kind==='hall'?'#ad937e':'#947f6b');
+if(kind==='bath'){box(2.4,.10,.58,stone,0,.83,.46);box(1.7,.45,.5,wood,0,.53,.39);box(.72,.19,.48,stone,0,.99,.46);box(.13,.42,.13,metal,.25,1.3,.48);}
+else if(kind==='hall'){box(2.3,.12,.48,wood,0,.69,.42);box(2.1,.43,.4,wood,0,.4,.38);box(.18,.7,.18,metal,1.15,.4,.25);}
+else{box(3,.36,.9,wood,0,.39,1.35);box(2.9,.12,.85,stone,0,.65,1.3);box(.55,.55,.55,wood,-1.7,.3,.8);}
+}
+const mirrorRoot=new THREE.Group();mirrorRoot.position.set(0,1.9,.018);scene.add(mirrorRoot);
+const allLights=[];const state={shape:'arch',light:'on',tone:'warm',frame:'none',finish:'silver',room:'bath',stripes:'off'};
+function shapePoints(name,w,h){
+const p=[];const push=(x,y)=>p.push(new THREE.Vector2(x,y));
+if(name==='round'){let r=Math.min(w,h)/2;for(let i=0;i<160;i++){let a=i/160*Math.PI*2;push(r*Math.cos(a),r*Math.sin(a))}}
+else if(name==='oval'){for(let i=0;i<160;i++){let a=i/160*Math.PI*2;push(w/2*Math.cos(a),h/2*Math.sin(a))}}
+else if(name==='arch'){push(-w/2,-h/2);push(w/2,-h/2);push(w/2,h/2-w/2);for(let i=0;i<=70;i++){let a=i/70*Math.PI;push(w/2*Math.cos(a),h/2-w/2+w/2*Math.sin(a))}}
+else if(name==='wave'){for(let i=0;i<160;i++){let a=i/160*Math.PI*2;let r=1+.11*Math.sin(3*a+.4);push(w/2*r*Math.cos(a),h/2*r*Math.sin(a))}}
+else if(name==='cloud'){for(let i=0;i<180;i++){let a=i/180*Math.PI*2;let r=1+.075*Math.sin(7*a);push(w/2*r*Math.cos(a),h/2*r*Math.sin(a))}}
+else{let r=Math.min(w,h)*.025;for(let j=0;j<4;j++){let cx=(j===0||j===3?-1:1)*(w/2-r),cy=(j<=1?-1:1)*(h/2-r),from=(j===0?Math.PI:j===1?1.5*Math.PI:j===2?0:.5*Math.PI);for(let k=0;k<=16;k++){let a=from+k/16*Math.PI/2;push(cx+r*Math.cos(a),cy+r*Math.sin(a))}}}
+return p
+}
+function clearMirror(){for(const l of allLights)scene.remove(l);allLights.length=0;while(mirrorRoot.children.length){const o=mirrorRoot.children[0];mirrorRoot.remove(o);o.traverse(v=>{v.geometry?.dispose();if(v.material && !Array.isArray(v.material))v.material.dispose()})}}
+let mirrorSurface;
+function createMirror(){
+clearMirror();let w=Math.min(2.4,Math.max(.3,+document.getElementById('width').value/100||.8));let h=Math.min(3.2,Math.max(.3,+document.getElementById('height').value/100||1.8));
+const sz=state.shape==='round'?Math.min(w,h):0,pts=shapePoints(state.shape,sz||w,sz||h);
+const shape=new THREE.Shape(pts);const backing=new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshStandardMaterial({color:'#555958',metalness:.65,roughness:.24,side:THREE.DoubleSide}));
+backing.position.z=-.026;mirrorRoot.add(backing);
+const surfaceShape=new THREE.Shape(pts.map(v=>v.clone().multiplyScalar(.987)));
+const reflector=new Reflector(new THREE.ShapeGeometry(surfaceShape),{clipBias:.004,textureWidth:Math.min(1024,Math.floor(512*renderer.getPixelRatio())),textureHeight:Math.min(1024,Math.floor(512*renderer.getPixelRatio())),color:state.finish==='graphite'?0x747e87:state.finish==='bronze'?0xc1a88e:0xdfe4e8,multisample:0});
+reflector.position.z=.015;mirrorRoot.add(reflector);mirrorSurface=reflector;
+const baseColor=state.frame==='black'?'#262626':state.frame==='white'?'#f1ede6':state.frame==='gold'?'#c7a569':'#c2c8c6';
+const frameMat=new THREE.MeshStandardMaterial({color:baseColor,metalness:state.frame==='none'?.3:.72,roughness:.23});
+const curve=new THREE.CatmullRomCurve3(pts.concat([pts[0]]).map(v=>new THREE.Vector3(v.x,v.y,.023)),true,'centripetal');
+const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,Math.max(200,pts.length),state.frame==='none'?.008:.024,8,true),frameMat);mirrorRoot.add(tube);
+if(state.light==='on'){
+const color=state.tone==='warm'?'#ffd59b':state.tone==='cool'?'#b5e0ff':'#f6f5ee';
+const haloMat=new THREE.MeshBasicMaterial({color:new THREE.Color(color),transparent:true,opacity:.43,depthWrite:false});
+for(let i=1;i<=6;i++){let g=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.concat([pts[0]]).map(v=>new THREE.Vector3(v.x*(1+.014*i),v.y*(1+.014*i),-.02-.008*i)),true),Math.max(120,pts.length),.012+i*.006,4,true);let m=new THREE.Mesh(g,haloMat.clone());m.material.opacity=.13/i;mirrorRoot.add(m)}
+const led=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.concat([pts[0]]).map(v=>new THREE.Vector3(v.x*1.013,v.y*1.013,-.014)),true),Math.max(200,pts.length),.012,8,true),new THREE.MeshBasicMaterial({color:new THREE.Color(color)}));mirrorRoot.add(led);
+for(let i=0;i<8;i++){const v=pts[Math.floor(i*pts.length/8)];const l=new THREE.PointLight(color,3,1.35,2);l.position.set(v.x,mirrorRoot.position.y+v.y,-.03);scene.add(l);allLights.push(l)}
+}
+if(state.stripes==='on'){const stripeMat=new THREE.MeshBasicMaterial({color:state.light==='on'?'#ffffff':'#c8cfd0',transparent:true,opacity:.85,side:THREE.DoubleSide});
+for(let x of [-w*.33,w*.33]){const path=new THREE.LineCurve3(new THREE.Vector3(x,-h*.35,.024),new THREE.Vector3(x,h*.35,.024));mirrorRoot.add(new THREE.Mesh(new THREE.TubeGeometry(path,2,.012,6),stripeMat))}}
+const ratio=Math.max(w,h);mirrorRoot.scale.setScalar(Math.min(1.3,2.5/ratio));controls.target.set(0,1.7,0)
+}
+setupRoom('bath');createMirror();
+document.querySelectorAll('[data-key]').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button[data-value]');if(!b)return;const k=g.dataset.key;state[k]=b.dataset.value;g.querySelectorAll('button').forEach(v=>v.setAttribute('aria-pressed',String(v===b)));if(k==='room')setupRoom(state.room);createMirror()}));
+document.getElementById('width').addEventListener('change',createMirror);document.getElementById('height').addEventListener('change',createMirror);
+function moveCam(x,y,z){camera.position.set(x,y,z);controls.target.set(0,1.7,0);controls.update();document.getElementById('front').setAttribute('aria-pressed',String(x===0));document.getElementById('angle').setAttribute('aria-pressed',String(x!==0))}
+document.getElementById('front').onclick=()=>moveCam(0,1.8,5.7);document.getElementById('angle').onclick=()=>moveCam(3,2.2,4.3);document.getElementById('reset').onclick=()=>{moveCam(0,1.8,5.7);controls.reset()};
+document.getElementById('roomButton').onclick=()=>{state.room=state.room==='bath'?'hall':state.room==='hall'?'bed':'bath';setupRoom(state.room);document.querySelectorAll('[data-key="room"] button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.value===state.room)))};
+const observer=new ResizeObserver(()=>{const w=root.clientWidth,h=root.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()});observer.observe(root);
+let last=0;renderer.setAnimationLoop(t=>{if(t-last<27)return;last=t;controls.update();renderer.render(scene,camera)});
+status.textContent='3D-модель загружена · поворачивайте пальцем';moveCam(0,1.8,5.7);
+</script></body></html>
