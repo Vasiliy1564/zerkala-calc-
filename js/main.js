@@ -1029,7 +1029,7 @@
         {key:'profile-trip',name:'Поездка за уголком',sale:profileTrip,cost:profileTrip},
         {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
         {key:'installation',sale:orderInstall,cost:null,expense:'install'}
-      ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:2,supplier:supplier,productionDays:supplier==='arsenal'?10:12,hardwareTariffVersion:1,mirrorOptions:mirrorOptions,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:3,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
+      ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:2,supplier:supplier,productionDays:supplier==='arsenal'?10:13,hardwareTariffVersion:1,mirrorOptions:mirrorOptions,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:3,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
         size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),material:state.material,
         materialLabel:window.MirrorSupplierPricing.materials[state.material].label+(state.material==='decorative'?' · '+mirrorOptions.decor:''),
         edge:state.edge,edgeLabel:window.MirrorCalcOptions.edgeLabel(EDGE_LABELS[state.edge],mirrorOptions,supplierQuote),light:state.light,ctrl:state.ctrl,clr:state.clr,
@@ -1042,7 +1042,7 @@
 
     document.getElementById('r-sum').textContent = fmt(price) + ' ₽';
     var supplierStatus=document.getElementById('supplier-status');
-    if(supplierStatus)supplierStatus.textContent=(supplier==='arsenal'?'Арсенал Стекло':'Риал Стекло')+' · изготовление до '+(supplier==='arsenal'?10:12)+' дней';
+    if(supplierStatus)supplierStatus.textContent='Изготовление до '+(supplier==='arsenal'?10:13)+' дней';
     var priceLabel = document.querySelector('.calc-result-label');
     if (priceLabel) priceLabel.textContent = supplierQuote.estimate ? 'Ориентировочная стоимость' : 'Итоговая цена зеркала';
     document.getElementById('r-sum').dataset.estimate = String(supplierQuote.estimate);
@@ -1072,7 +1072,7 @@
       inc += row('Подогрев 400×600 мм', 'да');
     }
 
-    inc += row('Срок изготовления', 'до '+(supplier==='arsenal'?10:12)+' дней');
+    inc += row('Срок изготовления', 'до '+(supplier==='arsenal'?10:13)+' дней');
     inc += row('Доставка', deliveryDescription());
     if (state.ledProfile) inc += row('Светодиодная лента в профиле', 'да');
     if (!glueMount) {
@@ -1095,7 +1095,7 @@
     if (state.ledProfile) details.push('со светодиодной лентой в алюминиевом профиле');
     if (glueMount) details.push('крепление: приклеивание, без заднего усиления');
     else if (reinfKind !== 'none') details.push('усиление сзади: ' + window.MirrorSupplierPricing.REINF[reinfKind].label);
-    details.push('изготовление до '+(supplier==='arsenal'?10:12)+' дней');
+    details.push('изготовление до '+(supplier==='arsenal'?10:13)+' дней');
     if (state.delivery || state.install) details.push('доставка: ' + deliveryDescription());
 
     if (state.faceFrame !== 'none') details.push('алюминиевая рама — ' + FACE_FRAME_LABELS[state.faceFrame]);
