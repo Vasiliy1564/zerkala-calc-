@@ -9,10 +9,10 @@ function restore(o){
  ['facet','sand'].forEach(function(k){var v=String(o[k]||(k==='facet'?'0':'none'));document.querySelectorAll('input[name="mirror-'+k+'"]').forEach(function(el){el.checked=el.value===v;});});
  document.getElementById('mirror-sand-area').value=o.sandArea||'';document.getElementById('mirror-sand-complexity').value=o.sandComplexity||'1';visible();
 }
-function facetCost(o,q){var arsenal=document.querySelector('input[name="supplier"]:checked')?.value==='arsenal';var rate=(arsenal?{0:0,10:200,15:230,20:270}:{0:0,10:180,15:200,20:220})[o.facet||0];if(rate===undefined)throw Error('Выберите фацет');return q.billedMetres*rate*(q.shapeRate?1.5:1);}
+function facetCost(o,q){var arsenal=q.supplier==='arsenal';var rate=(arsenal?{0:0,10:200,15:230,20:270}:{0:0,10:180,15:200,20:220})[o.facet||0];if(rate===undefined)throw Error('Выберите фацет');return q.billedMetres*rate*(q.shapeRate?1.5:1);}
 function sandCost(o,q){
  if(!o.sand||o.sand==='none')return 0;
- var arsenal=document.querySelector('input[name="supplier"]:checked')?.value==='arsenal';
+ var arsenal=q.supplier==='arsenal';
  var rate=(arsenal?{matte:1400,pattern:2500}:{matte:900,pattern:1900})[o.sand],area=Number(String(o.sandArea||'').replace(',','.')),complexity=o.sand==='pattern'?Number(o.sandComplexity||1):1;
  if(!rate)throw Error('Выберите пескоструйную обработку');
  if(!Number.isFinite(area)||area<=0)throw Error('Укажите площадь пескоструйной обработки в м²');
