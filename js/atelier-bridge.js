@@ -8,7 +8,7 @@
   const shell = document.createElement('div');
   shell.className = 'zp3d-shell';
   shell.innerHTML = '<iframe title="Интерактивная 3D-визуализация зеркала" loading="lazy" allow="fullscreen"></iframe>' +
-    '<button class="zp3d-expand" type="button" aria-label="Открыть 3D-конфигуратор">Открыть 3D на весь экран</button>' +
+    '<button class="zp3d-expand" type="button" aria-label="Открыть 3D-визуализацию">Открыть 3D на весь экран</button>' +
     '<button class="zp3d-close" type="button" aria-label="Закрыть 3D-конфигуратор">×</button>';
   preview.prepend(shell);
   preview.classList.add('zp3d-enabled');
@@ -43,6 +43,12 @@
   const post = message => {if (ready && frame.contentWindow) frame.contentWindow.postMessage(message, location.origin);};
   const sync = () => {
     if (syncing) return;
+    const supported = !preview.classList.contains('zp3d-failed') &&
+      ['rect','rounded','circle','oval','arch','curved'].includes(checked('shape')) &&
+      ['silver','bronze','graphite'].includes(checked('material'));
+    preview.classList.toggle('zp3d-enabled', supported);
+    preview.classList.toggle('zp3d-unavailable', !supported);
+    if (!supported) return;
     clearTimeout(timer);
     timer = setTimeout(() => post({type:'zp3d:sync', config:config()}), 50);
   };
@@ -50,16 +56,18 @@
     const total = document.getElementById('r-sum')?.textContent?.trim();
     if (total && total !== '—') post({type:'zp3d:price',title:total,subtitle:document.getElementById('supplier-status')?.textContent || 'Расчёт Зеркало Pro'});
   };
-  frame.addEventListener('load', () => {ready = true; post({type:'zp3d:mode',preview:!shell.classList.contains('zp3d-expanded')}); sync(); price();});
+  frame.addEventListener('load', () => {ready = true; post({type:'zp3d:mode',preview:true}); sync(); price();});
   frame.src = 'atelier/?embed=1';
-  form.addEventListener('change', sync);
-  form.addEventListener('input', sync);
+  form.addEventListener('change', () => {sync();setTimeout(price,150);});
+  form.addEventListener('input', () => {sync();setTimeout(price,150);});
   form.addEventListener('submit', () => setTimeout(price, 100));
   document.addEventListener('click', event => {if (event.target.closest('#quote-form button[type="submit"]')) setTimeout(price, 100);});
 
   const expand = shell.querySelector('.zp3d-expand');
   const close = shell.querySelector('.zp3d-close');
-  expand.addEventListener('click', () => {shell.classList.add('zp3d-expanded');document.body.classList.add('zp3d-open');post({type:'zp3d:mode',preview:false});});
+  // The existing calculator is the only source of purchasable options and prices.
+  // Keep Gemini's independent option panel hidden even in the enlarged camera view.
+  expand.addEventListener('click', () => {shell.classList.add('zp3d-expanded');document.body.classList.add('zp3d-open');post({type:'zp3d:mode',preview:true});});
   close.addEventListener('click', () => {shell.classList.remove('zp3d-expanded');document.body.classList.remove('zp3d-open');post({type:'zp3d:mode',preview:true});sync();});
   document.addEventListener('keydown', event => {if (event.key === 'Escape' && shell.classList.contains('zp3d-expanded')) close.click();});
 
