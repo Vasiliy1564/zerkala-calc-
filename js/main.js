@@ -393,7 +393,7 @@
     if (!el) return;
     var v = window.MirrorSize.read(el) || 0;
     v = Math.max(state.shape === 'semicircle' && id === 'height' ? 800 : 400, v + delta);
-    v = Math.min(v, state.shape === 'curved' && id === 'height' ? 1800 : 3210);
+    v = Math.min(v, state.shape === 'curved' && id === 'height' ? 1800 : state.shape === 'semidouble' && id === 'height' ? 1600 : 3210);
     window.MirrorSize.write(el, v);
     if (state.shape === 'circle') {
       var hEl = document.getElementById('height');
@@ -757,7 +757,8 @@
     inputH.disabled = false;
     inputH.style.opacity = '1';
     inputH.min = shape === 'semicircle' ? '80' : '40';
-    inputH.max = shape === 'curved' ? '180' : '321';
+    inputH.max = shape === 'curved' ? '180' : shape === 'semidouble' ? '160' : '321';
+    if (shape === 'semidouble' && (window.MirrorSize.read(inputH) || 0) > 1600) window.MirrorSize.write(inputH, 1200);
     inputW.disabled = shape === 'curved' || shape === 'semicircle' || shape === 'semidouble';
     $all('.stepper-btn[data-adj="width"]').forEach(function (button) {
       button.disabled = shape === 'curved' || shape === 'semicircle' || shape === 'semidouble';
