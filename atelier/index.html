@@ -1,0 +1,3776 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>VERRE ATELIER — Интерактивный 3D-конфигуратор дизайнерских зеркал</title>
+  <meta name="description" content="Фотореалистичный 3D-конфигуратор зеркал на заказ с LED-подсветкой, пескоструйной обработкой, алюминиевыми рамами и 5 архитектурными интерьерами." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg-deep: #0e0f11;
+      --bg-panel: #141518;
+      --bg-elevated: #1b1d21;
+      --bg-card: rgba(255, 255, 255, 0.032);
+      --bg-card-hover: rgba(214, 190, 155, 0.08);
+      --bg-card-active: rgba(214, 190, 155, 0.14);
+
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(214, 190, 155, 0.42);
+      --border-gold: rgba(214, 190, 155, 0.78);
+
+      --text-primary: #f2eee8;
+      --text-secondary: #a8a298;
+      --text-muted: #6f6a62;
+
+      --champagne: #d6be9b;
+      --gold-soft: #c5a474;
+      --gold-bright: #e7d4b5;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-pill: 999px;
+
+      --font-serif: 'Cormorant Garamond', Georgia, serif;
+      --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+      --shadow-glass: 0 18px 48px rgba(0, 0, 0, 0.48);
+      --transition-fast: 180ms cubic-bezier(0.22, 1, 0.36, 1);
+      --transition-med: 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ================= LAYOUT ================= */
+    .app-shell {
+      display: grid;
+      grid-template-columns: 1fr 404px;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--bg-deep);
+      transition: grid-template-columns var(--transition-med);
+    }
+
+    .app-shell.cinema-mode {
+      grid-template-columns: 1fr 0px;
+    }
+
+    .app-shell.cinema-mode .config-panel {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(30px);
+    }
+
+    /* ================= 3D STAGE ================= */
+    .stage-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 42%, #1d1e22 0%, #0d0e10 100%);
+      user-select: none;
+    }
+
+    #webgl-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    #webgl-canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Overlay Dimension Lines */
+    #dimension-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 6;
+      transition: opacity var(--transition-med);
+    }
+
+    #dimension-overlay.hidden {
+      opacity: 0;
+    }
+
+    .dim-badge {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      padding: 3px 9px;
+      border-radius: var(--radius-pill);
+      background: rgba(14, 15, 17, 0.78);
+      border: 1px solid rgba(214, 190, 155, 0.36);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--gold-bright);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    }
+
+    /* Top Brand & HUD */
+    .stage-top-bar {
+      position: absolute;
+      top: 18px;
+      left: 20px;
+      right: 20px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .brand-lockup {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 16px;
+      border-radius: var(--radius-pill);
+      background: rgba(16, 17, 20, 0.66);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.32);
+    }
+
+    .brand-mark {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(214, 190, 155, 0.55);
+      border-radius: 50%;
+      color: var(--champagne);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .brand-sub {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--champagne);
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+
+    .hud-actions {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .hud-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 13px;
+      border-radius: var(--radius-pill);
+      background: rgba(16, 17, 20, 0.68);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .hud-pill:hover {
+      color: var(--text-primary);
+      border-color: rgba(214, 190, 155, 0.4);
+      background: rgba(26, 27, 31, 0.84);
+    }
+
+    .hud-pill.active {
+      color: var(--gold-bright);
+      border-color: rgba(214, 190, 155, 0.65);
+      background: rgba(214, 190, 155, 0.16);
+    }
+
+    .hud-pill svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Bottom Floating Stage Bar */
+    .stage-bottom-bar {
+      position: absolute;
+      bottom: 18px;
+      left: 20px;
+      right: 20px;
+      z-index: 10;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .camera-dock {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      border-radius: var(--radius-pill);
+      background: rgba(16, 17, 20, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.36);
+    }
+
+    .cam-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 7px 13px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .cam-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .cam-btn.active {
+      background: linear-gradient(135deg, rgba(214, 190, 155, 0.24), rgba(197, 164, 116, 0.12));
+      color: var(--gold-bright);
+      box-shadow: inset 0 0 0 1px rgba(214, 190, 155, 0.45);
+    }
+
+    .stage-hint {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      background: rgba(16, 17, 20, 0.64);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: var(--text-secondary);
+      font-size: 11.5px;
+    }
+
+    .sensor-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--champagne);
+      box-shadow: 0 0 10px var(--champagne);
+      animation: pulse-dot 2.4s infinite ease-in-out;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 0.45; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.18); }
+    }
+
+    /* Loader */
+    .stage-loader {
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: radial-gradient(circle at center, #18191d 0%, #0d0e10 100%);
+      transition: opacity 480ms ease, visibility 480ms ease;
+    }
+
+    .stage-loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .loader-ring {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(214, 190, 155, 0.16);
+      border-top-color: var(--champagne);
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loader-text {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      letter-spacing: 0.14em;
+      color: var(--champagne);
+    }
+
+    .loader-sub {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ================= CONFIGURATOR SIDEBAR ================= */
+    .config-panel {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border-subtle);
+      overflow: hidden;
+      transition: opacity var(--transition-med), transform var(--transition-med);
+      z-index: 15;
+    }
+
+    .panel-header {
+      padding: 20px 22px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    }
+
+    .panel-heading {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      color: var(--text-primary);
+      line-height: 1.1;
+    }
+
+    .panel-subheading {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .reset-link {
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      padding: 6px 11px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .reset-link:hover {
+      border-color: var(--border-strong);
+      color: var(--champagne);
+    }
+
+    /* Mobile quick section tabs (hidden on desktop) */
+    .mobile-tabs {
+      display: none;
+    }
+
+    .panel-scroll {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 18px 22px 26px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(214, 190, 155, 0.25) transparent;
+    }
+
+    .panel-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .panel-scroll::-webkit-scrollbar-thumb {
+      background: rgba(214, 190, 155, 0.22);
+      border-radius: 99px;
+    }
+
+    .section-block {
+      margin-bottom: 24px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+    }
+
+    .section-block:last-of-type {
+      border-bottom: none;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+    }
+
+    .section-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--champagne);
+    }
+
+    .section-value {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Shape Grid (9 shapes) */
+    .shape-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .shape-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 11px 6px 9px;
+      border-radius: var(--radius-md);
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 500;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      min-height: 76px;
+    }
+
+    .shape-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(214, 190, 155, 0.32);
+      color: var(--text-primary);
+    }
+
+    .shape-card.active {
+      background: var(--bg-card-active);
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+      box-shadow: 0 0 0 1px rgba(214, 190, 155, 0.18), 0 6px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    .shape-card svg {
+      width: 30px;
+      height: 30px;
+      stroke: currentColor;
+      fill: rgba(214, 190, 155, 0.06);
+      stroke-width: 1.35;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform var(--transition-fast);
+    }
+
+    .shape-card.active svg {
+      fill: rgba(214, 190, 155, 0.18);
+      transform: scale(1.04);
+    }
+
+    /* Dimensions */
+    .dim-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slider-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .slider-name {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+    }
+
+    .num-input-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      transition: border-color var(--transition-fast);
+    }
+
+    .num-input-wrap:focus-within {
+      border-color: var(--border-gold);
+    }
+
+    .num-input {
+      width: 54px;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      outline: none;
+    }
+
+    .num-unit {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--champagne) var(--pct, 50%), rgba(255,255,255,0.12) var(--pct, 50%));
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      background: var(--gold-bright);
+      border: 2px solid var(--bg-deep);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(214, 190, 155, 0.5);
+      transition: transform 140ms ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.12);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      background: var(--gold-bright);
+      border: 2px solid var(--bg-deep);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+    }
+
+    .preset-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+
+    .preset-chip {
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      font-variant-numeric: tabular-nums;
+      transition: all var(--transition-fast);
+    }
+
+    .preset-chip:hover {
+      border-color: var(--border-strong);
+      color: var(--gold-bright);
+    }
+
+    /* Swatch & Option Pills */
+    .option-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .option-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .swatch-card {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 10px;
+      border-radius: var(--radius-md);
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-align: left;
+    }
+
+    .swatch-card:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .swatch-card.active {
+      background: var(--bg-card-active);
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+
+    .swatch-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .swatch-dot.silver {
+      background: linear-gradient(135deg, #f3f7f8 0%, #aeb6bc 52%, #eef2f5 100%);
+    }
+    .swatch-dot.graphite {
+      background: linear-gradient(135deg, #69707a 0%, #262a30 55%, #555c66 100%);
+    }
+    .swatch-dot.bronze {
+      background: linear-gradient(135deg, #b89172 0%, #5c402c 55%, #9b775b 100%);
+    }
+    .swatch-dot.none {
+      background: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 4px, transparent 4px 8px);
+    }
+    .swatch-dot.black {
+      background: linear-gradient(135deg, #323438, #0f1012);
+    }
+    .swatch-dot.white {
+      background: linear-gradient(135deg, #ffffff, #d9d6cf);
+    }
+    .swatch-dot.gold {
+      background: linear-gradient(135deg, #f0dcba 0%, #b48d53 55%, #e2c593 100%);
+    }
+
+    .swatch-dot.warm {
+      background: radial-gradient(circle, #ffe7b8 15%, #ffb85c 100%);
+      box-shadow: 0 0 10px rgba(255, 196, 112, 0.55);
+    }
+    .swatch-dot.neutral {
+      background: radial-gradient(circle, #fffaf0 20%, #ebe5d8 100%);
+      box-shadow: 0 0 10px rgba(255, 248, 232, 0.4);
+    }
+    .swatch-dot.cool {
+      background: radial-gradient(circle, #edf6ff 20%, #9ec8ff 100%);
+      box-shadow: 0 0 10px rgba(164, 206, 255, 0.5);
+    }
+
+    /* Segmented Pill */
+    .segment-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      padding: 4px;
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .seg-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 8px 4px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .seg-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .seg-btn.active {
+      background: var(--bg-card-active);
+      color: var(--gold-bright);
+      box-shadow: inset 0 0 0 1px rgba(214, 190, 155, 0.45);
+    }
+
+    /* Toggle Switch Row */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    .toggle-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .toggle-title {
+      font-size: 12.5px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .toggle-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .switch {
+      position: relative;
+      width: 38px;
+      height: 22px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.14);
+      transition: background var(--transition-fast);
+      flex-shrink: 0;
+    }
+
+    .switch::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform var(--transition-fast);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    }
+
+    .toggle-row.active .switch {
+      background: var(--gold-soft);
+    }
+
+    .toggle-row.active .switch::after {
+      transform: translateX(16px);
+    }
+
+    /* Interior Selector */
+    .interior-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .interior-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-align: left;
+    }
+
+    .interior-card:last-child:nth-child(odd) {
+      grid-column: span 2;
+    }
+
+    .interior-card:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .interior-card.active {
+      background: var(--bg-card-active);
+      border-color: var(--border-gold);
+      color: var(--gold-bright);
+    }
+
+    .interior-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    /* Calculator Integration Bridge Footer */
+    .calc-bridge-footer {
+      flex-shrink: 0;
+      padding: 14px 22px 18px;
+      background: linear-gradient(180deg, rgba(20, 21, 24, 0.92), #101113);
+      border-top: 1px solid rgba(214, 190, 155, 0.22);
+    }
+
+    .specs-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .spec-pill {
+      padding: 7px 9px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .spec-k {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .spec-v {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+      margin-top: 2px;
+    }
+
+    #calculator-mount {
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      background: rgba(214, 190, 155, 0.06);
+      border: 1px dashed rgba(214, 190, 155, 0.34);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .bridge-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .bridge-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gold-bright);
+    }
+
+    .bridge-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .btn-gold {
+      flex-shrink: 0;
+      border: none;
+      padding: 9px 14px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, #e0c8a4 0%, #b89460 100%);
+      color: #14120e;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: transform var(--transition-fast), filter var(--transition-fast);
+    }
+
+    .btn-gold:hover {
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+    }
+
+    .btn-gold:active {
+      transform: translateY(0);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translate(-50%, -24px);
+      z-index: 90;
+      padding: 10px 18px;
+      border-radius: var(--radius-pill);
+      background: rgba(20, 21, 24, 0.92);
+      border: 1px solid var(--border-gold);
+      color: var(--gold-bright);
+      font-size: 12.5px;
+      font-weight: 500;
+      backdrop-filter: blur(12px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 260ms ease;
+      box-shadow: var(--shadow-glass);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .disabled-block {
+      opacity: 0.42;
+      pointer-events: none;
+      transition: opacity var(--transition-fast);
+    }
+
+    /* ================= MOBILE / TABLET RESPONSIVE ================= */
+    @media (max-width: 980px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+        grid-template-rows: 52dvh 48dvh;
+      }
+
+      .app-shell.cinema-mode {
+        grid-template-columns: 1fr;
+        grid-template-rows: 100dvh 0dvh;
+      }
+
+      .stage-top-bar {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+      }
+
+      .brand-lockup {
+        padding: 7px 12px;
+        gap: 8px;
+      }
+
+      .brand-title {
+        font-size: 14px;
+        letter-spacing: 0.12em;
+      }
+
+      .brand-sub {
+        display: none;
+      }
+
+      .hud-pill {
+        height: 32px;
+        padding: 0 10px;
+        font-size: 11px;
+      }
+
+      .hud-pill span.hide-sm {
+        display: none;
+      }
+
+      .stage-bottom-bar {
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+      }
+
+      .stage-hint {
+        display: none;
+      }
+
+      .cam-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+
+      .config-panel {
+        border-left: none;
+        border-top: 1px solid rgba(214, 190, 155, 0.22);
+        border-radius: 18px 18px 0 0;
+        margin-top: -12px;
+        box-shadow: 0 -10px 34px rgba(0, 0, 0, 0.5);
+      }
+
+      .panel-header {
+        padding: 12px 16px 10px;
+      }
+
+      .panel-heading {
+        font-size: 18px;
+      }
+
+      .panel-subheading {
+        display: none;
+      }
+
+      .mobile-tabs {
+        display: flex;
+        gap: 6px;
+        padding: 8px 14px;
+        overflow-x: auto;
+        border-bottom: 1px solid var(--border-subtle);
+        flex-shrink: 0;
+        scrollbar-width: none;
+      }
+
+      .mobile-tabs::-webkit-scrollbar {
+        display: none;
+      }
+
+      .m-tab {
+        flex-shrink: 0;
+        border: 1px solid var(--border-subtle);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        font-family: var(--font-sans);
+        font-size: 11.5px;
+        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: var(--radius-pill);
+        cursor: pointer;
+      }
+
+      .m-tab.active {
+        background: var(--bg-card-active);
+        border-color: var(--border-gold);
+        color: var(--gold-bright);
+      }
+
+      .panel-scroll {
+        padding: 14px 16px 18px;
+      }
+
+      .calc-bridge-footer {
+        padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+      }
+
+      .specs-strip {
+        margin-bottom: 8px;
+      }
+    }
+    /* Embedded preview keeps Gemini's full stage and opens its original panel on demand. */
+    body.embedded-preview .app-shell { grid-template-columns: 1fr; }
+    body.embedded-preview .config-panel { display: none; }
+    body.embedded-preview .stage-wrap { width: 100%; }
+    body.embedded-preview .stage-loader { pointer-events: none; }
+  </style>
+</head>
+<body>
+  <script>if(new URLSearchParams(location.search).has("embed"))document.body.classList.add("embedded-preview");</script>
+  <div class="app-shell" id="app-shell">
+    <!-- ================= 3D VIEWPORT ================= -->
+    <main class="stage-wrap" id="stage-wrap">
+      <canvas id="webgl-canvas"></canvas>
+
+      <!-- Architectural Projection Dimension Lines -->
+      <svg id="dimension-overlay" width="100%" height="100%" aria-hidden="true">
+        <defs>
+          <marker id="dim-tick" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <line x1="5" y1="0" x2="5" y2="10" stroke="#d6be9b" stroke-width="1.5" />
+          </marker>
+        </defs>
+        <g id="dim-lines-group" stroke="rgba(214,190,155,0.62)" stroke-width="1" fill="none">
+          <line id="dim-w-line" marker-start="url(#dim-tick)" marker-end="url(#dim-tick)" />
+          <line id="dim-w-ext1" stroke-dasharray="3 3" stroke="rgba(214,190,155,0.3)" />
+          <line id="dim-w-ext2" stroke-dasharray="3 3" stroke="rgba(214,190,155,0.3)" />
+
+          <line id="dim-h-line" marker-start="url(#dim-tick)" marker-end="url(#dim-tick)" />
+          <line id="dim-h-ext1" stroke-dasharray="3 3" stroke="rgba(214,190,155,0.3)" />
+          <line id="dim-h-ext2" stroke-dasharray="3 3" stroke="rgba(214,190,155,0.3)" />
+        </g>
+      </svg>
+      <div class="dim-badge" id="dim-w-label">900 мм</div>
+      <div class="dim-badge" id="dim-h-label">1100 мм</div>
+
+      <!-- Top Floating Bar -->
+      <header class="stage-top-bar">
+        <div class="brand-lockup">
+          <div class="brand-mark">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M5 3h14v18H5z" />
+              <path d="M9 7l6 10" />
+            </svg>
+          </div>
+          <div>
+            <div class="brand-title">VERRE ATELIER</div>
+            <div class="brand-sub">Bespoke Architectural Mirrors · 3D Studio</div>
+          </div>
+        </div>
+
+        <div class="hud-actions">
+          <button class="hud-pill" id="btn-mood" title="Переключить освещение День / Вечер">
+            <svg id="mood-icon" viewBox="0 0 24 24">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+            <span id="mood-label">Вечер</span>
+          </button>
+          <button class="hud-pill active" id="btn-dims" title="Показать / скрыть размеры">
+            <svg viewBox="0 0 24 24">
+              <path d="M21 6H3M21 6l-3-3M21 6l-3 3M3 6l3-3M3 6l3 3M6 12v9M6 21l-3-3M6 21l3-3" />
+            </svg>
+            <span class="hide-sm">Размеры</span>
+          </button>
+          <button class="hud-pill" id="btn-cinema" title="Развернуть 3D на весь экран">
+            <svg viewBox="0 0 24 24">
+              <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+            </svg>
+            <span class="hide-sm" id="cinema-label">Обзор</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Bottom Camera Presets & Sensor Hint -->
+      <div class="stage-bottom-bar">
+        <div class="camera-dock" role="group" aria-label="Ракурсы камеры">
+          <button class="cam-btn active" data-cam="front">Фронт</button>
+          <button class="cam-btn" data-cam="threeQuarter">Ракурс 3/4</button>
+          <button class="cam-btn" data-cam="edge">Кромка 5 мм</button>
+          <button class="cam-btn" data-cam="room">Интерьер</button>
+        </div>
+
+        <div class="stage-hint">
+          <span class="sensor-dot"></span>
+          <span>Вращайте сцену · Нажмите на сенсор на стекле для LED</span>
+        </div>
+      </div>
+
+      <!-- Loading Overlay -->
+      <div class="stage-loader" id="stage-loader">
+        <div class="loader-ring"></div>
+        <div class="loader-text">VERRE ATELIER</div>
+        <div class="loader-sub">Инициализация оптического рендера WebGL</div>
+      </div>
+    </main>
+
+    <!-- ================= CONFIGURATOR PANEL ================= -->
+    <aside class="config-panel" id="config-panel">
+      <div class="panel-header">
+        <div>
+          <h1 class="panel-heading">Конфигуратор</h1>
+          <p class="panel-subheading">Стекло 5 мм · Еврокромка · PBR-отражения</p>
+        </div>
+        <button class="reset-link" id="btn-reset">Сбросить</button>
+      </div>
+
+      <!-- Mobile Anchor Tabs -->
+      <nav class="mobile-tabs" aria-label="Разделы настроек">
+        <button class="m-tab active" data-target="sec-shape">Форма</button>
+        <button class="m-tab" data-target="sec-size">Размеры</button>
+        <button class="m-tab" data-target="sec-glass">Полотно и рама</button>
+        <button class="m-tab" data-target="sec-led">Подсветка</button>
+        <button class="m-tab" data-target="sec-sandblast">Пескоструй</button>
+        <button class="m-tab" data-target="sec-interior">Интерьер</button>
+      </nav>
+
+      <div class="panel-scroll" id="panel-scroll">
+        <!-- 1. SHAPE -->
+        <section class="section-block" id="sec-shape">
+          <div class="section-label-row">
+            <span class="section-title">01 · Форма зеркала</span>
+            <span class="section-value" id="lbl-shape">Арка</span>
+          </div>
+          <div class="shape-grid" id="shape-grid">
+            <button class="shape-card" data-shape="rect">
+              <svg viewBox="0 0 36 36"><rect x="6" y="4" width="24" height="28" rx="0.5"/></svg>
+              <span>Прямоугольник</span>
+            </button>
+            <button class="shape-card" data-shape="rounded">
+              <svg viewBox="0 0 36 36"><rect x="6" y="4" width="24" height="28" rx="6"/></svg>
+              <span>Закруглённый</span>
+            </button>
+            <button class="shape-card" data-shape="circle">
+              <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="13"/></svg>
+              <span>Круг</span>
+            </button>
+            <button class="shape-card" data-shape="capsule">
+              <svg viewBox="0 0 36 36"><rect x="8" y="4" width="20" height="28" rx="10"/></svg>
+              <span>Овал</span>
+            </button>
+            <button class="shape-card active" data-shape="arch">
+              <svg viewBox="0 0 36 36"><path d="M7 32V16a11 11 0 0 1 22 0v16Z"/></svg>
+              <span>Арка</span>
+            </button>
+            <button class="shape-card" data-shape="wave">
+              <svg viewBox="0 0 36 36"><path d="M8 5 C14 3, 22 7, 28 5 C30 12, 26 18, 29 24 C30 28, 28 31, 28 31 C22 33, 14 29, 8 31 C6 25, 10 19, 7 12 C6 8, 8 5, 8 5Z"/></svg>
+              <span>Волна</span>
+            </button>
+            <button class="shape-card" data-shape="cloud">
+              <svg viewBox="0 0 36 36"><path d="M10 30 C5 29, 5 21, 8 16 C10 11, 10 5, 17 5 C24 5, 29 10, 29 17 C29 23, 31 28, 24 30 C19 32, 14 31, 10 30Z"/></svg>
+              <span>Облако</span>
+            </button>
+            <button class="shape-card" data-shape="sail">
+              <svg viewBox="0 0 36 36"><path d="M8 31 C7 18, 12 7, 26 5 C30 15, 29 25, 25 31 Z"/></svg>
+              <span>Парус</span>
+            </button>
+            <button class="shape-card" data-shape="split_semi">
+              <svg viewBox="0 0 36 36">
+                <path d="M16 5 A13 13 0 0 0 16 31 Z"/>
+                <path d="M20 5 A13 13 0 0 1 20 31 Z"/>
+              </svg>
+              <span>Полукруг ×2</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 2. DIMENSIONS -->
+        <section class="section-block" id="sec-size">
+          <div class="section-label-row">
+            <span class="section-title">02 · Размеры полотна</span>
+            <span class="section-value" id="lbl-size">850 × 1250 мм</span>
+          </div>
+          <div class="dim-controls">
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-name" id="width-name">Ширина</span>
+                <div class="num-input-wrap">
+                  <input type="number" class="num-input" id="input-width" min="400" max="3200" step="10" value="850" />
+                  <span class="num-unit">мм</span>
+                </div>
+              </div>
+              <input type="range" id="range-width" min="400" max="3200" step="10" value="850" />
+            </div>
+
+            <div class="slider-group" id="height-group">
+              <div class="slider-header">
+                <span class="slider-name">Высота</span>
+                <div class="num-input-wrap">
+                  <input type="number" class="num-input" id="input-height" min="400" max="3200" step="10" value="1250" />
+                  <span class="num-unit">мм</span>
+                </div>
+              </div>
+              <input type="range" id="range-height" min="400" max="3200" step="10" value="1250" />
+            </div>
+
+            <div class="preset-row">
+              <button class="preset-chip" data-w="600" data-h="900">600×900</button>
+              <button class="preset-chip" data-w="850" data-h="1250">850×1250</button>
+              <button class="preset-chip" data-w="1000" data-h="1000">1000×1000</button>
+              <button class="preset-chip" data-w="1400" data-h="900">1400×900</button>
+              <button class="preset-chip" data-w="900" data-h="1900">В полный рост</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. GLASS TINT & FRAME -->
+        <section class="section-block" id="sec-glass">
+          <div class="section-label-row">
+            <span class="section-title">03 · Зеркальное полотно</span>
+            <span class="section-value" id="lbl-tint">Серебро AGC</span>
+          </div>
+          <div class="option-grid-3" id="tint-grid">
+            <button class="swatch-card active" data-tint="silver">
+              <span class="swatch-dot silver"></span>
+              <span>Серебро</span>
+            </button>
+            <button class="swatch-card" data-tint="graphite">
+              <span class="swatch-dot graphite"></span>
+              <span>Графит</span>
+            </button>
+            <button class="swatch-card" data-tint="bronze">
+              <span class="swatch-dot bronze"></span>
+              <span>Бронза</span>
+            </button>
+          </div>
+
+          <div class="section-label-row" style="margin-top: 18px;">
+            <span class="section-title">Алюминиевая рама</span>
+            <span class="section-value" id="lbl-frame">Золото шампань</span>
+          </div>
+          <div class="option-grid-2" id="frame-grid">
+            <button class="swatch-card" data-frame="none">
+              <span class="swatch-dot none"></span>
+              <span>Без рамы</span>
+            </button>
+            <button class="swatch-card" data-frame="black">
+              <span class="swatch-dot black"></span>
+              <span>Чёрный муар</span>
+            </button>
+            <button class="swatch-card" data-frame="white">
+              <span class="swatch-dot white"></span>
+              <span>Белый шёлк</span>
+            </button>
+            <button class="swatch-card active" data-frame="gold">
+              <span class="swatch-dot gold"></span>
+              <span>Золото шампань</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 4. LED BACKLIGHT -->
+        <section class="section-block" id="sec-led">
+          <div class="section-label-row">
+            <span class="section-title">04 · LED-подсветка</span>
+            <span class="section-value" id="lbl-led">Двойная · 3000K</span>
+          </div>
+
+          <div class="segment-bar" id="led-mode-bar">
+            <button class="seg-btn" data-led="off">Выкл</button>
+            <button class="seg-btn" data-led="ambient">Контур</button>
+            <button class="seg-btn" data-led="front">Фронт</button>
+            <button class="seg-btn active" data-led="both">Двойная</button>
+          </div>
+
+          <div id="led-sub-controls" style="margin-top: 12px;">
+            <div class="option-grid-3" id="temp-grid">
+              <button class="swatch-card active" data-temp="warm">
+                <span class="swatch-dot warm"></span>
+                <span>3000K</span>
+              </button>
+              <button class="swatch-card" data-temp="neutral">
+                <span class="swatch-dot neutral"></span>
+                <span>4000K</span>
+              </button>
+              <button class="swatch-card" data-temp="cool">
+                <span class="swatch-dot cool"></span>
+                <span>6000K</span>
+              </button>
+            </div>
+
+            <div class="slider-group" style="margin-top: 14px;">
+              <div class="slider-header">
+                <span class="slider-name">Яркость диммера</span>
+                <span class="section-value" id="lbl-brightness">85%</span>
+              </div>
+              <input type="range" id="range-brightness" min="20" max="100" step="1" value="85" />
+            </div>
+
+            <div class="toggle-row active" id="toggle-sensor" role="switch" aria-checked="true" tabindex="0">
+              <div class="toggle-meta">
+                <span class="toggle-title">Сенсорный выключатель на стекле</span>
+                <span class="toggle-desc">Интерактивная кнопка — кликните в 3D</span>
+              </div>
+              <div class="switch"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. SANDBLASTING -->
+        <section class="section-block" id="sec-sandblast">
+          <div class="section-label-row">
+            <span class="section-title">05 · Пескоструйная полоса</span>
+            <span class="section-value" id="lbl-sandblast">Тонкий контур</span>
+          </div>
+          <div class="option-grid-2" id="sandblast-grid">
+            <button class="swatch-card" data-sandblast="none">
+              <span>Без рисунка</span>
+            </button>
+            <button class="swatch-card active" data-sandblast="perimeter">
+              <span>Тонкий контур</span>
+            </button>
+            <button class="swatch-card" data-sandblast="double">
+              <span>Двойная линия</span>
+            </button>
+            <button class="swatch-card" data-sandblast="sides">
+              <span>Боковые полосы</span>
+            </button>
+            <button class="swatch-card" data-sandblast="topBottom" style="grid-column: span 2;">
+              <span>Верхняя и нижняя линии</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 6. INTERIORS -->
+        <section class="section-block" id="sec-interior">
+          <div class="section-label-row">
+            <span class="section-title">06 · Интерьерная сцена</span>
+            <span class="section-value" id="lbl-interior">Ванная комната</span>
+          </div>
+          <div class="interior-grid" id="interior-grid">
+            <button class="interior-card active" data-interior="bathroom">
+              <span class="interior-swatch" style="background: linear-gradient(135deg, #d7cbb8, #8c7b67);"></span>
+              <span>Ванная комната</span>
+            </button>
+            <button class="interior-card" data-interior="hallway">
+              <span class="interior-swatch" style="background: linear-gradient(135deg, #696865, #3d2e22);"></span>
+              <span>Прихожая</span>
+            </button>
+            <button class="interior-card" data-interior="bedroom">
+              <span class="interior-swatch" style="background: linear-gradient(135deg, #c7bcb0, #8a7e72);"></span>
+              <span>Спальня</span>
+            </button>
+            <button class="interior-card" data-interior="closet">
+              <span class="interior-swatch" style="background: linear-gradient(135deg, #4b3d33, #231d19);"></span>
+              <span>Гардеробная</span>
+            </button>
+            <button class="interior-card" data-interior="living">
+              <span class="interior-swatch" style="background: linear-gradient(135deg, #dbd6ce, #9c958a);"></span>
+              <span>Гостиная</span>
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- CALCULATOR BRIDGE FOOTER (NO INVENTED PRICES) -->
+      <footer class="calc-bridge-footer">
+        <div class="specs-strip">
+          <div class="spec-pill">
+            <div class="spec-k">Площадь</div>
+            <div class="spec-v" id="spec-area">0.98 м²</div>
+          </div>
+          <div class="spec-pill">
+            <div class="spec-k">Периметр</div>
+            <div class="spec-v" id="spec-perimeter">3.83 м</div>
+          </div>
+          <div class="spec-pill">
+            <div class="spec-k">Толщина</div>
+            <div class="spec-v">5 мм + 20 мм</div>
+          </div>
+        </div>
+
+        <div id="calculator-mount" data-calculator-slot="true">
+          <div class="bridge-info">
+            <span class="bridge-title" id="bridge-status-title">Модуль калькулятора готов</span>
+            <span class="bridge-sub" id="bridge-status-sub">window.MirrorCalculatorBridge</span>
+          </div>
+          <button class="btn-gold" id="btn-copy-spec">Копировать JSON</button>
+        </div>
+      </footer>
+    </aside>
+  </div>
+
+  <div class="toast" id="toast">Параметры скопированы</div>
+
+  <!-- ================= APPLICATION MODULE ================= -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { Reflector } from 'three/addons/objects/Reflector.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+    import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+    import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+
+    RectAreaLightUniformsLib.init();
+
+    /* =========================================================================
+       1. CONFIGURATION STATE & CALCULATOR BRIDGE MODULE
+    ========================================================================= */
+    const SHAPE_LABELS = {
+      rect: 'Прямоугольник',
+      rounded: 'Закруглённый',
+      circle: 'Круг',
+      capsule: 'Овал с прямыми боками',
+      arch: 'Арка',
+      wave: 'Волна',
+      cloud: 'Облако',
+      sail: 'Парус',
+      split_semi: 'Полукруг из 2 частей'
+    };
+
+    const TINT_META = {
+      silver:   { label: 'Серебро AGC',   tint: new THREE.Color('#f7faf9'), edge: new THREE.Color('#c8dbd6'), refl: 0.94, f0: 0.05 },
+      graphite: { label: 'Графит тонир.', tint: new THREE.Color('#6f7782'), edge: new THREE.Color('#393f47'), refl: 0.56, f0: 0.08 },
+      bronze:   { label: 'Бронза тонир.', tint: new THREE.Color('#b08c6f'), edge: new THREE.Color('#6b4d37'), refl: 0.64, f0: 0.07 }
+    };
+
+    const FRAME_META = {
+      none:  { label: 'Без рамы',       color: null },
+      black: { label: 'Чёрный муар',    color: '#17181b', roughness: 0.42, metalness: 0.52 },
+      white: { label: 'Белый шёлк',     color: '#ebe8e1', roughness: 0.34, metalness: 0.14 },
+      gold:  { label: 'Золото шампань', color: '#cdb082', roughness: 0.24, metalness: 0.90 }
+    };
+
+    const LED_TEMPS = {
+      warm:    { label: '3000K', color: new THREE.Color('#ffd394'), hex: '#ffd394' },
+      neutral: { label: '4000K', color: new THREE.Color('#fff5e4'), hex: '#fff5e4' },
+      cool:    { label: '6000K', color: new THREE.Color('#d8ebff'), hex: '#d8ebff' }
+    };
+
+    const SANDBLAST_LABELS = {
+      none: 'Без рисунка',
+      perimeter: 'Тонкий контур',
+      double: 'Двойная линия',
+      sides: 'Боковые полосы',
+      topBottom: 'Верх + низ'
+    };
+
+    const INTERIOR_META = {
+      bathroom: {
+        label: 'Ванная комната',
+        hdri: 'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_09_1k.hdr',
+        dayBg: '#23201c', nightBg: '#121110',
+        wallPrimary: '#cfc4b4', wallSecondary: '#b6a792', accent: '#c9ad7f'
+      },
+      hallway: {
+        label: 'Прихожая',
+        hdri: 'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/empty_warehouse_01_1k.hdr',
+        dayBg: '#1f1e1c', nightBg: '#101011',
+        wallPrimary: '#6d6b66', wallSecondary: '#473628', accent: '#202124'
+      },
+      bedroom: {
+        label: 'Спальня',
+        hdri: 'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/hotel_room_1k.hdr',
+        dayBg: '#24211e', nightBg: '#131110',
+        wallPrimary: '#c6bcb0', wallSecondary: '#a39585', accent: '#b7976b'
+      },
+      closet: {
+        label: 'Гардеробная',
+        hdri: 'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/lebombo_1k.hdr',
+        dayBg: '#1b1714', nightBg: '#0e0c0b',
+        wallPrimary: '#3e332b', wallSecondary: '#27201b', accent: '#d2b484'
+      },
+      living: {
+        label: 'Гостиная',
+        hdri: 'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/modern_buildings_2_1k.hdr',
+        dayBg: '#262420', nightBg: '#121214',
+        wallPrimary: '#d5d0c7', wallSecondary: '#beb7ac', accent: '#c4a678'
+      }
+    };
+
+    const DEFAULT_STATE = {
+      shape: 'arch',
+      widthMm: 850,
+      heightMm: 1250,
+      tint: 'silver',
+      frame: 'gold',
+      ledMode: 'both',      // off | ambient | front | both
+      ledTemp: 'warm',      // warm | neutral | cool
+      ledBrightness: 0.85,
+      ledPowerOn: true,
+      sensor: true,
+      sandblast: 'perimeter', // none | perimeter | double | sides | topBottom
+      interior: 'bathroom',
+      mood: 'evening',      // day | evening
+      showDims: true,
+      cameraPreset: 'front'
+    };
+
+    const state = { ...DEFAULT_STATE };
+
+    // Animated targets for silky smooth transitions
+    const anim = {
+      curW: state.widthMm / 1000,
+      curH: state.heightMm / 1000,
+      ledPower: 1.0,
+      ledColor: LED_TEMPS[state.ledTemp].color.clone(),
+      moodDay: 0.0,
+      camPosTarget: null,
+      camLookTarget: null,
+      camLerping: false,
+      sensorPulse: 0
+    };
+
+    /* ----------------- External Calculator Bridge Module ----------------- */
+    class MirrorCalculatorBridge {
+      constructor() {
+        this.version = '2.1.0';
+        this._subscribers = new Set();
+        this._calculatorFn = null;
+        this._lastPayload = null;
+      }
+
+      getState() {
+        return this._lastPayload ? structuredClone(this._lastPayload) : null;
+      }
+
+      subscribe(callback) {
+        if (typeof callback === 'function') {
+          this._subscribers.add(callback);
+          if (this._lastPayload) callback(this.getState());
+        }
+        return () => this._subscribers.delete(callback);
+      }
+
+      registerCalculator(calculatorFn) {
+        this._calculatorFn = typeof calculatorFn === 'function' ? calculatorFn : null;
+        if (this._lastPayload) this._runCalculator(this._lastPayload);
+      }
+
+      renderResult(content) {
+        const titleEl = document.getElementById('bridge-status-title');
+        const subEl = document.getElementById('bridge-status-sub');
+        if (!titleEl || !subEl) return;
+        if (typeof content === 'string') {
+          titleEl.textContent = content;
+        } else if (content && typeof content === 'object') {
+          if (content.title) titleEl.textContent = content.title;
+          if (content.subtitle) subEl.textContent = content.subtitle;
+        }
+      }
+
+      _emit(metrics) {
+        const payload = {
+          version: this.version,
+          timestamp: Date.now(),
+          config: {
+            shape: state.shape,
+            shapeLabel: SHAPE_LABELS[state.shape],
+            widthMm: state.widthMm,
+            heightMm: state.heightMm,
+            glassThicknessMm: 5,
+            tint: state.tint,
+            frame: state.frame,
+            ledMode: state.ledMode,
+            ledTemp: state.ledTemp,
+            ledBrightnessPct: Math.round(state.ledBrightness * 100),
+            ledPowerOn: state.ledPowerOn,
+            sensor: state.sensor,
+            sandblast: state.sandblast,
+            interior: state.interior
+          },
+          geometry: {
+            areaM2: Number(metrics.areaM2.toFixed(3)),
+            perimeterM: Number(metrics.perimeterM.toFixed(3)),
+            partsCount: state.shape === 'split_semi' ? 2 : 1
+          }
+        };
+        this._lastPayload = payload;
+        this._subscribers.forEach(fn => {
+          try { fn(structuredClone(payload)); } catch (e) { console.error(e); }
+        });
+        window.dispatchEvent(new CustomEvent('mirror:config-change', { detail: structuredClone(payload) }));
+        this._runCalculator(payload);
+        if (window.parent !== window && !receivingHost) window.parent.postMessage({type:'zp3d:changed',config:payload.config}, location.origin);
+      }
+
+      _runCalculator(payload) {
+        if (!this._calculatorFn) return;
+        try {
+          const res = this._calculatorFn(structuredClone(payload));
+          if (res) this.renderResult(res);
+        } catch (err) {
+          console.error('[MirrorCalculatorBridge] Calculator error:', err);
+        }
+      }
+    }
+
+    let receivingHost = false;
+    const calculatorBridge = new MirrorCalculatorBridge();
+    window.MirrorCalculatorBridge = calculatorBridge;
+
+    /* =========================================================================
+       2. PROCEDURAL PBR TEXTURE ENGINE (DIFFUSE + SOBEL NORMAL + ROUGHNESS)
+    ========================================================================= */
+    function seededNoise(seed) {
+      let s = seed >>> 0;
+      return () => {
+        s = (s * 1664525 + 1013904223) >>> 0;
+        return s / 4294967296;
+      };
+    }
+
+    function generateNormalFromHeight(heightCanvas, strength = 2.0) {
+      const w = heightCanvas.width;
+      const h = heightCanvas.height;
+      const src = heightCanvas.getContext('2d').getImageData(0, 0, w, h).data;
+      const outCanvas = document.createElement('canvas');
+      outCanvas.width = w;
+      outCanvas.height = h;
+      const outCtx = outCanvas.getContext('2d');
+      const outImg = outCtx.createImageData(w, h);
+      const dst = outImg.data;
+
+      const sample = (x, y) => {
+        const cx = ((x % w) + w) % w;
+        const cy = ((y % h) + h) % h;
+        return src[(cy * w + cx) * 4] / 255.0;
+      };
+
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const tl = sample(x - 1, y - 1), t = sample(x, y - 1), tr = sample(x + 1, y - 1);
+          const l  = sample(x - 1, y),                           r  = sample(x + 1, y);
+          const bl = sample(x - 1, y + 1), b = sample(x, y + 1), br = sample(x + 1, y + 1);
+
+          const dx = (tr + 2 * r + br - tl - 2 * l - bl) * strength;
+          const dy = (bl + 2 * b + br - tl - 2 * t - tr) * strength;
+          const dz = 1.0;
+          const invLen = 1.0 / Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+          const idx = (y * w + x) * 4;
+          dst[idx]     = Math.round((-dx * invLen * 0.5 + 0.5) * 255);
+          dst[idx + 1] = Math.round((-dy * invLen * 0.5 + 0.5) * 255);
+          dst[idx + 2] = Math.round(( dz * invLen * 0.5 + 0.5) * 255);
+          dst[idx + 3] = 255;
+        }
+      }
+      outCtx.putImageData(outImg, 0, 0);
+      const tex = new THREE.CanvasTexture(outCanvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    function createPBRWallTextures(type) {
+      const size = 512;
+      const diffC = document.createElement('canvas');
+      const hgtC = document.createElement('canvas');
+      diffC.width = hgtC.width = size;
+      diffC.height = hgtC.height = size;
+      const dCtx = diffC.getContext('2d');
+      const hCtx = hgtC.getContext('2d');
+      const rand = seededNoise(type.charCodeAt(0) * 997 + type.length * 31);
+
+      if (type === 'travertine') {
+        dCtx.fillStyle = '#d3c8b8';
+        dCtx.fillRect(0, 0, size, size);
+        hCtx.fillStyle = '#808080';
+        hCtx.fillRect(0, 0, size, size);
+
+        // Horizontal mineral sedimentary veins
+        for (let i = 0; i < 160; i++) {
+          const y = rand() * size;
+          const th = 1 + rand() * 8;
+          const shade = rand() > 0.5 ? 'rgba(244,238,228,0.22)' : 'rgba(145,129,110,0.18)';
+          dCtx.fillStyle = shade;
+          dCtx.fillRect(0, y, size, th);
+          hCtx.fillStyle = rand() > 0.5 ? 'rgba(170,170,170,0.24)' : 'rgba(90,90,90,0.28)';
+          hCtx.fillRect(0, y, size, th);
+        }
+        // Subtle architectural stone slab seams
+        dCtx.strokeStyle = 'rgba(110,98,84,0.22)';
+        dCtx.lineWidth = 2;
+        hCtx.strokeStyle = 'rgba(35,35,35,0.65)';
+        hCtx.lineWidth = 3;
+        [0, 256].forEach(y => {
+          dCtx.beginPath(); dCtx.moveTo(0, y); dCtx.lineTo(size, y); dCtx.stroke();
+          hCtx.beginPath(); hCtx.moveTo(0, y); hCtx.lineTo(size, y); hCtx.stroke();
+        });
+        // Fine pores
+        for (let i = 0; i < 650; i++) {
+          const x = rand() * size, y = rand() * size;
+          const w = 2 + rand() * 14, h = 1 + rand() * 2;
+          dCtx.fillStyle = 'rgba(122,108,92,0.16)';
+          dCtx.fillRect(x, y, w, h);
+          hCtx.fillStyle = 'rgba(40,40,40,0.35)';
+          hCtx.fillRect(x, y, w, h);
+        }
+      } else if (type === 'microcement') {
+        dCtx.fillStyle = '#6c6a65';
+        dCtx.fillRect(0, 0, size, size);
+        hCtx.fillStyle = '#808080';
+        hCtx.fillRect(0, 0, size, size);
+        for (let i = 0; i < 240; i++) {
+          const x = rand() * size, y = rand() * size, r = 20 + rand() * 75;
+          const g = dCtx.createRadialGradient(x, y, 2, x, y, r);
+          const v = Math.round(92 + rand() * 34);
+          g.addColorStop(0, `rgba(${v},${v - 2},${v - 5},0.16)`);
+          g.addColorStop(1, 'rgba(108,106,101,0)');
+          dCtx.fillStyle = g;
+          dCtx.fillRect(x - r, y - r, r * 2, r * 2);
+
+          const hv = Math.round(105 + rand() * 48);
+          const hg = hCtx.createRadialGradient(x, y, 2, x, y, r);
+          hg.addColorStop(0, `rgba(${hv},${hv},${hv},0.2)`);
+          hg.addColorStop(1, 'rgba(128,128,128,0)');
+          hCtx.fillStyle = hg;
+          hCtx.fillRect(x - r, y - r, r * 2, r * 2);
+        }
+      } else if (type === 'limewash') {
+        dCtx.fillStyle = '#c8bfb3';
+        dCtx.fillRect(0, 0, size, size);
+        hCtx.fillStyle = '#808080';
+        hCtx.fillRect(0, 0, size, size);
+        for (let i = 0; i < 320; i++) {
+          const x = rand() * size, y = rand() * size;
+          const rw = 26 + rand() * 90, rh = 12 + rand() * 45;
+          dCtx.save();
+          dCtx.translate(x, y);
+          dCtx.rotate((rand() - 0.5) * 0.9);
+          dCtx.fillStyle = rand() > 0.5 ? 'rgba(232,225,214,0.14)' : 'rgba(155,142,126,0.13)';
+          dCtx.fillRect(-rw / 2, -rh / 2, rw, rh);
+          dCtx.restore();
+
+          hCtx.save();
+          hCtx.translate(x, y);
+          hCtx.rotate((rand() - 0.5) * 0.9);
+          hCtx.fillStyle = rand() > 0.5 ? 'rgba(156,156,156,0.16)' : 'rgba(102,102,102,0.16)';
+          hCtx.fillRect(-rw / 2, -rh / 2, rw, rh);
+          hCtx.restore();
+        }
+      } else if (type === 'smokedOak') {
+        dCtx.fillStyle = '#3a2e25';
+        dCtx.fillRect(0, 0, size, size);
+        hCtx.fillStyle = '#808080';
+        hCtx.fillRect(0, 0, size, size);
+        for (let x = 0; x < size; x += 2) {
+          const wave = Math.sin(x * 0.08) * 10 + (rand() - 0.5) * 14;
+          const c = Math.max(24, Math.min(82, Math.round(54 + wave)));
+          dCtx.fillStyle = `rgb(${c + 10}, ${c}, ${Math.round(c * 0.82)})`;
+          dCtx.fillRect(x, 0, 2, size);
+          const hVal = Math.round(128 + wave * 1.6);
+          hCtx.fillStyle = `rgb(${hVal},${hVal},${hVal})`;
+          hCtx.fillRect(x, 0, 2, size);
+        }
+      } else { // gallery plaster
+        dCtx.fillStyle = '#d7d2ca';
+        dCtx.fillRect(0, 0, size, size);
+        hCtx.fillStyle = '#808080';
+        hCtx.fillRect(0, 0, size, size);
+        for (let i = 0; i < 420; i++) {
+          const x = rand() * size, y = rand() * size, r = 8 + rand() * 34;
+          dCtx.fillStyle = rand() > 0.5 ? 'rgba(245,242,237,0.10)' : 'rgba(175,168,158,0.09)';
+          dCtx.beginPath(); dCtx.arc(x, y, r, 0, Math.PI * 2); dCtx.fill();
+          hCtx.fillStyle = rand() > 0.5 ? 'rgba(145,145,145,0.14)' : 'rgba(112,112,112,0.14)';
+          hCtx.beginPath(); hCtx.arc(x, y, r, 0, Math.PI * 2); hCtx.fill();
+        }
+      }
+
+      const map = new THREE.CanvasTexture(diffC);
+      map.colorSpace = THREE.SRGBColorSpace;
+      map.wrapS = map.wrapT = THREE.RepeatWrapping;
+      map.anisotropy = 8;
+
+      const normalMap = generateNormalFromHeight(hgtC, type === 'travertine' ? 2.4 : 1.5);
+      normalMap.anisotropy = 8;
+
+      return { map, normalMap };
+    }
+
+    function createProceduralEnvPanorama(interiorKey, isDay) {
+      const w = 1024, h = 512;
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+
+      const palette = {
+        bathroom: isDay ? ['#f4ede2', '#d7cbb9', '#998977', '#564c42'] : ['#2e2720', '#211c17', '#161310', '#0c0a09'],
+        hallway:  isDay ? ['#e6e4df', '#b8b3aa', '#6e655c', '#3c3631'] : ['#25221f', '#1a1816', '#111010', '#09090a'],
+        bedroom:  isDay ? ['#f2e8dc', '#d5c7b8', '#998b7c', '#4c433c'] : ['#2c241d', '#1f1914', '#14100d', '#0b0908'],
+        closet:   isDay ? ['#dcd0c1', '#9d8873', '#564638', '#2a221b'] : ['#2a2018', '#1c1510', '#120e0b', '#090706'],
+        living:   isDay ? ['#f3f1ec', '#d8d3c9', '#9a9387', '#4b4741'] : ['#242428', '#19191c', '#111114', '#09090b']
+      }[interiorKey];
+
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0.0, palette[0]);
+      bg.addColorStop(0.45, palette[1]);
+      bg.addColorStop(0.55, palette[2]);
+      bg.addColorStop(1.0, palette[3]);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      // Architectural panoramic window softboxes (give crisp specular highlights in mirror & chrome!)
+      const winColor = isDay ? 'rgba(255, 250, 240, 0.92)' : 'rgba(255, 212, 152, 0.42)';
+      ctx.fillStyle = winColor;
+      ctx.fillRect(w * 0.14, h * 0.18, w * 0.14, h * 0.34);
+      ctx.fillRect(w * 0.30, h * 0.18, w * 0.14, h * 0.34);
+
+      // Warm ceiling architectural cove light
+      const cove = ctx.createLinearGradient(0, h * 0.06, 0, h * 0.16);
+      cove.addColorStop(0, isDay ? 'rgba(255,248,236,0.7)' : 'rgba(255,204,138,0.55)');
+      cove.addColorStop(1, 'rgba(255,204,138,0)');
+      ctx.fillStyle = cove;
+      ctx.fillRect(0, h * 0.06, w, h * 0.12);
+
+      // Pendant warm glow orbs on the opposite side of room
+      const orbs = [
+        { x: w * 0.72, y: h * 0.34, r: 44 },
+        { x: w * 0.79, y: h * 0.37, r: 30 }
+      ];
+      orbs.forEach(o => {
+        const g = ctx.createRadialGradient(o.x, o.y, 2, o.x, o.y, o.r);
+        g.addColorStop(0, isDay ? 'rgba(255,245,220,0.85)' : 'rgba(255,210,145,0.95)');
+        g.addColorStop(0.4, 'rgba(255,190,110,0.28)');
+        g.addColorStop(1, 'rgba(255,190,110,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.mapping = THREE.EquirectangularReflectionMapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    /* =========================================================================
+       3. PARAMETRIC MIRROR SHAPES (ALL 9 EXACT SILHOUETTES)
+    ========================================================================= */
+    function buildMirrorShapes(shapeType, w, h, inset = 0) {
+      const iw = Math.max(0.08, w - inset * 2);
+      const ih = Math.max(0.08, h - inset * 2);
+      const hw = iw / 2;
+      const hh = ih / 2;
+
+      const makeRoundedRect = (rw, rh, r) => {
+        const s = new THREE.Shape();
+        const x = -rw / 2, y = -rh / 2;
+        const rad = Math.min(r, rw * 0.49, rh * 0.49);
+        s.moveTo(x + rad, y);
+        s.lineTo(x + rw - rad, y);
+        s.quadraticCurveTo(x + rw, y, x + rw, y + rad);
+        s.lineTo(x + rw, y + rh - rad);
+        s.quadraticCurveTo(x + rw, y + rh, x + rw - rad, y + rh);
+        s.lineTo(x + rad, y + rh);
+        s.quadraticCurveTo(x, y + rh, x, y + rh - rad);
+        s.lineTo(x, y + rad);
+        s.quadraticCurveTo(x, y, x + rad, y);
+        return s;
+      };
+
+      const makeClosedSmoothPolygon = (pts) => {
+        const vecs = pts.map(([px, py]) => new THREE.Vector2(px * hw, py * hh));
+        const curve = new THREE.SplineCurve(vecs);
+        const sampled = curve.getPoints(120);
+        const s = new THREE.Shape();
+        s.moveTo(sampled[0].x, sampled[0].y);
+        for (let i = 1; i < sampled.length; i++) s.lineTo(sampled[i].x, sampled[i].y);
+        s.closePath();
+        return s;
+      };
+
+      switch (shapeType) {
+        case 'rect':
+          return [makeRoundedRect(iw, ih, 0.002)];
+
+        case 'rounded': {
+          const r = Math.min(iw, ih) * 0.16;
+          return [makeRoundedRect(iw, ih, r)];
+        }
+
+        case 'circle': {
+          const r = Math.min(hw, hh);
+          const s = new THREE.Shape();
+          s.absarc(0, 0, r, 0, Math.PI * 2, false);
+          return [s];
+        }
+
+        case 'capsule': {
+          const r = Math.min(hw, hh);
+          return [makeRoundedRect(iw, ih, r)];
+        }
+
+        case 'arch': {
+          const s = new THREE.Shape();
+          const r = Math.min(hw, ih * 0.52);
+          const archCenterY = hh - r;
+          s.moveTo(-hw, -hh);
+          s.lineTo(hw, -hh);
+          s.lineTo(hw, archCenterY);
+          s.absarc(0, archCenterY, r, 0, Math.PI, false);
+          s.lineTo(-hw, -hh);
+          return [s];
+        }
+
+        case 'wave': {
+          // Sculptural designer organic wave perimeter
+          const s = new THREE.Shape();
+          const steps = 128;
+          for (let i = 0; i <= steps; i++) {
+            const t = (i / steps) * Math.PI * 2;
+            // Superellipse base + gentle rhythmic organic wave
+            const cosT = Math.cos(t), sinT = Math.sin(t);
+            const sx = Math.sign(cosT) * Math.pow(Math.abs(cosT), 0.62);
+            const sy = Math.sign(sinT) * Math.pow(Math.abs(sinT), 0.62);
+            const waveX = 0.068 * Math.sin(sy * Math.PI * 2.2 + 0.5);
+            const waveY = 0.042 * Math.cos(sx * Math.PI * 2.0);
+            const px = (sx * 0.93 + waveX) * hw;
+            const py = (sy * 0.95 + waveY) * hh;
+            if (i === 0) s.moveTo(px, py);
+            else s.lineTo(px, py);
+          }
+          s.closePath();
+          return [s];
+        }
+
+        case 'cloud': {
+          // Asymmetrical luxury organic "pond / cloud" designer mirror
+          const pts = [
+            [-0.58, -0.92], [ 0.05, -0.98], [ 0.64, -0.82],
+            [ 0.96, -0.34], [ 0.92,  0.28], [ 0.68,  0.76],
+            [ 0.16,  0.98], [-0.40,  0.92], [-0.76,  0.56],
+            [-0.96,  0.04], [-0.90, -0.52], [-0.58, -0.92]
+          ];
+          return [makeClosedSmoothPolygon(pts)];
+        }
+
+        case 'sail': {
+          // Architectural asymmetric billowing sail
+          const s = new THREE.Shape();
+          s.moveTo(-hw * 0.84, -hh);
+          s.quadraticCurveTo(hw * 0.15, -hh * 0.96, hw * 0.78, -hh * 0.92);
+          s.bezierCurveTo(hw * 1.04, -hh * 0.25, hw * 0.98, hh * 0.48, hw * 0.42, hh);
+          s.bezierCurveTo(-hw * 0.28, hh * 0.78, -hw * 0.96, hh * 0.18, -hw * 0.84, -hh);
+          return [s];
+        }
+
+        case 'split_semi': {
+          // Diptych: two complementary half-circles separated by an architectural gap
+          const gap = 0.032 + inset * 0.45;
+          const r = Math.min(hh, Math.max(0.08, (w - gap) / 2 - inset));
+          const left = new THREE.Shape();
+          left.moveTo(-gap / 2, -r);
+          left.lineTo(-gap / 2, r);
+          left.absarc(-gap / 2, 0, r, Math.PI * 0.5, Math.PI * 1.5, false);
+          left.closePath();
+
+          const right = new THREE.Shape();
+          right.moveTo(gap / 2, r);
+          right.lineTo(gap / 2, -r);
+          right.absarc(gap / 2, 0, r, -Math.PI * 0.5, Math.PI * 0.5, false);
+          right.closePath();
+          return [left, right];
+        }
+
+        default:
+          return [makeRoundedRect(iw, ih, 0.002)];
+      }
+    }
+
+    function computeShapesMetrics(shapes) {
+      let area = 0;
+      let perimeter = 0;
+      shapes.forEach(sh => {
+        const pts = sh.getPoints(96);
+        area += Math.abs(THREE.ShapeUtils.area(pts));
+        for (let i = 0; i < pts.length; i++) {
+          const a = pts[i];
+          const b = pts[(i + 1) % pts.length];
+          perimeter += a.distanceTo(b);
+        }
+      });
+      return { areaM2: area, perimeterM: perimeter };
+    }
+
+    function normalizeShapeGeometryUVs(geometry, totalW, totalH) {
+      const pos = geometry.attributes.position;
+      const uvs = new Float32Array(pos.count * 2);
+      for (let i = 0; i < pos.count; i++) {
+        uvs[i * 2] = (pos.getX(i) + totalW / 2) / totalW;
+        uvs[i * 2 + 1] = (pos.getY(i) + totalH / 2) / totalH;
+      }
+      geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+      return geometry;
+    }
+
+    /* =========================================================================
+       4. SANDBLASTING MASK & CONTOUR WALL HALO GENERATORS
+    ========================================================================= */
+    function generateSandblastTexture(shapes, w, h, pattern) {
+      const res = 1024;
+      const c = document.createElement('canvas');
+      c.width = res;
+      c.height = res;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, res, res);
+
+      if (pattern === 'none') {
+        const t = new THREE.CanvasTexture(c);
+        return t;
+      }
+
+      const toPx = (x, y) => [
+        ((x + w / 2) / w) * res,
+        (1 - (y + h / 2) / h) * res
+      ];
+
+      const traceShape = (shape, scale = 1.0, beginNewPath = true) => {
+        const pts = shape.getPoints(120);
+        let cx = 0, cy = 0;
+        pts.forEach(p => { cx += p.x; cy += p.y; });
+        cx /= pts.length; cy /= pts.length;
+
+        if (beginNewPath) ctx.beginPath();
+        pts.forEach((p, idx) => {
+          const sx = cx + (p.x - cx) * scale;
+          const sy = cy + (p.y - cy) * scale;
+          const [px, py] = toPx(sx, sy);
+          if (idx === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
+        ctx.closePath();
+      };
+
+      const minDim = Math.min(w, h);
+      const insetRatio = Math.max(0.78, 1 - (0.075 / Math.max(0.35, minDim)));
+      const bandPx = Math.max(14, Math.min(34, (0.022 / Math.max(0.4, minDim)) * res));
+
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      if (pattern === 'perimeter') {
+        ctx.lineWidth = bandPx;
+        shapes.forEach(sh => {
+          traceShape(sh, insetRatio);
+          ctx.stroke();
+        });
+      } else if (pattern === 'double') {
+        ctx.lineWidth = bandPx * 0.55;
+        shapes.forEach(sh => {
+          traceShape(sh, insetRatio);
+          ctx.stroke();
+          traceShape(sh, insetRatio - 0.065);
+          ctx.stroke();
+        });
+      } else if (pattern === 'sides') {
+        // Clip inside shape inset, draw crisp left/right luminous frosted columns
+        ctx.save();
+        ctx.beginPath();
+        shapes.forEach(sh => {
+          traceShape(sh, 0.94, false);
+        });
+        ctx.clip();
+        ctx.fillStyle = '#ffffff';
+        const colW = res * 0.048;
+        const marginX = res * 0.085;
+        const marginY = res * 0.11;
+        ctx.fillRect(marginX, marginY, colW, res - marginY * 2);
+        ctx.fillRect(res - marginX - colW, marginY, colW, res - marginY * 2);
+        ctx.restore();
+      } else if (pattern === 'topBottom') {
+        ctx.save();
+        ctx.beginPath();
+        shapes.forEach(sh => {
+          traceShape(sh, 0.94, false);
+        });
+        ctx.clip();
+        ctx.fillStyle = '#ffffff';
+        const barH = res * 0.046;
+        const marginX = res * 0.10;
+        const marginY = res * 0.085;
+        ctx.fillRect(marginX, marginY, res - marginX * 2, barH);
+        ctx.fillRect(marginX, res - marginY - barH, res - marginX * 2, barH);
+        ctx.restore();
+      }
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.anisotropy = 4;
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function generateHaloAndShadowTextures(shapes, w, h) {
+      const pad = 0.56; // meters of glow bleed around mirror
+      const fullW = w + pad * 2;
+      const fullH = h + pad * 2;
+      const res = 512;
+
+      const haloC = document.createElement('canvas');
+      const shadC = document.createElement('canvas');
+      haloC.width = shadC.width = res;
+      haloC.height = shadC.height = res;
+      const hCtx = haloC.getContext('2d');
+      const sCtx = shadC.getContext('2d');
+
+      const drawSilhouettes = (ctx) => {
+        shapes.forEach(sh => {
+          const pts = sh.getPoints(96);
+          ctx.beginPath();
+          pts.forEach((p, idx) => {
+            const px = ((p.x + fullW / 2) / fullW) * res;
+            const py = (1 - (p.y + fullH / 2) / fullH) * res;
+            if (idx === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          });
+          ctx.closePath();
+          ctx.fill();
+        });
+      };
+
+      // Multi-pass realistic Gaussian LED aura on the wall
+      const passes = [
+        { blur: 48, alpha: 0.42 },
+        { blur: 24, alpha: 0.62 },
+        { blur: 10, alpha: 0.85 },
+        { blur: 4,  alpha: 0.95 }
+      ];
+      passes.forEach(p => {
+        hCtx.save();
+        hCtx.filter = `blur(${p.blur}px)`;
+        hCtx.fillStyle = `rgba(255,255,255,${p.alpha})`;
+        drawSilhouettes(hCtx);
+        hCtx.restore();
+      });
+
+      // Soft physical wall contact shadow
+      sCtx.save();
+      sCtx.filter = 'blur(18px)';
+      sCtx.fillStyle = 'rgba(0,0,0,0.58)';
+      sCtx.translate(6, 10);
+      drawSilhouettes(sCtx);
+      sCtx.restore();
+
+      const haloTex = new THREE.CanvasTexture(haloC);
+      const shadowTex = new THREE.CanvasTexture(shadC);
+      return { haloTex, shadowTex, fullW, fullH };
+    }
+
+    /* =========================================================================
+       5. CUSTOM OPTICAL MIRROR GLSL SHADER
+          (Real Planar Reflection + Schlick Fresnel + Frosted 9-Tap Sandblast + HDR Glow)
+    ========================================================================= */
+    function createOpticalMirrorShader() {
+      return {
+        name: 'OpticalMirrorShader',
+        uniforms: {
+          color: { value: null },
+          tDiffuse: { value: null },
+          textureMatrix: { value: null },
+          uTint: { value: new THREE.Color('#f7faf9') },
+          uReflectivity: { value: 0.94 },
+          uF0: { value: 0.05 },
+          uSandblastMap: { value: null },
+          uHasSandblast: { value: 1.0 },
+          uFrontLedColor: { value: new THREE.Color('#ffd394') },
+          uFrontLedIntensity: { value: 1.4 },
+          uEnvTint: { value: new THREE.Color('#22201d') }
+        },
+        vertexShader: /* glsl */`
+          uniform mat4 textureMatrix;
+          varying vec4 vProjUv;
+          varying vec2 vMeshUv;
+          varying vec3 vWorldPos;
+          varying vec3 vWorldNormal;
+
+          void main() {
+            vMeshUv = uv;
+            vProjUv = textureMatrix * vec4(position, 1.0);
+            vec4 worldPos = modelMatrix * vec4(position, 1.0);
+            vWorldPos = worldPos.xyz;
+            vWorldNormal = normalize(mat3(modelMatrix) * normal);
+            gl_Position = projectionMatrix * viewMatrix * worldPos;
+          }
+        `,
+        fragmentShader: /* glsl */`
+          uniform sampler2D tDiffuse;
+          uniform sampler2D uSandblastMap;
+          uniform vec3 uTint;
+          uniform float uReflectivity;
+          uniform float uF0;
+          uniform float uHasSandblast;
+          uniform vec3 uFrontLedColor;
+          uniform float uFrontLedIntensity;
+          uniform vec3 uEnvTint;
+
+          varying vec4 vProjUv;
+          varying vec2 vMeshUv;
+          varying vec3 vWorldPos;
+          varying vec3 vWorldNormal;
+
+          float hash12(vec2 p) {
+            vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+            p3 += dot(p3, p3.yzx + 33.33);
+            return fract((p3.x + p3.y) * p3.z);
+          }
+
+          void main() {
+            vec2 projUv = vProjUv.xy / max(vProjUv.w, 0.0001);
+            vec3 viewDir = normalize(cameraPosition - vWorldPos);
+            vec3 N = normalize(vWorldNormal);
+            float NdotV = clamp(dot(N, viewDir), 0.0, 1.0);
+
+            // Schlick Fresnel grazing glass sheen
+            float fresnel = uF0 + (1.0 - uF0) * pow(1.0 - NdotV, 4.5);
+
+            // Sharp optical mirror reflection
+            vec3 sharpRefl = texture2D(tDiffuse, projUv).rgb;
+
+            // Subtle luxury depth & glass substrate absorption
+            vec3 mirrorCol = sharpRefl * uTint * uReflectivity;
+            mirrorCol += sharpRefl * fresnel * 0.16;
+            mirrorCol += uEnvTint * (1.0 - uReflectivity) * 0.14;
+
+            // Subtle glass surface sheen gradient (subtle studio skylight reflection)
+            float sheen = smoothstep(0.15, 0.95, vMeshUv.y * 0.72 + (1.0 - vMeshUv.x) * 0.28);
+            mirrorCol += vec3(0.022, 0.024, 0.026) * sheen * (0.4 + fresnel);
+
+            // Sandblasted frosted glass zone (9-tap blur + micro-crystalline grain + HDR LED emission)
+            float frost = uHasSandblast > 0.5 ? texture2D(uSandblastMap, vMeshUv).r : 0.0;
+            if (frost > 0.01) {
+              vec2 stepPx = vec2(0.0055);
+              vec3 blurred = sharpRefl * 0.22;
+              blurred += texture2D(tDiffuse, projUv + vec2( stepPx.x,  0.0)).rgb * 0.11;
+              blurred += texture2D(tDiffuse, projUv + vec2(-stepPx.x,  0.0)).rgb * 0.11;
+              blurred += texture2D(tDiffuse, projUv + vec2( 0.0,  stepPx.y)).rgb * 0.11;
+              blurred += texture2D(tDiffuse, projUv + vec2( 0.0, -stepPx.y)).rgb * 0.11;
+              blurred += texture2D(tDiffuse, projUv + vec2( stepPx.x,  stepPx.y)).rgb * 0.085;
+              blurred += texture2D(tDiffuse, projUv + vec2(-stepPx.x,  stepPx.y)).rgb * 0.085;
+              blurred += texture2D(tDiffuse, projUv + vec2( stepPx.x, -stepPx.y)).rgb * 0.085;
+              blurred += texture2D(tDiffuse, projUv + vec2(-stepPx.x, -stepPx.y)).rgb * 0.085;
+
+              float grain = (hash12(vMeshUv * 640.0) - 0.5) * 0.06;
+              vec3 frostedGlass = mix(blurred * 0.45 + vec3(0.32, 0.34, 0.36), vec3(0.76, 0.78, 0.80), 0.42) + grain;
+
+              // HDR emission when front LED is active (picked up softly by selective Bloom)
+              vec3 ledGlow = uFrontLedColor * (uFrontLedIntensity * 1.48);
+              vec3 sandblastFinal = mix(frostedGlass, frostedGlass * 0.28 + ledGlow, clamp(uFrontLedIntensity, 0.0, 1.0));
+
+              mirrorCol = mix(mirrorCol, sandblastFinal, smoothstep(0.08, 0.88, frost));
+            }
+
+            gl_FragColor = vec4(mirrorCol, 1.0);
+          }
+        `
+      };
+    }
+
+    /* =========================================================================
+       6. THREE.JS SCENE, RENDERER, POST-PROCESSING & CAMERA SETUP
+    ========================================================================= */
+    const stageWrap = document.getElementById('stage-wrap');
+    const canvas = document.getElementById('webgl-canvas');
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      powerPreference: 'high-performance',
+      alpha: false
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(stageWrap.clientWidth, stageWrap.clientHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.04;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#121214');
+    scene.fog = new THREE.Fog('#121214', 6.5, 16);
+
+    const camera = new THREE.PerspectiveCamera(
+      40,
+      stageWrap.clientWidth / Math.max(1, stageWrap.clientHeight),
+      0.05,
+      40
+    );
+    camera.position.set(0.0, 1.48, 2.38);
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.065;
+    controls.target.set(0, 1.44, 0.03);
+    controls.minDistance = 0.55;
+    controls.maxDistance = 4.4;
+    controls.minPolarAngle = Math.PI * 0.18;
+    controls.maxPolarAngle = Math.PI * 0.66;
+    controls.minAzimuthAngle = -Math.PI * 0.44;
+    controls.maxAzimuthAngle = Math.PI * 0.44;
+    controls.panSpeed = 0.6;
+    controls.rotateSpeed = 0.72;
+    controls.addEventListener('start', () => { anim.camLerping = false; });
+
+    // Post-processing with selective UnrealBloomPass (threshold 0.92 so only LEDs glow)
+    const composer = new EffectComposer(renderer);
+    const renderPass = new RenderPass(scene, camera);
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(stageWrap.clientWidth, stageWrap.clientHeight),
+      0.34, // strength
+      0.58, // radius
+      0.92  // threshold
+    );
+    const outputPass = new OutputPass();
+    composer.addPass(renderPass);
+    composer.addPass(bloomPass);
+    composer.addPass(outputPass);
+
+    // PMREM Environment Generator + HDRI Cache
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    const rgbeLoader = new RGBELoader();
+    const hdriCache = new Map();
+
+    // 360° Background Sphere so the mirror Reflector always sees rich spatial light behind camera
+    const envSphereGeo = new THREE.SphereGeometry(12, 48, 24);
+    const envSphereMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide, color: 0xffffff });
+    const envSphere = new THREE.Mesh(envSphereGeo, envSphereMat);
+    envSphere.position.set(0, 1.5, 0);
+    scene.add(envSphere);
+
+    function applyEnvironment(interiorKey, isDay) {
+      const procTex = createProceduralEnvPanorama(interiorKey, isDay);
+      envSphereMat.map = procTex;
+      envSphereMat.color.setHex(isDay ? 0xffffff : 0x857d76);
+      envSphereMat.needsUpdate = true;
+
+      const envRT = pmrem.fromEquirectangular(procTex);
+      scene.environment = envRT.texture;
+      scene.environmentIntensity = isDay ? 0.85 : 0.42;
+
+      const meta = INTERIOR_META[interiorKey];
+      scene.background.set(isDay ? meta.dayBg : meta.nightBg);
+      scene.fog.color.set(isDay ? meta.dayBg : meta.nightBg);
+
+      // Asynchronously upgrade with CC0 Poly Haven HDRI if online
+      if (hdriCache.has(meta.hdri)) {
+        const cached = hdriCache.get(meta.hdri);
+        scene.environment = cached;
+      } else {
+        rgbeLoader.load(
+          meta.hdri,
+          (hdrTex) => {
+            hdrTex.mapping = THREE.EquirectangularReflectionMapping;
+            const rt = pmrem.fromEquirectangular(hdrTex);
+            hdrTex.dispose();
+            hdriCache.set(meta.hdri, rt.texture);
+            if (state.interior === interiorKey) {
+              scene.environment = rt.texture;
+            }
+          },
+          undefined,
+          () => { /* Stay cleanly on high-res procedural panorama */ }
+        );
+      }
+    }
+
+    /* =========================================================================
+       7. ARCHITECTURAL SCENE LIGHTING
+    ========================================================================= */
+    const hemiLight = new THREE.HemisphereLight('#fff8ee', '#36322d', 0.45);
+    scene.add(hemiLight);
+
+    const keyLight = new THREE.DirectionalLight('#fff5e6', 1.15);
+    keyLight.position.set(2.4, 3.4, 2.8);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(1024, 1024);
+    keyLight.shadow.camera.near = 0.5;
+    keyLight.shadow.camera.far = 10;
+    keyLight.shadow.bias = -0.0005;
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight('#cadcf0', 0.35);
+    fillLight.position.set(-2.6, 2.1, 2.2);
+    scene.add(fillLight);
+
+    // Opposite room warm architectural pendant glow (visible in mirror reflection!)
+    const backRoomLight = new THREE.PointLight('#ffcf91', 2.4, 8, 1.6);
+    backRoomLight.position.set(-0.9, 2.2, 3.1);
+    scene.add(backRoomLight);
+
+    /* =========================================================================
+       8. FIVE ARCHITECTURAL 3D INTERIORS (WITH OPPOSITE WALL FOR REFLECTION)
+    ========================================================================= */
+    const wallTextures = {
+      travertine: createPBRWallTextures('travertine'),
+      microcement: createPBRWallTextures('microcement'),
+      limewash: createPBRWallTextures('limewash'),
+      smokedOak: createPBRWallTextures('smokedOak'),
+      gallery: createPBRWallTextures('gallery')
+    };
+
+    const interiorGroup = new THREE.Group();
+    scene.add(interiorGroup);
+
+    const MIRROR_CENTER_Y = 1.46;
+
+    function disposeGroup(group) {
+      while (group.children.length > 0) {
+        const obj = group.children[0];
+        group.remove(obj);
+        obj.traverse((child) => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach(m => m.dispose());
+          }
+        });
+      }
+    }
+
+    function buildRoomShell(wallMat, floorColor, ceilingColor, oppositeAccent) {
+      const grp = new THREE.Group();
+
+      // Main feature wall behind mirror (z = 0)
+      const mainWall = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 3.6), wallMat);
+      mainWall.position.set(0, 1.8, 0);
+      mainWall.receiveShadow = true;
+      grp.add(mainWall);
+
+      // Left & Right side walls
+      const sideMat = wallMat.clone();
+      sideMat.color = wallMat.color.clone().multiplyScalar(0.9);
+      const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(6.0, 3.6), sideMat);
+      leftWall.position.set(-3.1, 1.8, 3.0);
+      leftWall.rotation.y = Math.PI / 2;
+      grp.add(leftWall);
+
+      const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(6.0, 3.6), sideMat);
+      rightWall.position.set(3.1, 1.8, 3.0);
+      rightWall.rotation.y = -Math.PI / 2;
+      grp.add(rightWall);
+
+      // Floor
+      const floorMat = new THREE.MeshStandardMaterial({
+        color: floorColor,
+        roughness: 0.42,
+        metalness: 0.05
+      });
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 6.2), floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.set(0, 0, 3.0);
+      floor.receiveShadow = true;
+      grp.add(floor);
+
+      // Ceiling with architectural light cove recess
+      const ceilMat = new THREE.MeshStandardMaterial({ color: ceilingColor, roughness: 0.85 });
+      const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 6.2), ceilMat);
+      ceiling.rotation.x = Math.PI / 2;
+      ceiling.position.set(0, 3.2, 3.0);
+      grp.add(ceiling);
+
+      // Opposite Wall (z = 5.2) — CRITICALLY IMPORTANT FOR REALISTIC MIRROR REFLECTIONS!
+      const oppMat = new THREE.MeshStandardMaterial({
+        color: oppositeAccent,
+        roughness: 0.72,
+        metalness: 0.04
+      });
+      const oppWall = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 3.6), oppMat);
+      oppWall.position.set(0, 1.8, 5.2);
+      oppWall.rotation.y = Math.PI;
+      grp.add(oppWall);
+
+      // Architectural window frame & glowing soft daylight/evening pane on opposite wall
+      const winFrameMat = new THREE.MeshStandardMaterial({ color: '#1b1c1f', roughness: 0.4, metalness: 0.6 });
+      const winFrame = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.35, 0.08), winFrameMat);
+      winFrame.position.set(1.15, 1.65, 5.14);
+      grp.add(winFrame);
+
+      const winGlowMat = new THREE.MeshBasicMaterial({ color: state.mood === 'day' ? '#f5efe6' : '#3a342e' });
+      const winPane = new THREE.Mesh(new THREE.PlaneGeometry(2.04, 2.2), winGlowMat);
+      winPane.position.set(1.15, 1.65, 5.09);
+      winPane.rotation.y = Math.PI;
+      grp.add(winPane);
+
+      // Vertical window mullions for realistic crisp geometry in reflection
+      for (let i = -0.35; i <= 0.36; i += 0.7) {
+        const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.035, 2.22, 0.05), winFrameMat);
+        mullion.position.set(1.15 + i, 1.65, 5.08);
+        grp.add(mullion);
+      }
+
+      // Sculptural warm pendant lamp hanging in the room (reflected in mirror!)
+      const cord = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.005, 0.005, 0.95, 8),
+        winFrameMat
+      );
+      cord.position.set(-1.05, 2.72, 3.45);
+      grp.add(cord);
+
+      const shade = new THREE.Mesh(
+        new THREE.SphereGeometry(0.14, 24, 18),
+        new THREE.MeshBasicMaterial({ color: '#ffe3b3' })
+      );
+      shade.position.set(-1.05, 2.22, 3.45);
+      grp.add(shade);
+
+      // Framed abstract canvas art on opposite wall for rich depth in reflection
+      const artFrame = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.35, 0.04), winFrameMat);
+      artFrame.position.set(-1.15, 1.55, 5.15);
+      grp.add(artFrame);
+      const artCanvas = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.95, 1.25),
+        new THREE.MeshStandardMaterial({ color: '#dfd6c8', roughness: 0.85 })
+      );
+      artCanvas.position.set(-1.15, 1.55, 5.12);
+      artCanvas.rotation.y = Math.PI;
+      grp.add(artCanvas);
+
+      return grp;
+    }
+
+    function buildInterior(key) {
+      disposeGroup(interiorGroup);
+
+      const brassMat = new THREE.MeshStandardMaterial({ color: '#c8ab7b', roughness: 0.24, metalness: 0.92 });
+      const darkMetalMat = new THREE.MeshStandardMaterial({ color: '#1b1c1f', roughness: 0.36, metalness: 0.72 });
+      const stoneDarkMat = new THREE.MeshStandardMaterial({ color: '#2b2927', roughness: 0.32, metalness: 0.12 });
+      const oakMat = new THREE.MeshStandardMaterial({
+        map: wallTextures.smokedOak.map,
+        normalMap: wallTextures.smokedOak.normalMap,
+        normalScale: new THREE.Vector2(0.5, 0.5),
+        roughness: 0.55
+      });
+
+      if (key === 'bathroom') {
+        const wTex = wallTextures.travertine;
+        wTex.map.repeat.set(2.4, 1.5);
+        wTex.normalMap.repeat.set(2.4, 1.5);
+        const wallMat = new THREE.MeshStandardMaterial({
+          map: wTex.map,
+          normalMap: wTex.normalMap,
+          normalScale: new THREE.Vector2(0.7, 0.7),
+          roughness: 0.68,
+          metalness: 0.04
+        });
+        interiorGroup.add(buildRoomShell(wallMat, '#4a433b', '#cfc6b8', '#a89c8d'));
+
+        // Fluted travertine architectural side panels framing the mirror zone
+        const fluteGeo = new THREE.CylinderGeometry(0.022, 0.022, 3.2, 12);
+        const fluteMat = new THREE.MeshStandardMaterial({ color: '#c8bcab', roughness: 0.62 });
+        for (let side of [-1, 1]) {
+          for (let i = 0; i < 16; i++) {
+            const cyl = new THREE.Mesh(fluteGeo, fluteMat);
+            cyl.position.set(side * (1.42 + i * 0.046), 1.6, 0.008);
+            cyl.receiveShadow = true;
+            interiorGroup.add(cyl);
+          }
+        }
+
+        // Floating monolithic travertine bathroom vanity
+        const vanity = new THREE.Mesh(
+          new THREE.BoxGeometry(1.75, 0.26, 0.50),
+          new THREE.MeshStandardMaterial({ map: wTex.map, normalMap: wTex.normalMap, roughness: 0.42 })
+        );
+        vanity.position.set(0, 0.66, 0.25);
+        vanity.castShadow = true;
+        vanity.receiveShadow = true;
+        interiorGroup.add(vanity);
+
+        // Minimalist vessel basin
+        const basin = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.24, 0.21, 0.11, 36),
+          new THREE.MeshStandardMaterial({ color: '#ece7df', roughness: 0.18, metalness: 0.05 })
+        );
+        basin.position.set(0, 0.84, 0.28);
+        interiorGroup.add(basin);
+
+        // Brushed champagne brass wall-mounted faucet
+        const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.19, 16), brassMat);
+        spout.rotation.x = Math.PI / 2;
+        spout.position.set(0, 0.96, 0.10);
+        interiorGroup.add(spout);
+
+        const plate = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.055, 0.012), brassMat);
+        plate.position.set(0, 0.96, 0.008);
+        interiorGroup.add(plate);
+
+        // Sculptural amber glass soap bottle & stoneware cup
+        const bottle = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.036, 0.038, 0.15, 24),
+          new THREE.MeshPhysicalMaterial({ color: '#4d321c', roughness: 0.12, transmission: 0.35, thickness: 0.05 })
+        );
+        bottle.position.set(0.46, 0.865, 0.28);
+        interiorGroup.add(bottle);
+
+        const diffuser = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.032, 0.042, 0.11, 24),
+          stoneDarkMat
+        );
+        diffuser.position.set(-0.48, 0.845, 0.26);
+        interiorGroup.add(diffuser);
+      }
+
+      else if (key === 'hallway') {
+        const wTex = wallTextures.microcement;
+        wTex.map.repeat.set(2.2, 1.4);
+        wTex.normalMap.repeat.set(2.2, 1.4);
+        const wallMat = new THREE.MeshStandardMaterial({
+          map: wTex.map,
+          normalMap: wTex.normalMap,
+          normalScale: new THREE.Vector2(0.85, 0.85),
+          roughness: 0.78
+        });
+        interiorGroup.add(buildRoomShell(wallMat, '#2d2b28', '#52504c', '#575550'));
+
+        // Smoked oak vertical acoustic slats on the right architectural column
+        const slatGeo = new THREE.BoxGeometry(0.034, 3.2, 0.032);
+        for (let i = 0; i < 20; i++) {
+          const slat = new THREE.Mesh(slatGeo, oakMat);
+          slat.position.set(1.22 + i * 0.054, 1.6, 0.016);
+          slat.castShadow = true;
+          slat.receiveShadow = true;
+          interiorGroup.add(slat);
+        }
+
+        // Cantilevered dark Nero Marquina marble console shelf
+        const shelf = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.075, 0.34), stoneDarkMat);
+        shelf.position.set(0, 0.72, 0.17);
+        shelf.castShadow = true;
+        interiorGroup.add(shelf);
+
+        // Minimalist architectural brass bowl
+        const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.035, 32), brassMat);
+        bowl.position.set(-0.34, 0.775, 0.18);
+        interiorGroup.add(bowl);
+
+        // Minimal vertical warm architectural wall sconce
+        const sconceBody = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.42, 16), darkMetalMat);
+        sconceBody.position.set(-1.26, 1.56, 0.04);
+        interiorGroup.add(sconceBody);
+      }
+
+      else if (key === 'bedroom') {
+        const wTex = wallTextures.limewash;
+        wTex.map.repeat.set(2.0, 1.3);
+        wTex.normalMap.repeat.set(2.0, 1.3);
+        const wallMat = new THREE.MeshStandardMaterial({
+          map: wTex.map,
+          normalMap: wTex.normalMap,
+          normalScale: new THREE.Vector2(0.65, 0.65),
+          roughness: 0.84
+        });
+        interiorGroup.add(buildRoomShell(wallMat, '#594c40', '#d4cbc0', '#b5a99c'));
+
+        // Subtle recessed vertical brass inlays in plaster wall
+        for (const x of [-1.25, 1.25]) {
+          const inlay = new THREE.Mesh(new THREE.BoxGeometry(0.012, 3.2, 0.008), brassMat);
+          inlay.position.set(x, 1.6, 0.004);
+          interiorGroup.add(inlay);
+        }
+
+        // Sculpted walnut dressing console
+        const consoleTop = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.09, 0.44), oakMat);
+        consoleTop.position.set(0, 0.72, 0.22);
+        consoleTop.castShadow = true;
+        interiorGroup.add(consoleTop);
+
+        // Two fluted walnut pillar legs
+        for (const x of [-0.58, 0.58]) {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.68, 24), oakMat);
+          leg.position.set(x, 0.34, 0.22);
+          interiorGroup.add(leg);
+        }
+
+        // Bouclé pouf tucked softly beneath console
+        const pouf = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.22, 0.22, 0.42, 32),
+          new THREE.MeshStandardMaterial({ color: '#ddd5c9', roughness: 0.94 })
+        );
+        pouf.position.set(0.05, 0.21, 0.36);
+        interiorGroup.add(pouf);
+
+        // Ceramic sculptural vase
+        const vase = new THREE.Mesh(
+          new THREE.LatheGeometry([
+            new THREE.Vector2(0.04, 0),
+            new THREE.Vector2(0.075, 0.08),
+            new THREE.Vector2(0.055, 0.19),
+            new THREE.Vector2(0.032, 0.24)
+          ], 28),
+          new THREE.MeshStandardMaterial({ color: '#e6dfd5', roughness: 0.62 })
+        );
+        vase.position.set(-0.48, 0.765, 0.24);
+        interiorGroup.add(vase);
+      }
+
+      else if (key === 'closet') {
+        const wTex = wallTextures.smokedOak;
+        wTex.map.repeat.set(3.2, 1.4);
+        wTex.normalMap.repeat.set(3.2, 1.4);
+        const wallMat = new THREE.MeshStandardMaterial({
+          map: wTex.map,
+          normalMap: wTex.normalMap,
+          normalScale: new THREE.Vector2(0.55, 0.55),
+          roughness: 0.64
+        });
+        interiorGroup.add(buildRoomShell(wallMat, '#28211b', '#382f27', '#3a2f27'));
+
+        // Milanese illuminated smoked-glass wardrobe vitrines flanking the mirror
+        const glassMat = new THREE.MeshPhysicalMaterial({
+          color: '#221c18',
+          roughness: 0.08,
+          metalness: 0.15,
+          transparent: true,
+          opacity: 0.55,
+          reflectivity: 0.9
+        });
+        const stripGlow = new THREE.MeshBasicMaterial({ color: '#ffd9a0' });
+
+        for (const side of [-1, 1]) {
+          const x = side * 1.55;
+          const cabinet = new THREE.Mesh(new THREE.BoxGeometry(0.92, 2.95, 0.48), stoneDarkMat);
+          cabinet.position.set(x, 1.48, 0.24);
+          interiorGroup.add(cabinet);
+
+          const door = new THREE.Mesh(new THREE.BoxGeometry(0.88, 2.86, 0.015), glassMat);
+          door.position.set(x, 1.48, 0.485);
+          interiorGroup.add(door);
+
+          // Internal warm vertical LED strip inside vitrine
+          const led = new THREE.Mesh(new THREE.BoxGeometry(0.012, 2.74, 0.012), stripGlow);
+          led.position.set(x - side * 0.41, 1.48, 0.44);
+          interiorGroup.add(led);
+
+          // Subtle brass shelf edges
+          for (let sy = 0.55; sy <= 2.45; sy += 0.48) {
+            const sh = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.016, 0.42), brassMat);
+            sh.position.set(x, sy, 0.24);
+            interiorGroup.add(sh);
+          }
+        }
+
+        // Low luxury bouclé dressing bench
+        const bench = new THREE.Mesh(
+          new THREE.BoxGeometry(1.1, 0.42, 0.42),
+          new THREE.MeshStandardMaterial({ color: '#d5cbbd', roughness: 0.92 })
+        );
+        bench.position.set(0, 0.21, 0.95);
+        interiorGroup.add(bench);
+      }
+
+      else { // living room
+        const wTex = wallTextures.gallery;
+        wTex.map.repeat.set(2.4, 1.4);
+        wTex.normalMap.repeat.set(2.4, 1.4);
+        const wallMat = new THREE.MeshStandardMaterial({
+          map: wTex.map,
+          normalMap: wTex.normalMap,
+          normalScale: new THREE.Vector2(0.45, 0.45),
+          roughness: 0.78
+        });
+        interiorGroup.add(buildRoomShell(wallMat, '#6e6050', '#dedad2', '#c8c2b8'));
+
+        // Refined gallery boiserie architectural wall frames
+        const moldMat = new THREE.MeshStandardMaterial({ color: '#dcd7cf', roughness: 0.65 });
+        for (const side of [-1, 1]) {
+          const cx = side * 1.72;
+          const topBar = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.032, 0.022), moldMat);
+          topBar.position.set(cx, 2.55, 0.011);
+          interiorGroup.add(topBar);
+          const botBar = topBar.clone();
+          botBar.position.y = 0.92;
+          interiorGroup.add(botBar);
+          for (const dx of [-0.56, 0.56]) {
+            const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.032, 1.66, 0.022), moldMat);
+            vBar.position.set(cx + dx, 1.735, 0.011);
+            interiorGroup.add(vBar);
+          }
+        }
+
+        // Monolithic low travertine credenza / fireplace plinth
+        const credenza = new THREE.Mesh(
+          new THREE.BoxGeometry(2.45, 0.46, 0.46),
+          new THREE.MeshStandardMaterial({
+            map: wallTextures.travertine.map,
+            normalMap: wallTextures.travertine.normalMap,
+            roughness: 0.48
+          })
+        );
+        credenza.position.set(0, 0.23, 0.23);
+        credenza.castShadow = true;
+        credenza.receiveShadow = true;
+        interiorGroup.add(credenza);
+
+        // Sculptural smoked glass object on credenza
+        const obj = new THREE.Mesh(
+          new THREE.SphereGeometry(0.11, 28, 24),
+          new THREE.MeshPhysicalMaterial({ color: '#2b2927', roughness: 0.12, metalness: 0.25, clearcoat: 1.0 })
+        );
+        obj.scale.set(1, 1.25, 1);
+        obj.position.set(0.74, 0.59, 0.26);
+        interiorGroup.add(obj);
+      }
+
+      applyEnvironment(key, state.mood === 'day');
+    }
+
+    /* =========================================================================
+       9. 8-LAYER PHYSICAL MIRROR ASSEMBLY (REBUILT CLEANLY ON PARAMETER CHANGE)
+    ========================================================================= */
+    const mirrorRoot = new THREE.Group();
+    mirrorRoot.position.set(0, MIRROR_CENTER_Y, 0);
+    scene.add(mirrorRoot);
+
+    // Physical lighting emitted by mirror onto the wall & room
+    const wallRectLight = new THREE.RectAreaLight('#ffd394', 5.0, 0.9, 1.2);
+    wallRectLight.position.set(0, 0, 0.06);
+    wallRectLight.rotation.y = Math.PI; // Facing -Z directly onto the wall!
+    mirrorRoot.add(wallRectLight);
+
+    const frontRectLight = new THREE.RectAreaLight('#ffd394', 1.2, 0.8, 1.0);
+    frontRectLight.position.set(0, 0, 0.05);
+    mirrorRoot.add(frontRectLight);
+
+    // 4 subtle perimeter point lights for grazing illumination on fluted walls
+    const rimLights = [];
+    for (let i = 0; i < 4; i++) {
+      const pl = new THREE.PointLight('#ffd394', 0.6, 2.2, 1.8);
+      mirrorRoot.add(pl);
+      rimLights.push(pl);
+    }
+
+    // Dynamic mirror parts references
+    let mirrorPartsGroup = new THREE.Group();
+    mirrorRoot.add(mirrorPartsGroup);
+
+    let activeReflectors = [];
+    let activeHaloMat = null;
+    let activeDiffuserMat = null;
+    let activeSensorRingMat = null;
+    let activeSensorHitMesh = null;
+    let activeSandblastTex = null;
+
+    function rebuildMirrorAssembly(w, h) {
+      // Dispose old resources cleanly to prevent GPU memory leaks
+      activeReflectors.forEach(r => {
+        if (r.getRenderTarget) r.getRenderTarget().dispose();
+      });
+      activeReflectors = [];
+      if (activeSandblastTex) {
+        activeSandblastTex.dispose();
+        activeSandblastTex = null;
+      }
+      disposeGroup(mirrorPartsGroup);
+
+      // Compute exact parametric shapes
+      const shapes = buildMirrorShapes(state.shape, w, h, 0);
+      const metrics = computeShapesMetrics(shapes);
+      calculatorBridge._emit(metrics);
+      updateSpecReadouts(metrics);
+
+      const tintCfg = TINT_META[state.tint];
+      const frameCfg = FRAME_META[state.frame];
+      const ledCfg = LED_TEMPS[state.ledTemp];
+
+      // 1 & 2. Wall Contact Shadow + Multi-pass Contour LED Halo on Wall
+      const { haloTex, shadowTex, fullW, fullH } = generateHaloAndShadowTextures(shapes, w, h);
+
+      const shadowMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(fullW, fullH),
+        new THREE.MeshBasicMaterial({
+          map: shadowTex,
+          transparent: true,
+          opacity: 0.72,
+          depthWrite: false
+        })
+      );
+      shadowMesh.position.z = 0.0015;
+      mirrorPartsGroup.add(shadowMesh);
+
+      activeHaloMat = new THREE.MeshBasicMaterial({
+        map: haloTex,
+        color: ledCfg.color.clone(),
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const haloMesh = new THREE.Mesh(new THREE.PlaneGeometry(fullW, fullH), activeHaloMat);
+      haloMesh.position.z = 0.003;
+      mirrorPartsGroup.add(haloMesh);
+
+      // 3. Recessed Aluminum Rear Housing + Milky Silicone LED Diffuser Strip (visible in Edge view!)
+      const boxShapes = buildMirrorShapes(state.shape, w, h, 0.022);
+      const boxMat = new THREE.MeshStandardMaterial({ color: '#1b1d20', roughness: 0.45, metalness: 0.65 });
+      activeDiffuserMat = new THREE.MeshBasicMaterial({ color: ledCfg.color.clone() });
+
+      boxShapes.forEach(sh => {
+        const boxGeo = new THREE.ExtrudeGeometry(sh, {
+          depth: 0.020,
+          bevelEnabled: false,
+          curveSegments: 48
+        });
+        const boxMesh = new THREE.Mesh(boxGeo, boxMat);
+        boxMesh.position.z = 0.004;
+        boxMesh.castShadow = true;
+        mirrorPartsGroup.add(boxMesh);
+
+        // Glowing LED diffuser ring around rear chassis edge
+        const pts = sh.getPoints(72);
+        const diffPts = pts.map(p => new THREE.Vector3(p.x, p.y, 0.014));
+        const closedCurve = new THREE.CatmullRomCurve3(diffPts, true);
+        const tubeGeo = new THREE.TubeGeometry(closedCurve, 96, 0.0042, 8, true);
+        const tubeMesh = new THREE.Mesh(tubeGeo, activeDiffuserMat);
+        mirrorPartsGroup.add(tubeMesh);
+      });
+
+      // 4. 5mm Architectural Glass Slab with Polished 45° Euro-Edge Bevel
+      const glassEdgeMat = new THREE.MeshPhysicalMaterial({
+        color: tintCfg.edge,
+        roughness: 0.05,
+        metalness: 0.18,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.04,
+        ior: 1.52,
+        reflectivity: 1.0
+      });
+
+      shapes.forEach(sh => {
+        const glassGeo = new THREE.ExtrudeGeometry(sh, {
+          depth: 0.0042,
+          bevelEnabled: true,
+          bevelThickness: 0.0011,
+          bevelSize: 0.0011,
+          bevelSegments: 3,
+          curveSegments: 64
+        });
+        const glassMesh = new THREE.Mesh(glassGeo, glassEdgeMat);
+        glassMesh.position.z = 0.024;
+        glassMesh.castShadow = true;
+        mirrorPartsGroup.add(glassMesh);
+      });
+
+      // 5. Optical Planar Reflector Surface with Custom GLSL Shader & Sandblast Map
+      activeSandblastTex = generateSandblastTexture(shapes, w, h, state.sandblast);
+      const isMobile = window.innerWidth < 768;
+      const rtSize = isMobile ? 512 : 1024;
+
+      shapes.forEach(sh => {
+        const faceGeo = new THREE.ShapeGeometry(sh, 64);
+        normalizeShapeGeometryUVs(faceGeo, w, h);
+
+        const customShader = createOpticalMirrorShader();
+        const reflector = new Reflector(faceGeo, {
+          clipBias: 0.0025,
+          textureWidth: rtSize,
+          textureHeight: rtSize,
+          color: 0xffffff,
+          shader: customShader
+        });
+        reflector.position.z = 0.0296;
+
+        // Bind custom uniforms
+        const u = reflector.material.uniforms;
+        u.uTint.value.copy(tintCfg.tint);
+        u.uReflectivity.value = tintCfg.refl;
+        u.uF0.value = tintCfg.f0;
+        u.uSandblastMap.value = activeSandblastTex;
+        u.uHasSandblast.value = state.sandblast === 'none' ? 0.0 : 1.0;
+        u.uFrontLedColor.value.copy(ledCfg.color);
+        u.uEnvTint.value.set(INTERIOR_META[state.interior].wallPrimary);
+
+        mirrorPartsGroup.add(reflector);
+        activeReflectors.push(reflector);
+      });
+
+      // 6. Optional Anodized Aluminum Precision Frame (7mm profile)
+      if (state.frame !== 'none' && frameCfg.color) {
+        const frameMat = new THREE.MeshStandardMaterial({
+          color: frameCfg.color,
+          roughness: frameCfg.roughness,
+          metalness: frameCfg.metalness
+        });
+
+        const outerShapes = buildMirrorShapes(state.shape, w, h, -0.0075);
+        const innerCutShapes = buildMirrorShapes(state.shape, w, h, 0.0012);
+
+        outerShapes.forEach((outerSh, idx) => {
+          const innerSh = innerCutShapes[idx];
+          if (innerSh) {
+            const holePath = new THREE.Path(innerSh.getPoints(72));
+            outerSh.holes.push(holePath);
+          }
+          const frameGeo = new THREE.ExtrudeGeometry(outerSh, {
+            depth: 0.023,
+            bevelEnabled: true,
+            bevelThickness: 0.0012,
+            bevelSize: 0.0009,
+            bevelSegments: 2,
+            curveSegments: 64
+          });
+          const frameMesh = new THREE.Mesh(frameGeo, frameMat);
+          frameMesh.position.z = 0.009;
+          frameMesh.castShadow = true;
+          mirrorPartsGroup.add(frameMesh);
+        });
+      }
+
+      // 7. Interactive Touch Sensor on Glass Surface
+      activeSensorHitMesh = null;
+      activeSensorRingMat = null;
+      if (state.sensor && state.ledMode !== 'off') {
+        const sensorX = state.shape === 'split_semi' ? (w * 0.22) : 0;
+        const sensorY = -h * 0.36;
+
+        activeSensorRingMat = new THREE.MeshBasicMaterial({
+          color: '#ffffff',
+          transparent: true,
+          opacity: 0.82
+        });
+        const ring = new THREE.Mesh(new THREE.RingGeometry(0.013, 0.0165, 32), activeSensorRingMat);
+        ring.position.set(sensorX, sensorY, 0.0306);
+        mirrorPartsGroup.add(ring);
+
+        const dot = new THREE.Mesh(new THREE.CircleGeometry(0.0032, 16), activeSensorRingMat);
+        dot.position.set(sensorX, sensorY, 0.0306);
+        mirrorPartsGroup.add(dot);
+
+        // Generous invisible raycast hit target for effortless mobile tap
+        activeSensorHitMesh = new THREE.Mesh(
+          new THREE.CircleGeometry(0.065, 16),
+          new THREE.MeshBasicMaterial({ visible: false })
+        );
+        activeSensorHitMesh.position.set(sensorX, sensorY, 0.032);
+        mirrorPartsGroup.add(activeSensorHitMesh);
+      }
+
+      // Update physical RectAreaLight & perimeter rim light positions
+      wallRectLight.width = w * 0.92;
+      wallRectLight.height = h * 0.92;
+      frontRectLight.width = w * 0.85;
+      frontRectLight.height = h * 0.85;
+
+      const rx = w * 0.46, ry = h * 0.46;
+      rimLights[0].position.set(-rx, 0, 0.055);
+      rimLights[1].position.set( rx, 0, 0.055);
+      rimLights[2].position.set(0,  ry, 0.055);
+      rimLights[3].position.set(0, -ry, 0.055);
+
+      // Keep bottom of very tall mirrors nicely above floor/vanity
+      const minClearanceY = state.interior === 'living' || state.interior === 'closet' ? 0.56 : 0.96;
+      const targetY = Math.max(MIRROR_CENTER_Y, minClearanceY + h / 2 + 0.06);
+      mirrorRoot.position.y = Math.min(targetY, 1.72);
+      controls.target.y = mirrorRoot.position.y;
+    }
+
+    /* =========================================================================
+       10. INTERACTIVE RAYCASTING FOR GLASS TOUCH SENSOR
+    ========================================================================= */
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let ptrDownX = 0, ptrDownY = 0;
+
+    canvas.addEventListener('pointerdown', (e) => {
+      ptrDownX = e.clientX;
+      ptrDownY = e.clientY;
+    });
+
+    canvas.addEventListener('pointerup', (e) => {
+      if (!activeSensorHitMesh) return;
+      const dist = Math.hypot(e.clientX - ptrDownX, e.clientY - ptrDownY);
+      if (dist > 8) return; // Ignore drag/orbit gestures
+
+      const rect = canvas.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+
+      const hits = raycaster.intersectObject(activeSensorHitMesh, false);
+      if (hits.length > 0) {
+        state.ledPowerOn = !state.ledPowerOn;
+        anim.sensorPulse = 1.0;
+        showToast(state.ledPowerOn ? 'Сенсор: подсветка включена' : 'Сенсор: подсветка выключена');
+        const shapes = buildMirrorShapes(state.shape, state.widthMm / 1000, state.heightMm / 1000, 0);
+        calculatorBridge._emit(computeShapesMetrics(shapes));
+      }
+    });
+
+    /* =========================================================================
+       11. CAMERA PRESETS & ARCHITECTURAL DIMENSION PROJECTION
+    ========================================================================= */
+    function moveToCameraPreset(preset) {
+      state.cameraPreset = preset;
+      const w = state.widthMm / 1000;
+      const h = state.heightMm / 1000;
+      const maxD = Math.max(w, h);
+      const cy = mirrorRoot.position.y;
+      const baseDist = Math.max(1.85, maxD * 1.78);
+
+      const presets = {
+        front:        { pos: new THREE.Vector3(0, cy, baseDist), look: new THREE.Vector3(0, cy, 0.03) },
+        threeQuarter: { pos: new THREE.Vector3(baseDist * 0.62, cy + 0.06, baseDist * 0.86), look: new THREE.Vector3(0, cy, 0.03) },
+        edge:         { pos: new THREE.Vector3(w * 0.5 + 0.56, cy + 0.04, 0.44), look: new THREE.Vector3(w * 0.42, cy, 0.02) },
+        room:         { pos: new THREE.Vector3(-0.75, 1.38, Math.min(3.85, baseDist * 1.48)), look: new THREE.Vector3(0, cy - 0.16, 0.1) }
+      };
+
+      const target = presets[preset] || presets.front;
+      anim.camPosTarget = target.pos;
+      anim.camLookTarget = target.look;
+      anim.camLerping = true;
+
+      document.querySelectorAll('.cam-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.cam === preset);
+      });
+    }
+
+    const dimOverlay = document.getElementById('dimension-overlay');
+    const dimWLine = document.getElementById('dim-w-line');
+    const dimWExt1 = document.getElementById('dim-w-ext1');
+    const dimWExt2 = document.getElementById('dim-w-ext2');
+    const dimHLine = document.getElementById('dim-h-line');
+    const dimHExt1 = document.getElementById('dim-h-ext1');
+    const dimHExt2 = document.getElementById('dim-h-ext2');
+    const dimWLabel = document.getElementById('dim-w-label');
+    const dimHLabel = document.getElementById('dim-h-label');
+
+    function projectToScreen(vec3) {
+      const v = vec3.clone().project(camera);
+      const cw = stageWrap.clientWidth;
+      const ch = stageWrap.clientHeight;
+      return {
+        x: (v.x * 0.5 + 0.5) * cw,
+        y: (-v.y * 0.5 + 0.5) * ch,
+        visible: v.z < 1.0
+      };
+    }
+
+    function updateDimensionOverlay() {
+      if (!state.showDims) {
+        dimOverlay.classList.add('hidden');
+        dimWLabel.style.opacity = '0';
+        dimHLabel.style.opacity = '0';
+        return;
+      }
+      dimOverlay.classList.remove('hidden');
+
+      const w = anim.curW;
+      const h = anim.curH;
+      const cy = mirrorRoot.position.y;
+      const z = 0.032;
+      const offset = 0.11;
+
+      // Top horizontal width dimension
+      const tl = projectToScreen(new THREE.Vector3(-w / 2, cy + h / 2, z));
+      const tr = projectToScreen(new THREE.Vector3( w / 2, cy + h / 2, z));
+      const wl = projectToScreen(new THREE.Vector3(-w / 2, cy + h / 2 + offset, z));
+      const wr = projectToScreen(new THREE.Vector3( w / 2, cy + h / 2 + offset, z));
+
+      // Left vertical height dimension
+      const bl = projectToScreen(new THREE.Vector3(-w / 2, cy - h / 2, z));
+      const hlTop = projectToScreen(new THREE.Vector3(-w / 2 - offset, cy + h / 2, z));
+      const hlBot = projectToScreen(new THREE.Vector3(-w / 2 - offset, cy - h / 2, z));
+
+      const setLine = (el, a, b) => {
+        el.setAttribute('x1', a.x.toFixed(1));
+        el.setAttribute('y1', a.y.toFixed(1));
+        el.setAttribute('x2', b.x.toFixed(1));
+        el.setAttribute('y2', b.y.toFixed(1));
+      };
+
+      setLine(dimWLine, wl, wr);
+      setLine(dimWExt1, tl, wl);
+      setLine(dimWExt2, tr, wr);
+      setLine(dimHLine, hlTop, hlBot);
+      setLine(dimHExt1, tl, hlTop);
+      setLine(dimHExt2, bl, hlBot);
+
+      dimWLabel.style.opacity = wl.visible && wr.visible ? '1' : '0';
+      dimWLabel.style.left = `${((wl.x + wr.x) / 2).toFixed(1)}px`;
+      dimWLabel.style.top = `${((wl.y + wr.y) / 2 - 14).toFixed(1)}px`;
+      dimWLabel.textContent = `${state.widthMm} мм`;
+
+      dimHLabel.style.opacity = hlTop.visible && hlBot.visible ? '1' : '0';
+      dimHLabel.style.left = `${((hlTop.x + hlBot.x) / 2 - 34).toFixed(1)}px`;
+      dimHLabel.style.top = `${((hlTop.y + hlBot.y) / 2).toFixed(1)}px`;
+      dimHLabel.textContent = `${state.heightMm} мм`;
+    }
+
+    /* =========================================================================
+       12. UI BINDINGS & SMOOTH STATE UPDATES
+    ========================================================================= */
+    const toastEl = document.getElementById('toast');
+    let toastTimer = null;
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
+    }
+
+    function updateRangeFill(input) {
+      const min = Number(input.min), max = Number(input.max), val = Number(input.value);
+      const pct = ((val - min) / (max - min)) * 100;
+      input.style.setProperty('--pct', `${pct}%`);
+    }
+
+    function updateSpecReadouts(metrics) {
+      document.getElementById('spec-area').textContent = `${metrics.areaM2.toFixed(2)} м²`;
+      document.getElementById('spec-perimeter').textContent = `${metrics.perimeterM.toFixed(2)} м`;
+    }
+
+    function syncUIFromState() {
+      // Labels
+      document.getElementById('lbl-shape').textContent = SHAPE_LABELS[state.shape];
+      document.getElementById('lbl-size').textContent =
+        state.shape === 'circle' ? `Ø ${state.widthMm} мм` : `${state.widthMm} × ${state.heightMm} мм`;
+      document.getElementById('lbl-tint').textContent = TINT_META[state.tint].label;
+      document.getElementById('lbl-frame').textContent = FRAME_META[state.frame].label;
+
+      const ledNames = { off: 'Выключена', ambient: 'Контурная', front: 'Фронтальная', both: 'Двойная' };
+      document.getElementById('lbl-led').textContent =
+        state.ledMode === 'off' ? 'Выключена' : `${ledNames[state.ledMode]} · ${LED_TEMPS[state.ledTemp].label}`;
+      document.getElementById('lbl-brightness').textContent = `${Math.round(state.ledBrightness * 100)}%`;
+      document.getElementById('lbl-sandblast').textContent = SANDBLAST_LABELS[state.sandblast];
+      document.getElementById('lbl-interior').textContent = INTERIOR_META[state.interior].label;
+
+      // Active buttons
+      document.querySelectorAll('#shape-grid .shape-card').forEach(b =>
+        b.classList.toggle('active', b.dataset.shape === state.shape));
+      document.querySelectorAll('#tint-grid .swatch-card').forEach(b =>
+        b.classList.toggle('active', b.dataset.tint === state.tint));
+      document.querySelectorAll('#frame-grid .swatch-card').forEach(b =>
+        b.classList.toggle('active', b.dataset.frame === state.frame));
+      document.querySelectorAll('#led-mode-bar .seg-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.led === state.ledMode));
+      document.querySelectorAll('#temp-grid .swatch-card').forEach(b =>
+        b.classList.toggle('active', b.dataset.temp === state.ledTemp));
+      document.querySelectorAll('#sandblast-grid .swatch-card').forEach(b =>
+        b.classList.toggle('active', b.dataset.sandblast === state.sandblast));
+      document.querySelectorAll('#interior-grid .interior-card').forEach(b =>
+        b.classList.toggle('active', b.dataset.interior === state.interior));
+
+      // Circle locks width=height
+      const isCircle = state.shape === 'circle';
+      document.getElementById('width-name').textContent = isCircle ? 'Диаметр' : 'Ширина';
+      document.getElementById('height-group').style.display = isCircle ? 'none' : 'flex';
+
+      // Sliders & numeric inputs
+      const rw = document.getElementById('range-width');
+      const rh = document.getElementById('range-height');
+      const rb = document.getElementById('range-brightness');
+      rw.value = state.widthMm;
+      rh.value = state.heightMm;
+      rb.value = Math.round(state.ledBrightness * 100);
+      document.getElementById('input-width').value = state.widthMm;
+      document.getElementById('input-height').value = state.heightMm;
+      updateRangeFill(rw);
+      updateRangeFill(rh);
+      updateRangeFill(rb);
+
+      // LED sub-controls state
+      document.getElementById('led-sub-controls').classList.toggle('disabled-block', state.ledMode === 'off');
+      const sensorRow = document.getElementById('toggle-sensor');
+      sensorRow.classList.toggle('active', state.sensor);
+      sensorRow.setAttribute('aria-checked', String(state.sensor));
+
+      // Mood HUD
+      const isDay = state.mood === 'day';
+      document.getElementById('mood-label').textContent = isDay ? 'День' : 'Вечер';
+      document.getElementById('btn-mood').classList.toggle('active', !isDay);
+      document.getElementById('mood-icon').innerHTML = isDay
+        ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>'
+        : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+
+      document.getElementById('btn-dims').classList.toggle('active', state.showDims);
+    }
+
+    let rebuildDebounce = null;
+    function scheduleMirrorRebuild(immediate = false) {
+      if (immediate) {
+        clearTimeout(rebuildDebounce);
+        anim.curW = state.widthMm / 1000;
+        anim.curH = state.heightMm / 1000;
+        rebuildMirrorAssembly(anim.curW, anim.curH);
+        return;
+      }
+      clearTimeout(rebuildDebounce);
+      rebuildDebounce = setTimeout(() => {
+        anim.curW = state.widthMm / 1000;
+        anim.curH = state.heightMm / 1000;
+        rebuildMirrorAssembly(anim.curW, anim.curH);
+      }, 36);
+    }
+
+    // Shape buttons
+    document.getElementById('shape-grid').addEventListener('click', (e) => {
+      const btn = e.target.closest('.shape-card');
+      if (!btn) return;
+      state.shape = btn.dataset.shape;
+      if (state.shape === 'circle') {
+        const d = Math.min(1800, Math.round((state.widthMm + state.heightMm) / 20) * 10);
+        state.widthMm = state.heightMm = Math.max(500, d);
+      } else if (state.shape === 'split_semi') {
+        state.widthMm = Math.max(900, state.widthMm);
+        state.heightMm = Math.max(900, state.widthMm);
+      }
+      syncUIFromState();
+      scheduleMirrorRebuild(true);
+    });
+
+    // Dimensions
+    const applyDim = (w, h, immediate = false) => {
+      state.widthMm = Math.max(400, Math.min(3200, Math.round(w / 10) * 10));
+      state.heightMm = state.shape === 'circle'
+        ? state.widthMm
+        : Math.max(400, Math.min(3200, Math.round(h / 10) * 10));
+      syncUIFromState();
+      scheduleMirrorRebuild(immediate);
+    };
+
+    document.getElementById('range-width').addEventListener('input', (e) => applyDim(Number(e.target.value), state.heightMm));
+    document.getElementById('range-height').addEventListener('input', (e) => applyDim(state.widthMm, Number(e.target.value)));
+    document.getElementById('input-width').addEventListener('change', (e) => applyDim(Number(e.target.value) || 850, state.heightMm, true));
+    document.getElementById('input-height').addEventListener('change', (e) => applyDim(state.widthMm, Number(e.target.value) || 1250, true));
+
+    document.querySelectorAll('.preset-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        applyDim(Number(chip.dataset.w), Number(chip.dataset.h), true);
+      });
+    });
+
+    // Tint
+    document.getElementById('tint-grid').addEventListener('click', (e) => {
+      const btn = e.target.closest('.swatch-card');
+      if (!btn) return;
+      state.tint = btn.dataset.tint;
+      syncUIFromState();
+      scheduleMirrorRebuild(true);
+    });
+
+    // Frame
+    document.getElementById('frame-grid').addEventListener('click', (e) => {
+      const btn = e.target.closest('.swatch-card');
+      if (!btn) return;
+      state.frame = btn.dataset.frame;
+      syncUIFromState();
+      scheduleMirrorRebuild(true);
+    });
+
+    // LED Mode
+    document.getElementById('led-mode-bar').addEventListener('click', (e) => {
+      const btn = e.target.closest('.seg-btn');
+      if (!btn) return;
+      state.ledMode = btn.dataset.led;
+      if (state.ledMode !== 'off') state.ledPowerOn = true;
+      if ((state.ledMode === 'front' || state.ledMode === 'both') && state.sandblast === 'none') {
+        state.sandblast = 'perimeter';
+      }
+      syncUIFromState();
+      scheduleMirrorRebuild(true);
+    });
+
+    // LED Temp
+    document.getElementById('temp-grid').addEventListener('click', (e) => {
+      const btn = e.target.closest('.swatch-card');
+      if (!btn) return;
+      state.ledTemp = btn.dataset.temp;
+      syncUIFromState();
+      const shapes = buildMirrorShapes(state.shape, state.widthMm / 1000, state.heightMm / 1000, 0);
+      calculatorBridge._emit(computeShapesMetrics(shapes));
+    });
+
+    // Brightness
+    document.getElementById('range-brightness').addEventListener('input', (e) => {
+      state.ledBrightness = Number(e.target.value) / 100;
+      state.ledPowerOn = true;
+      syncUIFromState();
+    });
+
+    // Touch sensor switch
+    const toggleSensorFn = () => {
+      state.sensor = !state.sensor;
+      syncUIFromState();
+      scheduleMirrorRebuild(true);
+    };
+    document.getElementById('toggle-sensor').addEventListener('click', toggleSensorFn);
+    document.getElementById('toggle-sensor').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSensorFn(); }
+    });
+
+    // Sandblast
+    document.getElementById('sandblast-grid').addEventListener('click', (e) => {
+      const btn = e.target.closest('.swatch-card');
+      if (!btn) return;
+      state.sandblast = btn.dataset.sandblast;
+      syncUIFromState();
+      scheduleMirrorRebuild(true);
+    });
+
+    // Interior
+    document.getElementById('interior-grid').addEventListener('click', (e) => {
+      const btn = e.target.closest('.interior-card');
+      if (!btn) return;
+      state.interior = btn.dataset.interior;
+      syncUIFromState();
+      buildInterior(state.interior);
+      scheduleMirrorRebuild(true);
+    });
+
+    // HUD buttons
+    document.getElementById('btn-mood').addEventListener('click', () => {
+      state.mood = state.mood === 'day' ? 'evening' : 'day';
+      syncUIFromState();
+      buildInterior(state.interior);
+    });
+
+    document.getElementById('btn-dims').addEventListener('click', () => {
+      state.showDims = !state.showDims;
+      syncUIFromState();
+    });
+
+    document.getElementById('btn-cinema').addEventListener('click', () => {
+      const shell = document.getElementById('app-shell');
+      const isCinema = shell.classList.toggle('cinema-mode');
+      document.getElementById('btn-cinema').classList.toggle('active', isCinema);
+      document.getElementById('cinema-label').textContent = isCinema ? 'Панель' : 'Обзор';
+      setTimeout(handleResize, 340);
+    });
+
+    document.querySelectorAll('.cam-btn').forEach(btn => {
+      btn.addEventListener('click', () => moveToCameraPreset(btn.dataset.cam));
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      Object.assign(state, DEFAULT_STATE);
+      syncUIFromState();
+      buildInterior(state.interior);
+      scheduleMirrorRebuild(true);
+      moveToCameraPreset('front');
+      showToast('Конфигурация сброшена');
+    });
+
+    document.getElementById('btn-copy-spec').addEventListener('click', async () => {
+      const payload = calculatorBridge.getState();
+      const json = JSON.stringify(payload, null, 2);
+      try {
+        await navigator.clipboard.writeText(json);
+        showToast('JSON-конфигурация скопирована');
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = json;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        showToast('JSON-конфигурация скопирована');
+      }
+    });
+
+    // Mobile section tabs smooth scrolling inside panel (never scrolls viewport!)
+    document.querySelectorAll('.m-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.m-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const target = document.getElementById(tab.dataset.target);
+        const scrollBox = document.getElementById('panel-scroll');
+        if (target && scrollBox) {
+          scrollBox.scrollTo({ top: target.offsetTop - 10, behavior: 'smooth' });
+        }
+      });
+    });
+
+    /* =========================================================================
+       13. RESIZE HANDLING & 60 FPS RENDER LOOP
+    ========================================================================= */
+    function handleResize() {
+      const w = stageWrap.clientWidth;
+      const h = Math.max(1, stageWrap.clientHeight);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      composer.setSize(w, h);
+      bloomPass.resolution.set(w, h);
+    }
+
+    const resizeObserver = new ResizeObserver(() => handleResize());
+    resizeObserver.observe(stageWrap);
+
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+
+      // Smoothly interpolate LED color, power & mood lighting
+      const targetColor = LED_TEMPS[state.ledTemp].color;
+      anim.ledColor.lerp(targetColor, 1 - Math.exp(-dt * 8));
+
+      const targetPower = (state.ledMode !== 'off' && state.ledPowerOn) ? state.ledBrightness : 0.0;
+      anim.ledPower += (targetPower - anim.ledPower) * (1 - Math.exp(-dt * 10));
+
+      const targetMoodDay = state.mood === 'day' ? 1.0 : 0.0;
+      anim.moodDay += (targetMoodDay - anim.moodDay) * (1 - Math.exp(-dt * 6));
+
+      // Apply Day/Evening lighting smoothly
+      hemiLight.intensity = THREE.MathUtils.lerp(0.28, 0.92, anim.moodDay);
+      keyLight.intensity = THREE.MathUtils.lerp(0.42, 1.55, anim.moodDay);
+      fillLight.intensity = THREE.MathUtils.lerp(0.16, 0.52, anim.moodDay);
+      backRoomLight.intensity = THREE.MathUtils.lerp(3.2, 1.4, anim.moodDay);
+      renderer.toneMappingExposure = THREE.MathUtils.lerp(1.02, 1.12, anim.moodDay);
+
+      // Apply Ambient & Front LED power cleanly
+      const hasAmbient = state.ledMode === 'ambient' || state.ledMode === 'both';
+      const hasFront = (state.ledMode === 'front' || state.ledMode === 'both') && state.sandblast !== 'none';
+
+      const ambientPower = hasAmbient ? anim.ledPower : 0.0;
+      const frontPower = hasFront ? anim.ledPower : 0.0;
+      const eveningBoost = THREE.MathUtils.lerp(1.38, 0.72, anim.moodDay);
+
+      if (activeHaloMat) {
+        activeHaloMat.color.copy(anim.ledColor);
+        activeHaloMat.opacity = Math.min(1.0, ambientPower * 0.95 * eveningBoost);
+      }
+
+      if (activeDiffuserMat) {
+        const diffScale = ambientPower > 0.02 ? (0.4 + ambientPower * 1.4) : 0.08;
+        activeDiffuserMat.color.copy(anim.ledColor).multiplyScalar(diffScale);
+      }
+
+      wallRectLight.color.copy(anim.ledColor);
+      wallRectLight.intensity = ambientPower * 8.5 * eveningBoost;
+
+      frontRectLight.color.copy(anim.ledColor);
+      frontRectLight.intensity = frontPower * 1.65;
+
+      rimLights.forEach(pl => {
+        pl.color.copy(anim.ledColor);
+        pl.intensity = ambientPower * 0.72 * eveningBoost;
+      });
+
+      activeReflectors.forEach(refl => {
+        const u = refl.material.uniforms;
+        if (u && u.uFrontLedColor) {
+          u.uFrontLedColor.value.copy(anim.ledColor);
+          u.uFrontLedIntensity.value = frontPower * eveningBoost;
+        }
+      });
+
+      // Sensor indicator breathing / tap feedback
+      if (activeSensorRingMat) {
+        anim.sensorPulse = Math.max(0, anim.sensorPulse - dt * 3.5);
+        const onCol = anim.ledColor.clone().lerp(new THREE.Color('#ffffff'), 0.45);
+        activeSensorRingMat.color.copy(state.ledPowerOn ? onCol : new THREE.Color('#7d8796'));
+        activeSensorRingMat.opacity = state.ledPowerOn
+          ? Math.min(1, 0.78 + anim.sensorPulse * 0.22)
+          : 0.42;
+      }
+
+      // Smooth camera preset transition
+      if (anim.camLerping && anim.camPosTarget && anim.camLookTarget) {
+        const k = 1 - Math.exp(-dt * 5.8);
+        camera.position.lerp(anim.camPosTarget, k);
+        controls.target.lerp(anim.camLookTarget, k);
+        if (camera.position.distanceTo(anim.camPosTarget) < 0.008) {
+          anim.camLerping = false;
+        }
+      }
+
+      controls.update();
+      composer.render();
+      updateDimensionOverlay();
+    }
+
+    // Existing Zerkalo Pro calculator remains the only pricing authority.
+    window.addEventListener('message', (event) => {
+      if (event.origin !== location.origin || event.source !== window.parent) return;
+      const msg = event.data;
+      if (!msg || !['zp3d:sync','zp3d:mode','zp3d:price'].includes(msg.type)) return;
+      if (msg.type === 'zp3d:mode') {
+        document.body.classList.toggle('embedded-preview', msg.preview === true);
+        setTimeout(handleResize, 50);
+        return;
+      }
+      if (msg.type === 'zp3d:price') {
+        calculatorBridge.renderResult({title:msg.title, subtitle:msg.subtitle});
+        return;
+      }
+      const c = msg.config || {};
+      receivingHost = true;
+      try {
+        const shapes = ['rect','rounded','circle','capsule','arch','wave','cloud','sail','split_semi'];
+        if (shapes.includes(c.shape)) state.shape = c.shape;
+        if (Number.isFinite(c.widthMm)) state.widthMm = Math.max(400, Math.min(3200, Math.round(c.widthMm)));
+        if (Number.isFinite(c.heightMm)) state.heightMm = Math.max(400, Math.min(3200, Math.round(c.heightMm)));
+        if (state.shape === 'circle') state.heightMm = state.widthMm;
+        if (['silver','graphite','bronze'].includes(c.tint)) state.tint = c.tint;
+        if (['none','black','white','gold'].includes(c.frame)) state.frame = c.frame;
+        if (['off','ambient','front','both'].includes(c.ledMode)) {state.ledMode = c.ledMode;state.ledPowerOn = c.ledMode !== 'off';}
+        if (['warm','neutral','cool'].includes(c.ledTemp)) state.ledTemp = c.ledTemp;
+        if (['none','perimeter','double','sides','topBottom'].includes(c.sandblast)) state.sandblast = c.sandblast;
+        syncUIFromState();
+        scheduleMirrorRebuild(true);
+      } finally { receivingHost = false; }
+    });
+
+    /* =========================================================================
+       14. BOOTSTRAP
+    ========================================================================= */
+    syncUIFromState();
+    buildInterior(state.interior);
+    rebuildMirrorAssembly(anim.curW, anim.curH);
+    moveToCameraPreset('front');
+    handleResize();
+    animate();
+
+    // Hide loader gracefully after first rendered frame
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.getElementById('stage-loader').classList.add('hidden');
+      });
+    });
+  </script>
+  <script>
+    window.addEventListener('error', function(e) {
+      var sub = document.querySelector('.loader-sub');
+      var loader = document.getElementById('stage-loader');
+      if (loader && !loader.classList.contains('hidden') && sub) {
+        sub.textContent = 'Требуется подключение к интернету для загрузки Three.js WebGL';
+        sub.style.color = '#d6be9b';
+      }
+    });
+  </script>
+</body>
+</html>
