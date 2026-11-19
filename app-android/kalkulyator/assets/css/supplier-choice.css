@@ -1,0 +1,10 @@
+#supplier-choice{border:1px solid #aa8c63;border-radius:14px;padding:16px;margin:0 0 24px;background:linear-gradient(125deg,#302a23,#211e1b);color:#f5eee3}
+#supplier-choice legend{font-weight:700;font-size:18px;padding:0 8px;color:#f5eee3}
+.supplier-choice-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.supplier-choice-options label{display:block;cursor:pointer;min-width:0}
+.supplier-choice-options input{position:absolute;opacity:0;width:1px;height:1px}
+.supplier-choice-options span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:76px;padding:10px;border:1px solid #887764;border-radius:12px;text-align:center;background:#302c28;color:#f5eee3}
+.supplier-choice-options input:checked+span{border:2px solid #d8b683;background:#574634;box-shadow:0 0 0 2px #d8b68333}
+.supplier-choice-options input:focus-visible+span{outline:3px solid #fff;outline-offset:2px}
+.supplier-choice-options b{font-size:19px}.supplier-choice-options small{font-size:12px;line-height:1.2}
+#supplier-choice .form-hint{margin:12px 0 0;color:#d6c7b6;font-size:12px}

@@ -949,7 +949,8 @@
     var h2 = window.MirrorSize.read(document.getElementById('height2')) || 0;
 
     var mirrorOptions = window.MirrorCalcOptions.read();
-    var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.edge, h2,{category:state.supplierCategory,cost:state.supplierCost,machine:mirrorOptions.machine});
+    var supplier = document.querySelector('input[name="supplier"]:checked')?.value || 'rial';
+    var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.edge, h2,{category:state.supplierCategory,cost:state.supplierCost,machine:mirrorOptions.machine,supplier:supplier});
     if (supplierQuote.needsQuote) {
       requestQuote(state.shape==='curved'?'Стоимость сложного контура — после расчёта производителя.':'Для этой формы, материала или обработки стоимость согласуем по эскизу и прайсу поставщика.'); return;
     }
@@ -961,7 +962,9 @@
     var facetPurchase,sandPurchase;
     try{facetPurchase=window.MirrorCalcOptions.facetCost(mirrorOptions,supplierQuote);sandPurchase=window.MirrorCalcOptions.sandCost(mirrorOptions,supplierQuote);}
     catch(error){requestQuote(error.message);return;}
-    var price = markedBase + (facetPurchase+sandPurchase)*(1+window.MirrorSupplierPricing.markup(state.light,state.shape));
+    // The touch sensor needs a separate cleared-amalgam window at either supplier.
+    var sensorPurchase=state.light&&state.ctrl==='touch'?600:0;
+    var price = markedBase + (facetPurchase+sandPurchase+sensorPurchase)*(1+window.MirrorSupplierPricing.markup(state.light,state.shape));
     if (state.light) price += Math.ceil(ledPer / PRICE.ledRollLen) * PRICE.ledRoll + PRICE.block + PRICE.switch + ledPer * 119;
 
     /* Бронеплёнка: 500 ₽/м² по площади прямоугольника */
@@ -983,9 +986,12 @@
 
     // Поездка за полотном и доставка — без наценки и надбавок; установка — как в Ставрополе.
     price += purchaseTripPrice();
-    var reinfKind = window.MirrorSupplierPricing.reinforcementKind(state.reinf, state.shape, w, h, h2);
-    price += window.MirrorSupplierPricing.rearProfile(reinfKind, state.shape, w, h, h2).cost;
-    price += window.MirrorSupplierPricing.rearMounts(state.shape, w, h, h2).cost;
+    var glueMount = !!document.querySelector('input[name="mount-method"][value="glue"]:checked');
+    var reinfKind = glueMount ? 'none' : window.MirrorSupplierPricing.reinforcementKind(state.reinf, state.shape, w, h, h2);
+    if (!glueMount) {
+      price += window.MirrorSupplierPricing.rearProfile(reinfKind, state.shape, w, h, h2).cost;
+      price += window.MirrorSupplierPricing.rearMounts(state.shape, w, h, h2).cost;
+    }
     var profileTrip = 500;
     price += profileTrip;
     if (state.install) price += installationPrice(area, state.light, state.shape);
@@ -1011,7 +1017,7 @@
        Показываем только размер, форму, подсветку и опции.
        Себестоимость, наценка, комплектующие, доставка,
        доплаты и прибыль — только во внутреннем расчёте выше. */
-    var CLR_LABELS = { warm: 'тёплый', cold: 'холодный', neutral: 'нейтральный' };
+    var CLR_LABELS = { warm: 'тёплый 3000 K', cold: 'холодный 6500 K', neutral: 'дневной 4000 K' };
     var CTRL_LABELS = { wave: 'взмах рукой', touch: 'сенсор на зеркале', remote: 'пульт ДУ', smart: 'Wi-Fi / умный дом' };
 
     if (window.onPersonalCalculation) {
@@ -1023,11 +1029,11 @@
         {key:'profile-trip',name:'Поездка за уголком',sale:profileTrip,cost:profileTrip},
         {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
         {key:'installation',sale:orderInstall,cost:null,expense:'install'}
-      ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:2,hardwareTariffVersion:1,mirrorOptions:mirrorOptions,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:3,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
+      ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:2,supplier:supplier,productionDays:supplier==='arsenal'?8:12,hardwareTariffVersion:1,mirrorOptions:mirrorOptions,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:3,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
         size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),material:state.material,
         materialLabel:window.MirrorSupplierPricing.materials[state.material].label+(state.material==='decorative'?' · '+mirrorOptions.decor:''),
         edge:state.edge,edgeLabel:window.MirrorCalcOptions.edgeLabel(EDGE_LABELS[state.edge],mirrorOptions,supplierQuote),light:state.light,ctrl:state.ctrl,clr:state.clr,
-        film:state.film,heat:state.heat,reinf:reinfKind,ledProfile:state.ledProfile,faceFrame:state.faceFrame,
+        film:state.film,heat:state.heat,reinf:reinfKind,mountMethod:glueMount?'glue':'fixings',ledProfile:state.ledProfile,faceFrame:state.faceFrame,
         install:state.install,delivery:state.delivery,region:deliveryRegion(),estimate:supplierQuote.estimate
       }});
     }
@@ -1055,7 +1061,7 @@
     }
     inc += row('Кромка',window.MirrorCalcOptions.edgeLabel(EDGE_LABELS[state.edge],mirrorOptions,supplierQuote));
     if (state.install) {
-      inc += row('Установка', state.film ? 'на крепёж, с бронеплёнкой' : 'на крепёж');
+      inc += row('Установка', glueMount ? 'приклеивание' : (state.film ? 'на крепёж, с бронеплёнкой' : 'на крепёж'));
     }
     if (state.film) {
       inc += row('Бронеплёнка', 'да');
@@ -1066,8 +1072,10 @@
 
     inc += row('Доставка', deliveryDescription());
     if (state.ledProfile) inc += row('Светодиодная лента в профиле', 'да');
-    inc += row('Усиление сзади', window.MirrorSupplierPricing.REINF[reinfKind].label+' · включено');
-    inc += row('Задние крепления',window.MirrorSupplierPricing.rearMounts(state.shape,w,h,h2).count+' шт. · включены');
+    if (!glueMount) {
+      inc += row('Усиление сзади', window.MirrorSupplierPricing.REINF[reinfKind].label+' · включено');
+      inc += row('Задние крепления',window.MirrorSupplierPricing.rearMounts(state.shape,w,h,h2).count+' шт. · включены');
+    } else { inc += row('Способ крепления', 'приклеивание · без заднего усиления и крепежей'); }
     if (state.faceFrame !== 'none') inc += row('Алюминиевая рама', FACE_FRAME_LABELS[state.faceFrame]);
     if (supplierQuote.estimate) inc += '<p class="figure-price-note">Точная стоимость после согласования контура и заготовки. Установка и доставка — по выбранным условиям.</p>';
     document.getElementById('r-inc').innerHTML = inc;
@@ -1082,7 +1090,8 @@
     if (state.install) details.push('с установкой');
     if (state.film) details.push('с бронеплёнкой');
     if (state.ledProfile) details.push('со светодиодной лентой в алюминиевом профиле');
-    if (reinfKind !== 'none') details.push('усиление сзади: ' + window.MirrorSupplierPricing.REINF[reinfKind].label);
+    if (glueMount) details.push('крепление: приклеивание, без заднего усиления');
+    else if (reinfKind !== 'none') details.push('усиление сзади: ' + window.MirrorSupplierPricing.REINF[reinfKind].label);
     if (state.delivery || state.install) details.push('доставка: ' + deliveryDescription());
 
     if (state.faceFrame !== 'none') details.push('алюминиевая рама — ' + FACE_FRAME_LABELS[state.faceFrame]);
@@ -1122,6 +1131,9 @@
     });
     r.addEventListener('click', function () {
       if (r.disabled) return;
+      // The embedded calculator updates its mirror in place; opening the
+      // separate frame gallery would unexpectedly scroll the parent page.
+      if (window.parent !== window) return;
       if (r.value === 'none') window.hideFrameExample();
       else window.showFrameExample(r.value, r);
     });
@@ -1143,14 +1155,6 @@
   });
   $all('input[name="clr"]').forEach(function (r) {
     r.addEventListener('change', function () { readState(); renderMirrorSvg(); });
-    r.addEventListener('click', function () {
-      var preview = document.querySelector('.calculator .calc-preview');
-      if (preview) window.showPreviewReturn(r);
-      if (preview) preview.scrollIntoView({
-        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-        block: 'center'
-      });
-    });
   });
   $all('input[name="edge"]').forEach(function (r) {
     r.addEventListener('change', onEdgeChange);

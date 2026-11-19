@@ -1,0 +1,3 @@
+.motion-model .sand-stripes{paint-order:stroke fill;filter:drop-shadow(0 0 1px #fff9e8);opacity:.94;pointer-events:none}
+.motion-model .sand-stripes--lit{filter:drop-shadow(0 0 2px #fff5d7) drop-shadow(0 0 6px #ffd08b);opacity:1}
+.stage .motion-model{z-index:2}.stage .mirror-sheen{pointer-events:none}

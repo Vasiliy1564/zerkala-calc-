@@ -92,6 +92,7 @@ var materials={
 };
 function lookup(shape,material,width,height,edge,height2,options){
  options=options||{};
+ if(options.supplier==='arsenal')return arsenalLookup(shape,material,width,height,edge,height2,options);
  var missing={cost:null,includesPackaging:false,estimate:false,needsQuote:true};
  var stock=materials[material],w=Number(width),h=shape==='circle'?w:Number(height),h2=Number(height2||0);
  if(!stock||!Number.isFinite(w)||!Number.isFinite(h)||!(w>0&&h>0))return missing;
@@ -117,6 +118,29 @@ function lookup(shape,material,width,height,edge,height2,options){
   packagingCost:0,includesPackaging:false,estimate:shape==='curved'&&options.category!=='quoted',needsQuote:false,
   pricingMode:shape==='curved'&&options.category==='quoted'?'quoted':'rial-list',billedMetres:billedMetres,edgeRate:edgeRate,
   shapeRate:shapeRate,sizeSurcharge:0,splitFactor:1,roundedFactor:1,area:area,perimeter:perimeter,maxSide:Math.max.apply(null,[w].concat(parts)),minSide:Math.min.apply(null,[w].concat(parts))};
+}
+// Arsenal Steklo, September 2026. Rates absent from its sheet require a quote.
+function arsenalLookup(shape,material,width,height,edge,height2,options){
+ var missing={cost:null,needsQuote:true,estimate:false};
+ var rates={silver:1570,bronze:3300,graphite:3300,crystal:3300};
+ var rate=rates[material],w=Number(width),h=shape==='circle'?w:Number(height),h2=Number(height2||0);
+ if(!rate||!(w>0&&h>0)||(/double/.test(shape)&&!(h2>0)))return missing;
+ var parts=/double/.test(shape)?[h,h2]:[h],area=0,perimeter=0,materialCost=0,edgeCost=0,shapeCost=0;
+ var shapes={rect:0,double:0,rounded:.15,circle:.25,oval:.25,capsule:.25,arch:.5,semicircle:.5,semidouble:.5,curved:.5};
+ if(shapes[shape]===undefined)return missing;
+ for(var i=0;i<parts.length;i++){
+  var ph=parts[i],a=w*ph/1e6,per=2*(w+ph)/1000,max=Math.max(w,ph);
+  if(max>3210||Math.min(w,ph)>2400)return missing;
+  var cut=Math.max(a,.1)*rate,extra=cut*shapes[shape];
+  var processing=shape==='rect'||shape==='double'?90:300;
+  var factor=max>=2400?2:max>=1900?1.6:max>=1400?1.3:1;
+  materialCost+=cut;shapeCost+=extra;edgeCost+=per*processing*factor;
+  area+=a;perimeter+=per;
+ }
+ return {cost:materialCost+shapeCost+edgeCost,materialCost:materialCost,shapeCost:shapeCost,edgeCost:edgeCost,
+  packagingCost:0,includesPackaging:false,estimate:shape!=='rect'&&shape!=='double',needsQuote:false,
+  pricingMode:'arsenal',billedMetres:perimeter,edgeRate:90,shapeRate:shapes[shape],area:area,perimeter:perimeter,
+  maxSide:Math.max(w,h),minSide:Math.min(w,h)};
 }
 
 // Markup on mirror + edge: no light +100%; with light +150% (rect, double) or +115% (shaped).
