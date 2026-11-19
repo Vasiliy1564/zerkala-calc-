@@ -294,7 +294,7 @@
     if(window.MirrorDelivery)window.MirrorDelivery.updateVisibility();
   }
 
-  var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'криволинейная шлифовка', 'curved-polish': 'криволинейная полировка' };
+  var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'полировка', 'curved-polish': 'полировка' };
 
   function euroEdgeRate(sideMm) {
     if (sideMm < 120 || sideMm >= 2400) return 270;
