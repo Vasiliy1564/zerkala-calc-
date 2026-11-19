@@ -11,7 +11,7 @@ function render(){
  const shape=checked('shape')?.value||'rect',material=checked('material')?.value||'silver',light=checked('light')?.value==='on',tone=checked('clr')?.value||'warm';
  let w=mm('width'),h=shape==='circle'?w:mm('height');if(shape==='double'||shape==='semidouble')h+=mm('height2');
  if(!(w>0&&h>0))return;
- const ratio=w/h,maxW=stage.clientWidth*.7||280,maxH=stage.clientHeight*.76||310,width=Math.min(maxW,maxH*ratio),height=width/ratio;
+ const ratio=w/h,maxW=Math.max(100,stage.clientWidth*.72),maxH=Math.max(100,stage.clientHeight*.66),width=Math.min(maxW,maxH*ratio),height=width/ratio;
  mirror.style.width=width+'px';mirror.style.height=height+'px';mirror.style.borderRadius=shape==='rect'?'2px':shape==='rounded'?'16px':shape==='arch'?(width/2)+'px '+(width/2)+'px 2px 2px':shape==='circle'||shape==='oval'?'50%':Math.min(width/2,height/2)+'px';
  stage.classList.toggle('lit',light);mirror.dataset.material=material;
  document.documentElement.style.setProperty('--led-rgb',({warm:'255,237,196',neutral:'239,248,255',cold:'194,224,255'})[tone]||'255,237,196');
@@ -31,7 +31,7 @@ function render(){
    const clip=source.querySelector('#realMirrorClip > *');
    if(clip){try{
      const b=clip.getBBox(), cm=Math.max(.1,Math.min(30,Number(($('#atelier-stripe-width')?.value||$('#owner-stripe-w')?.value||'3').replace(',','.'))||3));
-     const band=Math.min(b.width*.22,Math.max(1,b.width*cm/(w/10)));
+     const band=Math.min(b.width*.22,Math.max(3,b.width*cm/(w/10)));
      const layout=$('#atelier-stripe-layout')?.value||$('#owner-side-preset')?.value||'lr';
      const rect=(x,y,rw,rh)=>'<rect x="'+x+'" y="'+y+'" width="'+rw+'" height="'+rh+'"/>';
      let bands=''; const inset=Math.max(2,band*.7);
@@ -72,7 +72,7 @@ function focusPreview(key,action){
  ['wheel','touchstart','keydown'].forEach(type=>addEventListener(type,cancel,{capture:true,passive:true}));
  function step(now){if(began===null)began=now;const t=Math.min(1,(now-began)/duration),ease=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;scrollTo({top:start+delta*ease,behavior:'instant'});if(t<1)frame=requestAnimationFrame(step);else apply();}frame=requestAnimationFrame(step);
 }
-const previewNames=new Set(['shape','material','light','clr','ctrl','mirror-sand','face-frame']);
+const previewNames=new Set(['shape','material','light','clr','mirror-sand','face-frame']);
 document.addEventListener('click',event=>{
  if(replaying||event.button!==0||event.ctrlKey||event.metaKey)return;
  const label=event.target.closest('#quote-form label'),input=event.target.matches('#quote-form input')?event.target:label?.querySelector('input');
