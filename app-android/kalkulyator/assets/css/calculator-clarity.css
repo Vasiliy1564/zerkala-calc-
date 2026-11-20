@@ -26,3 +26,14 @@
 #mirror-order .order-final{background:#302b26!important;border:1px solid #a88e70!important;padding:14px 16px!important}
 #mirror-order .order-final span{color:#f7efe5!important;opacity:1!important;font-weight:600!important}
 #mirror-order .order-final strong,#mirror-order #order-total{color:#ffe1af!important;opacity:1!important}
+
+/* Compact action tiles and production time notice on narrow screens. */
+#calculator #supplier-choice{padding:8px 10px!important;margin:0 0 14px!important;border-width:1px!important;border-radius:8px!important;background:#292622!important}
+#calculator #supplier-choice .supplier-choice-options>div{padding:7px 10px!important;border-width:1px!important;border-radius:6px!important;background:transparent!important}
+#calculator #supplier-choice #supplier-status{display:block;color:#f6ead9!important;font-size:13px!important;font-weight:500!important;line-height:1.35!important}
+#calculator #supplier-choice .supplier-choice-options>div{display:flex!important;align-items:center!important;gap:9px!important}
+#calculator #supplier-choice .supplier-choice-options>div:before{content:"";display:block;flex:0 0 15px;width:15px;height:15px;border:1px solid #d6bc93;border-radius:50%;background:linear-gradient(#d6bc93,#d6bc93) 50% 3px/1px 5px no-repeat,linear-gradient(#d6bc93,#d6bc93) 8px 8px/4px 1px no-repeat}
+#calculator .calc-cta{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;align-items:stretch!important}
+#calculator .calc-cta .calc-btn{display:flex!important;min-width:0!important;width:100%!important;min-height:44px!important;height:auto!important;max-height:64px!important;flex:none!important;padding:9px 11px!important;border-width:1px!important;border-radius:6px!important;font-size:12px!important;font-weight:600!important;letter-spacing:.025em!important;line-height:1.25!important;text-transform:none!important;box-shadow:none!important}
+#calculator .calc-cta .calc-btn-call{grid-column:span 2}
+@media(max-width:390px){#calculator .calc-cta{grid-template-columns:1fr!important}#calculator .calc-cta .calc-btn-call{grid-column:auto}}
