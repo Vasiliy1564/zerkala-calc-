@@ -1,7 +1,6 @@
-/* MAX bot contact: copy quote locally, then let the customer send it. */
+/* MAX personal contact: copy quote locally, then let the customer send it. */
 (function () {
   'use strict';
-  var bot = 'https://max.ru/id262308371005_bot?start=site_spb';
   var personal = 'https://max.ru/u/f9LHodD0cOLbb_I_NfS4ans5ICo43Baa1UqtWuFJuR82JHYzk0Y3OhzIpvI';
   function notice(text) {
     var el = document.getElementById('max-bot-notice');
@@ -20,12 +19,12 @@
       if (!text) return;
     } else if (target.tagName === 'A') {
       var url; try { url = new URL(target.href,location.href); } catch (_) { return; }
-      if (url.hostname !== 'max.ru' || (url.pathname !== '/id262308371005_bot' && url.pathname !== new URL(personal).pathname)) return;
+      if (url.hostname !== 'max.ru' || (url.pathname !== new URL(personal).pathname)) return;
       text = url.searchParams.get('text') || '';
       if (!text) return;
     } else return;
     event.preventDefault(); event.stopImmediatePropagation();
-    window.open(target.id === 'order-send' || (target.tagName === 'A' && new URL(target.href).pathname === new URL(personal).pathname) ? personal : bot,'_blank','noopener,noreferrer');
+    window.open(personal,'_blank','noopener,noreferrer');
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(function () { notice('Расчёт скопирован. Вставьте его в чат MAX и отправьте.'); }, function () { notice('Открылся MAX. Используйте «Скопировать расчёт» на сайте, затем вставьте текст в чат.'); });
     } else notice('Открылся MAX. Используйте «Скопировать расчёт» на сайте, затем вставьте текст в чат.');
