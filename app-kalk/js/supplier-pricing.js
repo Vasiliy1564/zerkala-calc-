@@ -90,12 +90,12 @@ var materials={
  satinGraphite:{label:'Сатинат графит, 4 мм',rate:4000,sheet:2080,w:3210,h:2550},
  decorative:{label:'Декоративное зеркало, 4 мм',rate:4320,sheet:3600,w:2550,h:1605}
 };
-// The Arsenal processing tariff doubles from 2400 mm. Route the entire
-// mirror to RIAL at that boundary; split products are checked per piece.
+// Shaped processing uses the RIAL tariff. For straight rectangles the
+// Arsenal processing tariff doubles above 2400 mm; check split pieces separately.
 function selectSupplier(shape,width,height,height2){
  var w=Number(width),h=shape==='circle'?w:Number(height),h2=Number(height2||0);
  var parts=/double/.test(shape)?[h,h2]:[h];
- return Math.max.apply(null,[w].concat(parts))>=2400?'rial':'arsenal';
+ return !rectangular(shape)||Math.max.apply(null,[w].concat(parts))>2400?'rial':'arsenal';
 }
 function lookup(shape,material,width,height,edge,height2,options){
  options=options||{};
@@ -122,7 +122,7 @@ function lookup(shape,material,width,height,edge,height2,options){
   materialCost=quoted;shapeCost=0;edgeCost=0;shapeRate=0;
  }
  return {cost:materialCost+shapeCost+edgeCost,materialCost:materialCost,shapeCost:shapeCost,edgeCost:edgeCost,
-  supplier:'rial',productionDays:12,packagingCost:0,includesPackaging:false,estimate:shape==='curved'&&options.category!=='quoted',needsQuote:false,
+  supplier:'rial',productionDays:13,packagingCost:0,includesPackaging:false,estimate:shape==='curved'&&options.category!=='quoted',needsQuote:false,
   pricingMode:shape==='curved'&&options.category==='quoted'?'quoted':'rial-list',billedMetres:billedMetres,edgeRate:edgeRate,
   shapeRate:shapeRate,sizeSurcharge:0,splitFactor:1,roundedFactor:1,area:area,perimeter:perimeter,maxSide:Math.max.apply(null,[w].concat(parts)),minSide:Math.min.apply(null,[w].concat(parts))};
 }

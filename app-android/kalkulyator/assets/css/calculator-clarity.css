@@ -1,0 +1,28 @@
+/* Legibility and compact mobile controls for the existing calculator. */
+#calculator #quote-form .form-hint,#calculator #quote-form .field>label,#calculator #quote-form legend,#calculator #quote-form .mirror-edge-standard p,#calculator .semidouble-note{color:#f1ece4!important;opacity:1!important}
+#calculator #quote-form .options label span{color:#f7f2eb!important;opacity:1!important;font-weight:600!important}
+#calculator #quote-form .options label:has(input:checked) span{color:#ffe0ae!important}
+#calculator .calc-included,#calculator .calc-included span,#calculator .calc-result-label,#calculator .calc-result-size,#calculator .calc-result p{color:#f4eee6!important;opacity:1!important}
+#calculator #copy-calculation,#calculator #copy-order{background:#d6bc93!important;color:#201b17!important;border:2px solid #eed6af!important;font-weight:700!important;text-transform:none!important;letter-spacing:.02em!important;box-shadow:0 3px 14px #0005}
+#calculator .calc-btn-max{background:#d6bc93!important;color:#201b17!important;border:2px solid #eed6af!important;font-weight:700!important}
+#calculator .calc-btn-bot{background:#292725!important;color:#f7e5cb!important;border:2px solid #c9aa7e!important;font-weight:700!important}
+#calculator .calc-cta{display:flex!important;flex-wrap:wrap!important;gap:9px!important}
+#calculator .calc-cta .calc-btn{min-height:46px!important;white-space:normal!important;text-align:center!important}
+#calculator .semidouble-note{border-left:3px solid #d6bc93;padding:10px 12px;margin:6px 0 16px;background:#342e29;font-size:14px;line-height:1.5}
+#calculator .semidouble-note[hidden]{display:none!important}
+#calculator #faceFrameOpt .options label:has(input[value="black"]:checked) span{background:#101114!important;color:#fff!important;border:2px solid #e5c79a!important}
+#calculator #faceFrameOpt .options label:has(input[value="white"]:checked) span{background:#f4f0e8!important;color:#202020!important;border:2px solid #bbab91!important}
+#calculator #faceFrameOpt .options label:has(input[value="gold"]:checked) span{background:#785b34!important;color:#fff!important;border:2px solid #f2d197!important}
+.motion-model .mirror-face-frame{paint-order:stroke fill;filter:drop-shadow(0 0 2px #151515)}
+.motion-model .sand-stripes{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 7px #ffe4a0)!important;opacity:1!important}
+@media(max-width:820px){#calculator .calc-form{min-width:0!important}#calculator .options--grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#calculator .calc-cta .calc-btn{flex:1 1 145px!important;font-size:13px!important;letter-spacing:0!important}#calculator #stage{overflow:hidden!important}}
+
+/* Small outline symbols; option captions keep their own high contrast colour. */
+#calculator #quote-form .options label span{color:#f5eee4!important;font-weight:500!important}
+#calculator #quote-form .options label:has(input:checked) span{color:#ffe3b4!important}
+#calculator #quote-form .options label span .calc-shape-icon{color:#d6bc93!important;border-width:1px!important;width:14px;height:21px;opacity:.95}
+#calculator #quote-form .options label span .calc-shape-icon:after{border-width:1px!important}
+#calculator #quote-form .options label:has(input:checked) .calc-shape-icon{color:#fff0d5!important}
+#mirror-order .order-final{background:#302b26!important;border:1px solid #a88e70!important;padding:14px 16px!important}
+#mirror-order .order-final span{color:#f7efe5!important;opacity:1!important;font-weight:600!important}
+#mirror-order .order-final strong,#mirror-order #order-total{color:#ffe1af!important;opacity:1!important}

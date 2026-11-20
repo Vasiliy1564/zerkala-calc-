@@ -93,7 +93,7 @@
   function $(sel, ctx) { return (ctx || document).querySelector(sel); }
   function $all(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
 
-  var MAX_URL = 'https://max.ru/id262308371005_bot';
+  var MAX_URL = 'https://max.ru/u/f9LHodD0cOLbb_I_NfS4ans5ICo43Baa1UqtWuFJuR82JHYzk0Y3OhzIpvI';
 
   /* ---------- Fallback для битых картинок ---------- */
   document.addEventListener('error', function (e) {
@@ -294,7 +294,7 @@
     if(window.MirrorDelivery)window.MirrorDelivery.updateVisibility();
   }
 
-  var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'криволинейная шлифовка', 'curved-polish': 'криволинейная полировка' };
+  var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'полировка', 'curved-polish': 'полировка' };
 
   function euroEdgeRate(sideMm) {
     if (sideMm < 120 || sideMm >= 2400) return 270;
@@ -338,8 +338,7 @@
 
   function updateEdgeAvailability() {
     var curved = state.shape !== 'rect' && state.shape !== 'double';
-    var selected = $('input[name="edge"]:checked');
-    var treatment = selected && selected.value === 'grind' ? 'grind' : 'polish';
+    var treatment = 'polish';
     state.edge = (curved ? 'curved-' : '') + treatment;
     $all('input[name="edge"]').forEach(function (radio) {
       radio.disabled = false;
@@ -370,7 +369,7 @@
     var cl = $('input[name="clr"]:checked');
     if (cl) state.clr = cl.value;
     var f = $('input[name="edge"]:checked');
-    if (f) state.edge = f.value;
+    if (f) state.edge = 'polish';
     function opt(v) {
       var o = $('input[name="option"][value="' + v + '"]');
       return !!(o && o.checked);
@@ -394,7 +393,7 @@
     if (!el) return;
     var v = window.MirrorSize.read(el) || 0;
     v = Math.max(state.shape === 'semicircle' && id === 'height' ? 800 : 400, v + delta);
-    v = Math.min(v, state.shape === 'curved' && id === 'height' ? 1800 : 3210);
+    v = Math.min(v, state.shape === 'curved' && id === 'height' ? 1800 : state.shape === 'semidouble' && id === 'height' ? 1600 : 3210);
     window.MirrorSize.write(el, v);
     if (state.shape === 'circle') {
       var hEl = document.getElementById('height');
@@ -416,7 +415,7 @@
     var h2El = document.getElementById('height2');
     if (hEl && wEl) {
       var totalHeight = window.MirrorSize.read(hEl) || 0;
-      if (state.shape === 'semidouble') totalHeight += h2El ? (window.MirrorSize.read(h2El) || 0) : 0;
+      if (state.shape === 'semidouble') { if(h2El)window.MirrorSize.write(h2El,totalHeight); totalHeight *= 2; }
       window.MirrorSize.write(wEl, totalHeight / 2);
     }
   }
@@ -429,7 +428,8 @@
     if (state.shape === 'circle') hEl.value = wEl.value;
     syncSemicircleSize();
     var rowH2 = document.getElementById('rowH2');
-    if (rowH2) rowH2.classList.toggle('hidden', state.shape !== 'double' && state.shape !== 'semidouble');
+    if (rowH2) rowH2.classList.toggle('hidden', state.shape !== 'double');
+    var semiNote=document.getElementById('semidouble-note');if(semiNote)semiNote.hidden=state.shape!=='semidouble';
     updPreview();
     var result = document.getElementById('calc-result');
     if (result && result.classList.contains('show')) calc(false);
@@ -722,8 +722,8 @@
       bodies.forEach(function (body) {
         var frame = body.cloneNode(true);
         frame.setAttribute('fill', 'none');
-        frame.setAttribute('stroke', {white:'#f7f7f4',black:'#171717',gold:'#c5a34d'}[state.faceFrame]);
-        frame.setAttribute('stroke-width', '5');
+        frame.setAttribute('stroke', {white:'#fffefa',black:'#090909',gold:'#e2b65b'}[state.faceFrame]);
+        frame.setAttribute('stroke-width', '8');
         frame.setAttribute('clip-path', 'url(#realMirrorClip)');
         frame.setAttribute('class', 'mirror-face-frame');
         edges += frame.outerHTML;
@@ -757,7 +757,8 @@
     inputH.disabled = false;
     inputH.style.opacity = '1';
     inputH.min = shape === 'semicircle' ? '80' : '40';
-    inputH.max = shape === 'curved' ? '180' : '321';
+    inputH.max = shape === 'curved' ? '180' : shape === 'semidouble' ? '160' : '321';
+    if (shape === 'semidouble' && (window.MirrorSize.read(inputH) || 0) > 1600) window.MirrorSize.write(inputH, 1200);
     inputW.disabled = shape === 'curved' || shape === 'semicircle' || shape === 'semidouble';
     $all('.stepper-btn[data-adj="width"]').forEach(function (button) {
       button.disabled = shape === 'curved' || shape === 'semicircle' || shape === 'semidouble';
@@ -777,7 +778,7 @@
     } else if (shape === 'semidouble') {
       fieldH.classList.remove('hidden');
       labelW.textContent = 'Ширина = ½ общей высоты, см';
-      labelH.textContent = 'Высота верхней части, см';
+      labelH.textContent = 'Высота каждой части, см';
     } else {
       fieldH.classList.remove('hidden');
       labelW.textContent = shape === 'curved' ? 'Ширина автоматически, см' : 'Ширина, см';
@@ -833,7 +834,7 @@
     readState();
     renderMirrorSvg();
     var result = document.getElementById('calc-result');
-    if (result && result.classList.contains('show')) calc();
+    if (result && result.classList.contains('show')) calc(false);
   }
 
   function calcGeometry() {
@@ -949,7 +950,7 @@
     var h2 = window.MirrorSize.read(document.getElementById('height2')) || 0;
 
     var mirrorOptions = window.MirrorCalcOptions.read();
-    var supplier = document.querySelector('input[name="supplier"]:checked')?.value || 'rial';
+    var supplier = window.MirrorSupplierPricing.selectSupplier(state.shape,w,state.shape==='circle'?w:h,h2);
     var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.edge, h2,{category:state.supplierCategory,cost:state.supplierCost,machine:mirrorOptions.machine,supplier:supplier});
     if (supplierQuote.needsQuote) {
       requestQuote(state.shape==='curved'?'Стоимость сложного контура — после расчёта производителя.':'Для этой формы, материала или обработки стоимость согласуем по эскизу и прайсу поставщика.'); return;
@@ -1029,7 +1030,7 @@
         {key:'profile-trip',name:'Поездка за уголком',sale:profileTrip,cost:profileTrip},
         {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
         {key:'installation',sale:orderInstall,cost:null,expense:'install'}
-      ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:2,supplier:supplier,productionDays:supplier==='arsenal'?8:12,hardwareTariffVersion:1,mirrorOptions:mirrorOptions,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:3,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
+      ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:2,supplier:supplier,productionDays:supplier==='arsenal'?10:13,productionDate:window.MirrorProductionDate.due(supplier==='arsenal'?10:13).label,hardwareTariffVersion:1,mirrorOptions:mirrorOptions,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:3,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
         size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),material:state.material,
         materialLabel:window.MirrorSupplierPricing.materials[state.material].label+(state.material==='decorative'?' · '+mirrorOptions.decor:''),
         edge:state.edge,edgeLabel:window.MirrorCalcOptions.edgeLabel(EDGE_LABELS[state.edge],mirrorOptions,supplierQuote),light:state.light,ctrl:state.ctrl,clr:state.clr,
@@ -1041,6 +1042,8 @@
     document.getElementById('r-size').textContent = window.MirrorSize.dimensions(sizeText);
 
     document.getElementById('r-sum').textContent = fmt(price) + ' ₽';
+    var supplierStatus=document.getElementById('supplier-status');
+    if(supplierStatus)supplierStatus.textContent=window.MirrorProductionDate.text(supplier==='arsenal'?10:13);
     var priceLabel = document.querySelector('.calc-result-label');
     if (priceLabel) priceLabel.textContent = supplierQuote.estimate ? 'Ориентировочная стоимость' : 'Итоговая цена зеркала';
     document.getElementById('r-sum').dataset.estimate = String(supplierQuote.estimate);
@@ -1070,6 +1073,8 @@
       inc += row('Подогрев 400×600 мм', 'да');
     }
 
+    inc += row('Срок изготовления', 'до '+(supplier==='arsenal'?10:13)+' дней');
+    inc += row('Ориентировочная готовность', window.MirrorProductionDate.due(supplier==='arsenal'?10:13).label);
     inc += row('Доставка', deliveryDescription());
     if (state.ledProfile) inc += row('Светодиодная лента в профиле', 'да');
     if (!glueMount) {
@@ -1092,6 +1097,8 @@
     if (state.ledProfile) details.push('со светодиодной лентой в алюминиевом профиле');
     if (glueMount) details.push('крепление: приклеивание, без заднего усиления');
     else if (reinfKind !== 'none') details.push('усиление сзади: ' + window.MirrorSupplierPricing.REINF[reinfKind].label);
+    details.push('изготовление до '+(supplier==='arsenal'?10:13)+' дней');
+    details.push('ориентировочно до '+window.MirrorProductionDate.due(supplier==='arsenal'?10:13).label);
     if (state.delivery || state.install) details.push('доставка: ' + deliveryDescription());
 
     if (state.faceFrame !== 'none') details.push('алюминиевая рама — ' + FACE_FRAME_LABELS[state.faceFrame]);
@@ -1134,8 +1141,7 @@
       // The embedded calculator updates its mirror in place; opening the
       // separate frame gallery would unexpectedly scroll the parent page.
       if (window.parent !== window) return;
-      if (r.value === 'none') window.hideFrameExample();
-      else window.showFrameExample(r.value, r);
+      window.hideFrameExample();
     });
   });
 
