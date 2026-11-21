@@ -6,7 +6,7 @@
  }
  window.MirrorProductionDate={due:due,text:function(days){return 'Изготовление до '+days+' дней · ориентировочно до '+due(days).label;}};
  const form=document.getElementById('quote-form');
- if(!form||!window.MirrorSupplierPricing||!window.MirrorSize)return;
+ if(!form||!window.MirrorSize)return;
  const field=document.createElement('div');
  field.id='supplier-choice';field.className='field supplier-choice';
  field.innerHTML='<div class="supplier-choice-options"><div><b id="supplier-status" aria-live="polite">Срок изготовления рассчитывается по размеру</b></div></div>';
@@ -16,8 +16,7 @@
   const width=window.MirrorSize.read(document.getElementById('width'));
   const height=window.MirrorSize.read(document.getElementById('height'));
   const height2=window.MirrorSize.read(document.getElementById('height2'))||0;
-  const supplier=window.MirrorSupplierPricing.selectSupplier(shape,width,height,height2);
-  document.getElementById('supplier-status').textContent=window.MirrorProductionDate.text(supplier==='arsenal'?10:13);
+  document.getElementById('supplier-status').textContent='Срок изготовления уточним при оформлении заказа';
  }
  form.addEventListener('input',sync);form.addEventListener('change',sync);sync();
 })();
