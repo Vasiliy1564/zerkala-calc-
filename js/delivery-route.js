@@ -1,7 +1,7 @@
 /* One customer address and one road route for the whole order. */
 (function(){
 'use strict';
-var origin='Мурино, улица Шувалова, 16/9',point=[30.4290869,60.0565448],route=null,revision=0,busy=false,lastSearch=0;
+var origin='ГК Рубеж, Ставрополь, улица 45-я Параллель, 44',point=[41.9110926,45.0011119],route=null,revision=0,busy=false,lastSearch=0;
 var form=document.getElementById('quote-form'),option=document.querySelector('input[name="option"][value="delivery"]');
 var panel=document.createElement('div');panel.id='delivery-address-panel';panel.className='delivery-address-panel';
 panel.innerHTML='<label for="delivery-address">Укажите адрес доставки</label><input id="delivery-address" type="text" autocomplete="street-address" placeholder="Город, улица, дом"><button type="button" class="button" id="delivery-search">Рассчитать доставку</button><div id="delivery-candidates"></div><p id="delivery-route-status" role="status" aria-live="polite"></p><div id="delivery-map-slot"></div><small class="delivery-attribution">© 2ГИС · © OpenStreetMap</small>';
@@ -80,7 +80,7 @@ button.addEventListener('click',async function(){
  if(busy)return;var query=input.value.trim();if(query.length<5){status.textContent='Укажите город, улицу и номер дома.';return;}
  if(Date.now()-lastSearch<1100)return;lastSearch=Date.now();busy=true;button.disabled=true;var token=++revision;route=null;results.replaceChildren();status.textContent='Ищем адрес…';emit();
  try{
-  var data=await searchAddress(query,'spb',token);
+  var data=await searchAddress(query,'stav',token);
   if(token!==revision)return;
   var seen={};var matches=(data.features||[]).filter(function(f){var c=f.geometry&&f.geometry.coordinates,key=address(f);if(!c||!Number.isFinite(c[0])||!Number.isFinite(c[1])||!key||seen[key])return false;seen[key]=true;return true;});
   if(!matches.length){status.textContent=data.limited?'Адрес не найден в резервной базе. Укажите город, улицу и номер дома.':'Дом не найден. Уточните город, улицу и номер дома.';return;}
