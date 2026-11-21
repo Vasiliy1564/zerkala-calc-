@@ -94,6 +94,7 @@
   function $all(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
 
   var MAX_URL = 'https://max.ru/u/f9LHodD0cOLbb_I_NfS4ans5ICo43Baa1UqtWuFJuR82JHYzk0Y3OhzIpvI';
+  var MAX_URL_MIKHAIL = 'https://max.ru/u/f9LHodD0cOJfR3SWfCr0PAAJnlcPjnyOzhZYPpAWjhF-csqm7yrpZdJDnBQ';
 
   /* ---------- Fallback для битых картинок ---------- */
   document.addEventListener('error', function (e) {
@@ -224,6 +225,7 @@
     reinf: 'auto',
     delivery: false,
     faceFrame: 'none',
+    aluFrame: false,
     ledProfile: false,
     install: false
   };
@@ -384,6 +386,33 @@
     var frame = $('input[name="face-frame"]:checked');
     state.faceFrame = frame ? frame.value : 'none';
     updateEdgeAvailability();
+    var angleCheckbox = $('input[name="option"][value="alu-frame"]');
+    var hInput = window.MirrorSize.read(document.getElementById('height')) || 0;
+    var wInput = window.MirrorSize.read(document.getElementById('width')) || 0;
+    var h2Input = (state.shape === 'double' || state.shape === 'semidouble')
+      ? (window.MirrorSize.read(document.getElementById('height2')) || 0) : 0;
+    var angleRequired = (state.shape === 'circle' ? wInput : hInput + h2Input) > 2000;
+    if(angleCheckbox){
+      if(angleRequired){
+        if(angleCheckbox.dataset.autoRequired !== '1')
+          angleCheckbox.dataset.manualChecked = angleCheckbox.checked ? '1' : '0';
+        angleCheckbox.checked = true;
+        angleCheckbox.disabled = true;
+        angleCheckbox.dataset.autoRequired = '1';
+      } else {
+        if(angleCheckbox.dataset.autoRequired === '1'){
+          angleCheckbox.checked = angleCheckbox.dataset.manualChecked === '1';
+          delete angleCheckbox.dataset.autoRequired;
+          delete angleCheckbox.dataset.manualChecked;
+        }
+        angleCheckbox.disabled = false;
+      }
+      var hint = document.getElementById('aluFrameHint');
+      if(hint) hint.textContent = angleRequired
+        ? 'Высота свыше 200 см: каркас обязателен и уже учтён в цене.'
+        : 'По желанию. Уголок 80 ₽/м, покупка от 3 м и поездка 500 ₽.';
+    }
+    state.aluFrame = angleRequired || !!(angleCheckbox && angleCheckbox.checked);
     state.ledProfile = state.light && opt('led-profile');
   }
 
@@ -893,241 +922,123 @@
     };
   }
 
+  /* Ставропольский расчёт: точные тарифы из общего прайса.
+     Весь интерфейс предпросмотра/анимации остаётся без изменений. */
   function calc(scrollResult) {
     readState();
     syncSemicircleSize();
-    var wEl = document.getElementById('width');
-    var hEl = document.getElementById('height');
-    var w = window.MirrorSize.read(wEl) || 0;
-    var h = window.MirrorSize.read(hEl) || 0;
-
-    function requestQuote(message) {
-      if(window.onPersonalCalculation)window.onPersonalCalculation({rows:[],total:0});
-      document.getElementById('r-size').textContent = window.MirrorSize.cm(h) + ' × ' + window.MirrorSize.cm(w) + ' см · ' + SHAPE_NAMES[state.shape];
-      document.getElementById('r-sum').textContent = 'Индивидуальный расчёт';
-      document.getElementById('r-inc').textContent = message;
-      var link = document.getElementById('r-cta');
-      link.textContent = 'Уточнить стоимость в MAX';
-      link.href = MAX_URL + '?text=' + encodeURIComponent('Хочу уточнить стоимость: ' + SHAPE_NAMES[state.shape] + ', ' + h + '×' + w + ' мм, ' + ({silver:'серебро',graphite:'графит',bronze:'бронза'}[state.material]) + ', ' + (state.light ? 'с подсветкой' : 'без подсветки') + '. ' + message);
-      var result = document.getElementById('calc-result');
-      result.classList.add('show');
-      if (scrollResult !== false) result.scrollIntoView({behavior:'smooth',block:'nearest'});
-    }
-    if (!Number.isFinite(w) || !Number.isFinite(h) || (state.shape !== 'curved' && w < 400) || (state.shape !== 'circle' && h < 400)) {
-      requestQuote('Укажите корректные размеры от 40 см.'); return;
-    }
-    if (state.shape === 'curved' && (h < 400 || h > 1800)) {
-      requestQuote('Для фигурного зеркала выберите высоту от 40 до 180 см. Ширина определяется автоматически.'); return;
-    }
-    if (state.material !== 'silver' && (Math.max(w,h)>2550 || Math.min(w,h)>1605)) {
-      requestQuote('Размер превышает лист зеркала бронза/графит 2550 × 1605 мм. Согласуем изготовление из частей.'); return;
-    }
-    if (Math.max(w, h) > 3210 || Math.min(w, h) > 2250) {
-      requestQuote('Размер превышает формат одного листа 3210 × 2250 мм. Согласуем изготовление из частей.'); return;
-    }
-    if ((state.shape === 'double' || state.shape === 'semidouble') && (window.MirrorSize.read(document.getElementById('height2')) || 0) < 400) {
-      alert('Минимальная высота каждой части — 40 см');
-      return;
-    }
-
-    if (state.shape === 'arch' && h < w / 2) {
-      requestQuote('Для арочного зеркала высота должна быть не меньше половины ширины.'); return;
-    }
-    var geo = calcGeometry();
-    var area = geo.area;
-    var per = geo.per;
-    var edgePer = geo.edgePer;
-    var ledPer = geo.ledPer;
-    // База для двух частей — цельный прямоугольник тех же общих размеров.
-    if (state.shape === 'double') {
-      var combinedHeight = h + (window.MirrorSize.read(document.getElementById('height2')) || 0);
-      area = w * combinedHeight / 1000000;
-      per = 2 * (w + combinedHeight) / 1000;
-      edgePer = per;
-      ledPer = per;
-    }
-
+    var w = window.MirrorSize.read(document.getElementById('width')) || 0;
+    var h = window.MirrorSize.read(document.getElementById('height')) || 0;
     var h2 = window.MirrorSize.read(document.getElementById('height2')) || 0;
+    var material = state.material;
+    var options = window.MirrorCalcOptions.read();
+    var sizeText = state.shape === 'circle' ? 'Ø ' + w + ' мм · ' + SHAPE_NAMES[state.shape] :
+      (state.shape === 'double' || state.shape === 'semidouble')
+      ? h + '+' + h2 + ' × ' + w + ' мм · ' + SHAPE_NAMES[state.shape]
+      : h + ' × ' + w + ' мм · ' + SHAPE_NAMES[state.shape];
+    var ALLOWED_FACETS={0:'обработка от порезов',10:'фацет 10 мм',20:'фацет 20 мм',25:'фацет 25 мм'};
 
-    var mirrorOptions = window.MirrorCalcOptions.read();
-    var supplier = window.MirrorSupplierPricing.selectSupplier(state.shape,w,state.shape==='circle'?w:h,h2);
-    var supplierQuote = window.MirrorSupplierPricing.lookup(state.shape, state.material, w, state.shape === 'circle' ? w : h, state.edge, h2,{category:state.supplierCategory,cost:state.supplierCost,machine:mirrorOptions.machine,supplier:supplier});
-    if (supplierQuote.needsQuote) {
-      requestQuote(state.shape==='curved'?'Стоимость сложного контура — после расчёта производителя.':'Для этой формы, материала или обработки стоимость согласуем по эскизу и прайсу поставщика.'); return;
+    function setActionLinks(text){
+      var first = document.getElementById('r-cta');
+      var second = document.getElementById('r-cta-mikhail');
+      if(first)first.href=MAX_URL+'?text='+encodeURIComponent(text);
+      if(second)second.href=MAX_URL_MIKHAIL+'?text='+encodeURIComponent(text);
     }
-    var mirrorCost = supplierQuote.materialCost;
-    var edgeCost = supplierQuote.edgeCost + supplierQuote.shapeCost;
-    area = supplierQuote.area;
-    ledPer = supplierQuote.perimeter;
-    var markedBase = supplierQuote.cost * (1 + window.MirrorSupplierPricing.markup(state.light, state.shape));
-    var facetPurchase,sandPurchase;
-    try{facetPurchase=window.MirrorCalcOptions.facetCost(mirrorOptions,supplierQuote);sandPurchase=window.MirrorCalcOptions.sandCost(mirrorOptions,supplierQuote);}
-    catch(error){requestQuote(error.message);return;}
-    // The touch sensor needs a separate cleared-amalgam window at either supplier.
-    var sensorPurchase=state.light&&state.ctrl==='touch'?600:0;
-    var price = markedBase + (facetPurchase+sandPurchase+sensorPurchase)*(1+window.MirrorSupplierPricing.markup(state.light,state.shape));
-    if (state.light) price += Math.ceil(ledPer / PRICE.ledRollLen) * PRICE.ledRoll + PRICE.block + PRICE.switch + ledPer * 119;
-
-    /* Бронеплёнка: 500 ₽/м² по площади прямоугольника */
-    if (state.film) {
-      price += geo.area * (supplierQuote.pricingMode === 'stavropol' ? 200 : 500);
+    function requestQuote(message){
+      if(window.onPersonalCalculation)window.onPersonalCalculation(null);
+      document.getElementById('r-size').textContent=window.MirrorSize.dimensions(sizeText);
+      document.getElementById('r-sum').textContent='Индивидуальный расчёт';
+      document.getElementById('r-inc').textContent=message;
+      var label=document.querySelector('.calc-result-label');
+      if(label)label.textContent='Уточнение цены по Ставрополю';
+      var safeMaterial=material==='silver'?'серебро':(document.querySelector('input[name="material"]:checked')?.closest('label')?.textContent||material).trim();
+      setActionLinks('Здравствуйте! Уточните стоимость зеркала: '+SHAPE_NAMES[state.shape]+
+       ', размеры '+window.MirrorSize.dimensions(sizeText.split(' · ')[0])+', '+safeMaterial+
+       (state.light?', с LED-подсветкой':', без подсветки')+'. '+message);
+      document.getElementById('calc-result').classList.add('show');
+      if(scrollResult!==false)document.getElementById('calc-result').scrollIntoView({behavior:'smooth',block:'nearest'});
     }
-    /* Подогрев: фиксированная доплата */
-    if (state.heat) {
-      price += 2500;
+    if(!window.MirrorStavropolPricing){requestQuote('Не удалось загрузить калькулятор. Обновите страницу.');return;}
+    if(!(w>=400&&h>=400)){requestQuote('Минимальные размеры — 40 см.');return;}
+    if((state.shape==='double'||state.shape==='semidouble')&&h2<400){
+      requestQuote('Минимальная высота каждой части — 40 см.');return;
     }
-
-    /* Дополнительные алюминиевые опции — по расчётному периметру,
-       без минимальной покупки 6 м. Ставки скрыты в клиентском интерфейсе. */
-    // Профиль для ленты — только слева и справа: две высоты по 400 ₽/м.
-    var profileLength = 2 * (state.shape==='circle'?w:h+(state.shape.indexOf('double')!==-1?h2:0)) / 1000;
-    // Приложение владельца может уточнить длину профиля (световые полосы по ширине или по периметру); на сайте хука нет.
-    if (window.MirrorProfileLength) profileLength = window.MirrorProfileLength(profileLength, {shape:state.shape,w:w,h:h,h2:h2});
-    if (state.ledProfile && state.light) price += profileLength * 400;
-
-    // Поездка за полотном и доставка — без наценки и надбавок; установка — как в Ставрополе.
-    price += purchaseTripPrice();
-    var glueMount = !!document.querySelector('input[name="mount-method"][value="glue"]:checked');
-    var reinfKind = glueMount ? 'none' : window.MirrorSupplierPricing.reinforcementKind(state.reinf, state.shape, w, h, h2);
-    if (!glueMount) {
-      price += window.MirrorSupplierPricing.rearProfile(reinfKind, state.shape, w, h, h2).cost;
-      price += window.MirrorSupplierPricing.rearMounts(state.shape, w, h, h2).cost;
+    var totalHeight=state.shape==='circle'?w:h+(/double/.test(state.shape)?h2:0);
+    if(Math.max(w,totalHeight)>3210||Math.min(w,totalHeight)>2250){
+      requestQuote('Габариты превышают стандартный лист, стоимость согласуем индивидуально.');return;
     }
-    var profileTrip = 500;
-    price += profileTrip;
-    if (state.install) price += installationPrice(area, state.light, state.shape);
-    price += clientDeliveryPrice();
-
-    if (state.faceFrame !== 'none') {
-      price += window.MirrorSupplierPricing.faceFrame(state.shape,w,h,h2,state.faceFrame).cost;
-    }
-
-    // General RIAL list: shaped material and processing each carry their own 50% surcharge.
-
-
-    var sizeText = '';
-    if (state.shape === 'circle') {
-      sizeText = 'Ø ' + w + ' мм · ' + SHAPE_NAMES[state.shape];
-    } else if (state.shape === 'double' || state.shape === 'semidouble') {
-      var h2r = window.MirrorSize.read(document.getElementById('height2')) || 0;
-      sizeText = h + '+' + h2r + ' × ' + w + ' мм · ' + SHAPE_NAMES[state.shape];
-    } else {
-      sizeText = h + ' × ' + w + ' мм · ' + SHAPE_NAMES[state.shape];
-    }
-    /* ---------- Клиентский результат ----------
-       Показываем только размер, форму, подсветку и опции.
-       Себестоимость, наценка, комплектующие, доставка,
-       доплаты и прибыль — только во внутреннем расчёте выше. */
-    var CLR_LABELS = { warm: 'тёплый 3000 K', cold: 'холодный 6500 K', neutral: 'дневной 4000 K' };
-    var CTRL_LABELS = { wave: 'взмах рукой', touch: 'сенсор на зеркале', remote: 'пульт ДУ', smart: 'Wi-Fi / умный дом' };
-
-    if (window.onPersonalCalculation) {
-      var orderTrip=purchaseTripPrice(),orderDelivery=clientDeliveryPrice();
-      var orderInstall=state.install?installationPrice(area,state.light,state.shape):0;
-      window.onPersonalCalculation({total:price,rows:[
-        {key:'mirror',sale:price-orderTrip-profileTrip-orderDelivery-orderInstall,cost:null,expense:'mirror'},
-        {key:'purchase-trip',sale:orderTrip,cost:orderTrip},
-        {key:'profile-trip',name:'Поездка за уголком',sale:profileTrip,cost:profileTrip},
-        {key:'customer-delivery',sale:orderDelivery,cost:null,expense:'delivery'},
-        {key:'installation',sale:orderInstall,cost:null,expense:'install'}
-      ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,height2:h2,supplierTariffVersion:2,supplier:supplier,productionDays:supplier==='arsenal'?10:13,productionDate:window.MirrorProductionDate.due(supplier==='arsenal'?10:13).label,hardwareTariffVersion:1,mirrorOptions:mirrorOptions,circleBlankVersion:1,componentTariffVersion:1,pricingVersion:2,evaTariffVersion:1,ledProfileTariffVersion:3,supplierCategory:state.supplierCategory,supplierCost:state.supplierCost,
-        size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),material:state.material,
-        materialLabel:window.MirrorSupplierPricing.materials[state.material].label+(state.material==='decorative'?' · '+mirrorOptions.decor:''),
-        edge:state.edge,edgeLabel:window.MirrorCalcOptions.edgeLabel(EDGE_LABELS[state.edge],mirrorOptions,supplierQuote),light:state.light,ctrl:state.ctrl,clr:state.clr,
-        film:state.film,heat:state.heat,reinf:reinfKind,mountMethod:glueMount?'glue':'fixings',ledProfile:state.ledProfile,faceFrame:state.faceFrame,
-        install:state.install,delivery:state.delivery,region:deliveryRegion(),estimate:supplierQuote.estimate
-      }});
-    }
-
-    document.getElementById('r-size').textContent = window.MirrorSize.dimensions(sizeText);
-
-    document.getElementById('r-sum').textContent = fmt(price) + ' ₽';
+    var deliveryRoute=window.MirrorDelivery?window.MirrorDelivery.getRoute():null;
+    var clientDelivery=window.MirrorOrderPricing.deliveryPrice(
+      Math.max(w,totalHeight),deliveryRoute?deliveryRoute.km:null,state.delivery||state.install,state.install);
+    var priced;
+    try{
+      priced=window.MirrorStavropolPricing.calculate({
+        shape:state.shape,width:w,height:h,height2:h2,material:material,
+        light:state.light,facet:options.facet,sand:options.sand,
+        film:state.film,heat:state.heat,ledProfile:state.ledProfile,
+        faceFrame:state.faceFrame,aluFrame:state.aluFrame,install:state.install,
+        deliveryPrice:clientDelivery
+      });
+    }catch(error){requestQuote(error.message||'Требуется индивидуальный расчёт.');return;}
+    var price=priced.total;
+    var facetLabel=ALLOWED_FACETS[priced.facet]||('фацет '+priced.facet+' мм');
+    var name=SHAPE_NAMES[state.shape];
+    var edgeLabel=facetLabel;
+    var orderData={total:price,rows:[
+      {key:'mirror',sale:priced.mirror,cost:null,expense:'mirror'},
+      {key:'purchase-trip',sale:priced.procurement,cost:null,expense:'trip'},
+      {key:'customer-delivery',sale:priced.delivery,cost:null,expense:'delivery'},
+      {key:'installation',sale:priced.installation,cost:null,expense:'install'}
+    ],mirror:{
+      carry:window.MirrorCarry?window.MirrorCarry.read():null,
+      shape:state.shape,name:name,width:w,height:h,height2:h2,size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),
+      material:'silver',materialLabel:'Зеркало, 4 мм',edge:state.edge,edgeLabel:edgeLabel,
+      mirrorOptions:options,ledProfileTariffVersion:1,stavropolTariffVersion:1,
+      light:state.light,ctrl:state.ctrl,clr:state.clr,
+      film:state.film,heat:state.heat,aluFrame:priced.aluFrame,requiredAngleFrame:priced.requiredFrame,
+      faceFrame:state.faceFrame,ledProfile:state.ledProfile,
+      install:state.install,delivery:state.delivery,region:'stavropol',estimate:false
+    }};
+    if(window.onPersonalCalculation)window.onPersonalCalculation(orderData);
+    document.getElementById('r-size').textContent=window.MirrorSize.dimensions(sizeText);
+    document.getElementById('r-sum').textContent=fmt(price)+' ₽';
+    document.getElementById('r-sum').dataset.estimate='false';
     var supplierStatus=document.getElementById('supplier-status');
-    if(supplierStatus)supplierStatus.textContent=window.MirrorProductionDate.text(supplier==='arsenal'?10:13);
-    var priceLabel = document.querySelector('.calc-result-label');
-    if (priceLabel) priceLabel.textContent = supplierQuote.estimate ? 'Ориентировочная стоимость' : 'Итоговая цена зеркала';
-    document.getElementById('r-sum').dataset.estimate = String(supplierQuote.estimate);
-    document.getElementById('r-cta').textContent = 'Заказать в MAX';
-
-    function row(label, value) {
-      return '<div class="row"><span>' + label + '</span><i class="dash"></i><span>' + value + '</span></div>';
-    }
-
-    var materialLabels={};Object.keys(window.MirrorSupplierPricing.materials).forEach(function(k){materialLabels[k]=window.MirrorSupplierPricing.materials[k].label;});if(state.material==='decorative')materialLabels[state.material]+=' · '+mirrorOptions.decor;
-    var inc = row('Полотно', materialLabels[state.material]);
-    var sandDescription=window.MirrorCalcOptions.sandLabel(mirrorOptions);if(sandDescription)inc+=row('Пескоструйная обработка',sandDescription);
-    if (state.light) {
-      inc += row('Подсветка', 'LED COB, ' + CLR_LABELS[state.clr] + ' свет');
-      inc += row('Управление', CTRL_LABELS[state.ctrl]);
-    } else {
-      inc += row('Подсветка', 'нет');
-    }
-    inc += row('Кромка',window.MirrorCalcOptions.edgeLabel(EDGE_LABELS[state.edge],mirrorOptions,supplierQuote));
-    if (state.install) {
-      inc += row('Установка', glueMount ? 'приклеивание' : (state.film ? 'на крепёж, с бронеплёнкой' : 'на крепёж'));
-    }
-    if (state.film) {
-      inc += row('Бронеплёнка', 'да');
-    }
-    if (state.heat) {
-      inc += row('Подогрев 400×600 мм', 'да');
-    }
-
-    inc += row('Срок изготовления', 'до '+(supplier==='arsenal'?10:13)+' дней');
-    inc += row('Ориентировочная готовность', window.MirrorProductionDate.due(supplier==='arsenal'?10:13).label);
-    inc += row('Доставка', deliveryDescription());
-    if (state.ledProfile) inc += row('Светодиодная лента в профиле', 'да');
-    if (!glueMount) {
-      inc += row('Усиление сзади', window.MirrorSupplierPricing.REINF[reinfKind].label+' · включено');
-      inc += row('Задние крепления',window.MirrorSupplierPricing.rearMounts(state.shape,w,h,h2).count+' шт. · включены');
-    } else { inc += row('Способ крепления', 'приклеивание · без заднего усиления и крепежей'); }
-    if (state.faceFrame !== 'none') inc += row('Алюминиевая рама', FACE_FRAME_LABELS[state.faceFrame]);
-    if (supplierQuote.estimate) inc += '<p class="figure-price-note">Точная стоимость после согласования контура и заготовки. Установка и доставка — по выбранным условиям.</p>';
-    document.getElementById('r-inc').innerHTML = inc;
-
-    var details = [materialLabels[state.material]];if(window.MirrorCalcOptions.sandLabel(mirrorOptions))details.push(window.MirrorCalcOptions.sandLabel(mirrorOptions));if(Number(mirrorOptions.facet))details.push('фацет '+mirrorOptions.facet+' мм');
-    if (state.light) {
-      details.push('с LED-подсветкой (' + CLR_LABELS[state.clr] + ', управление: ' + CTRL_LABELS[state.ctrl] + ')');
-    } else {
-      details.push('без подсветки');
-    }
-    details.push(EDGE_LABELS[state.edge]);
-    if (state.install) details.push('с установкой');
-    if (state.film) details.push('с бронеплёнкой');
-    if (state.ledProfile) details.push('со светодиодной лентой в алюминиевом профиле');
-    if (glueMount) details.push('крепление: приклеивание, без заднего усиления');
-    else if (reinfKind !== 'none') details.push('усиление сзади: ' + window.MirrorSupplierPricing.REINF[reinfKind].label);
-    details.push('изготовление до '+(supplier==='arsenal'?10:13)+' дней');
-    details.push('ориентировочно до '+window.MirrorProductionDate.due(supplier==='arsenal'?10:13).label);
-    if (state.delivery || state.install) details.push('доставка: ' + deliveryDescription());
-
-    if (state.faceFrame !== 'none') details.push('алюминиевая рама — ' + FACE_FRAME_LABELS[state.faceFrame]);
-    var ctaText = '';
-    if (state.shape === 'double') {
-      var h2c = window.MirrorSize.read(document.getElementById('height2')) || 0;
-      ctaText = 'Здравствуйте! Хочу заказать зеркало из двух частей ' + h + '+' + h2c + '×' + w + ' мм' + (details.length ? ' — ' + details.join(', ') : '') + (supplierQuote.estimate ? '. Ориентировочная стоимость по калькулятору: ' : '. Стоимость по калькулятору: ') + fmt(Math.round(price)) + ' ₽.';
-    } else if (state.shape === 'semidouble') {
-      var h2SemiCta = window.MirrorSize.read(document.getElementById('height2')) || 0;
-      ctaText = 'Здравствуйте! Хочу заказать полукруг из двух частей ' + h + '+' + h2SemiCta + '×' + w + ' мм' + (details.length ? ' — ' + details.join(', ') : '') + (supplierQuote.estimate ? '. Ориентировочная стоимость по калькулятору: ' : '. Стоимость по калькулятору: ') + fmt(Math.round(price)) + ' ₽.';
-    } else {
-      ctaText = 'Здравствуйте! Хочу заказать ' + SHAPE_NAMES[state.shape].toLowerCase() + ' зеркало ' + (state.shape === 'circle' ? 'Ø' + w : h + '×' + w) + ' мм' + (details.length ? ' — ' + details.join(', ') : '') + (supplierQuote.estimate ? '. Ориентировочная стоимость по калькулятору: ' : '. Стоимость по калькулятору: ') + fmt(Math.round(price)) + ' ₽.';
-    }
-    document.getElementById('r-cta').href = MAX_URL + '?text=' + encodeURIComponent(window.MirrorSize.dimensions(ctaText));
-    if (window.updateSelectedMirrorTotal) window.updateSelectedMirrorTotal();
-
-    var res = document.getElementById('calc-result');
-    res.classList.add('show');
-    if (scrollResult !== false) res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if(supplierStatus)supplierStatus.textContent='Срок изготовления уточним при оформлении заказа';
+    var priceLabel=document.querySelector('.calc-result-label');
+    if(priceLabel)priceLabel.textContent='Итоговая стоимость';
+    function row(label,value){return '<div class="row"><span>'+label+'</span><i class="dash"></i><span>'+value+'</span></div>';}
+    var lights={warm:'тёплый',cold:'холодный',neutral:'нейтральный'};
+    var controls={wave:'взмах рукой',touch:'сенсор',remote:'пульт',smart:'Wi-Fi / умный дом'};
+    var inc=row('Полотно','Серебро, 4 мм');
+    if(state.light){
+      inc+=row('Подсветка','LED COB, '+lights[state.clr]+' свет');
+      inc+=row('Управление',controls[state.ctrl]);
+    }else inc+=row('Подсветка','нет');
+    inc+=row('Кромка',edgeLabel);
+    if(state.install)inc+=row('Установка','включена');
+    if(state.film)inc+=row('Бронеплёнка','да');
+    if(state.heat)inc+=row('Подогрев','да');
+    if(state.ledProfile)inc+=row('Светодиодная лента в профиле','да');
+    inc+=row('Доставка',window.MirrorDelivery?window.MirrorDelivery.describe():'не выбрана');
+    if(state.faceFrame!=='none')inc+=row('Лицевая алюминиевая рама',FACE_FRAME_LABELS[state.faceFrame]);
+    if(priced.aluFrame)inc+=row('Каркас из алюминиевого уголка 1,5 мм',priced.requiredFrame?'обязателен · включён':'включён');
+    document.getElementById('r-inc').innerHTML=inc;
+    var details=[name,'полотно серебро 4 мм','кромка: '+edgeLabel,
+      state.light?'LED, '+lights[state.clr]+', управление: '+controls[state.ctrl]:'без подсветки'];
+    if(state.install)details.push('с установкой');
+    if(state.film)details.push('с бронеплёнкой');
+    if(state.heat)details.push('с подогревом');
+    if(state.ledProfile)details.push('светодиодная лента в профиле');
+    if(state.faceFrame!=='none')details.push('рама: '+FACE_FRAME_LABELS[state.faceFrame]);
+    if(priced.aluFrame)details.push('каркас из алюминиевого уголка');
+    setActionLinks('Здравствуйте! Хочу заказать зеркало в Ставрополе. '+details.join(', ')+
+      '. Размеры: '+window.MirrorSize.dimensions(sizeText.split(' · ')[0])+
+      '. Итоговая стоимость по калькулятору: '+fmt(Math.round(price))+' ₽.');
+    if(window.updateSelectedMirrorTotal)window.updateSelectedMirrorTotal();
+    var result=document.getElementById('calc-result');result.classList.add('show');
+    if(scrollResult!==false)result.scrollIntoView({behavior:'smooth',block:'nearest'});
   }
-
-  window.calculateMirrorInPlace = function () { calc(false); };
-
-  var deliveryRegionSelect = document.getElementById('delivery-region');
-  if (deliveryRegionSelect) deliveryRegionSelect.addEventListener('change', function () {
-    readState();
-    var result = document.getElementById('calc-result');
-    if (result && result.classList.contains('show')) calc(false);
-  });
 
   /* ---------- События калькулятора ---------- */
   $all('input[name="face-frame"]').forEach(function (r) {
