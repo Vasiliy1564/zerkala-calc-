@@ -851,7 +851,7 @@
       '<linearGradient id="realMirrorSheen" x2="1" y2="1"><stop stop-color="#f5fbff" stop-opacity=".22"/><stop offset=".38" stop-color="#fff" stop-opacity=".03"/><stop offset=".52" stop-color="#fff" stop-opacity=".13"/><stop offset=".68" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#78958a" stop-opacity=".16"/></linearGradient></defs>' +
       halos + '<g clip-path="url(#realMirrorClip)">' +
       '<rect width="170" height="240" fill="#d7dbd3"/>' +
-      '<image href="assets/mirror-reflection.png" width="170" height="240" preserveAspectRatio="xMidYMid slice" opacity=".88"/>' +
+      '<image href="assets/mirror-reflection.svg" width="170" height="240" preserveAspectRatio="xMidYMid slice" transform="translate(170 0) scale(-1 1)" opacity="1"/>' +
       '<rect width="170" height="240" fill="url(#realMirrorSheen)"/></g>' + edges + splitOverlay);
   }
 
