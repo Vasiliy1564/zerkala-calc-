@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var files = {black:'black-frame-full-height.webp',white:'bathroom-white-frame.webp',gold:'gold-frame-portrait.webp'};
+  var files = {black:'black-frame-full-height.jpg',white:'bathroom-white-frame.jpg',gold:'gold-frame-portrait.jpg'};
   var names = {black:'чёрной',white:'белой',gold:'золотой'};
   var box, returnTarget, returnButton;
   function move(target) {
@@ -22,12 +22,9 @@
       returnButton = document.createElement('button');
       returnButton.id = 'example-return'; returnButton.type = 'button';
       returnButton.textContent = '← Вернуться к калькулятору';
-      returnButton.style.cssText = 'position:fixed;z-index:110;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 24px);padding:15px 20px;border:1px solid #fff;border-radius:10px;background:#173d34;color:#fff;box-shadow:0 4px 18px #0003;font:600 16px/1.3 sans-serif;cursor:pointer';
+      returnButton.style.cssText = 'position:fixed;z-index:90;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 24px);padding:15px 20px;border:1px solid #fff;border-radius:10px;background:#173d34;color:#fff;box-shadow:0 4px 18px #0003;font:600 16px/1.3 sans-serif;cursor:pointer';
       returnButton.onclick = function () {
         hideReturn(); if (box) box.hidden = true;
-        var viewer = document.getElementById('lightbox');
-        if (viewer) viewer.classList.remove('open');
-        document.body.classList.remove('no-scroll');
         var target = document.getElementById('quote-form') || (returnTarget && returnTarget.closest('.field'));
         if (returnTarget) returnTarget.focus({preventScroll:true});
         if (target) move(target);
@@ -70,14 +67,14 @@
       figure.append(photo,caption); pair.appendChild(figure);
     });
     box.querySelector('h2').textContent = 'Зеркало в ' + names[color] + ' раме';
-    box.hidden = false; window.showPreviewReturn(origin); move(box);
+    box.hidden = false;
   };
 })();
 
 /* ============================================================
-   ЗЕРКАЛО PRO — дизайн ARCO
-   Интерактив + калькулятор СПб: прайс от 12.10.2026.
-   Наценка только на полотно и обработку: 100% / 150% с LED.
+   ЗЕРКАЛА ПРО — дизайн ARCO
+   Интерактив + калькулятор (прайс: зеркало 1500 ₽/м², обработка
+   150 ₽/пог.м, наценка 150% при подсветке)
    ============================================================ */
 (function () {
   'use strict';
@@ -86,7 +83,7 @@
     '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="700">' +
     '<rect width="100%" height="100%" fill="#f3f2ef"/>' +
     '<rect x="50%" y="42%" width="120" height="60" transform="translate(-60,-30)" fill="none" stroke="#c4c0b8" stroke-width="2"/>' +
-    '<text x="50%" y="60%" font-family="Georgia,serif" font-size="20" letter-spacing="5" fill="#8f8d88" text-anchor="middle">ЗЕРКАЛО PRO</text>' +
+    '<text x="50%" y="60%" font-family="Georgia,serif" font-size="20" letter-spacing="5" fill="#8f8d88" text-anchor="middle">ЗЕРКАЛА ПРО</text>' +
     '</svg>'
   );
 
@@ -147,7 +144,6 @@
         lightboxCaption = $('.lightbox-caption', lightbox);
     projects.forEach(function (card) {
       card.addEventListener('click', function () {
-        window.showPreviewReturn(card);
         var image = $('img', card);
         lightboxImage.src = image.src;
         lightboxImage.alt = image.alt;
@@ -157,7 +153,6 @@
       });
     });
     function closeLightbox() {
-      window.hideFrameExample();
       lightbox.classList.remove('open');
       document.body.classList.remove('no-scroll');
     }
@@ -215,14 +210,12 @@
      ============================================================ */
   var state = {
     shape: 'rect',
-    material: 'silver',
     light: true,
     ctrl: 'wave',
     clr: 'warm',
-    edge: 'grind',
+    facet: 'none',
     film: false,
     heat: false,
-    reinf: 'auto',
     delivery: false,
     faceFrame: 'none',
     aluFrame: false,
@@ -231,13 +224,94 @@
   };
 
   var FACE_FRAME_LABELS = { white: 'белая', black: 'чёрная', gold: 'золотая' };
+  function faceFramePerimeter(shape, w, h, h2) {
+  var totalH = h + (shape.indexOf('double') !== -1 ? h2 : 0);
+  if (shape === 'circle') return Math.PI * w / 1000;
+  if (shape === 'capsule') {
+    var shortSide = Math.min(w, h), longSide = Math.max(w, h);
+    return (Math.PI * shortSide + 2 * (longSide - shortSide)) / 1000;
+  }
+  if (shape === 'oval') {
+    var a = w / 2, b = h / 2, q = Math.pow(a - b, 2) / Math.pow(a + b, 2);
+    return Math.PI * (a + b) * (1 + 3 * q / (10 + Math.sqrt(4 - 3 * q))) / 1000;
+  }
+  if (shape === 'semicircle' || shape === 'semidouble') {
+    var r = totalH / 2;
+    var perimeter = Math.PI * r + totalH;
+    if (shape === 'semidouble') perimeter += 2 * (r + Math.sqrt(Math.max(0, r * r - Math.pow(h - r, 2))));
+    return perimeter / 1000;
+  }
+  return 2 * (w + totalH + (shape === 'double' ? w : 0)) / 1000;
+}
+
+  function faceFrameStock(shape, w, h, h2) {
+  var barLength = 2700, billedLength = 3, bars;
+  if (shape === 'rect' || shape === 'double') {
+    var sides = shape === 'double' ? [w,w,h,h,w,w,h2,h2] : [w,w,h,h];
+    var pieces = [];
+    sides.forEach(function (side) {
+      while (side > barLength) { pieces.push(barLength); side -= barLength; }
+      if (side > 0) pieces.push(side);
+    });
+    pieces.sort(function (a,b) { return b-a; });
+    var best = pieces.length, bins = [];
+    function pack(i) {
+      if (i === pieces.length) { best = Math.min(best,bins.length); return; }
+      if (bins.length >= best) return;
+      var seen = {};
+      for (var j=0;j<bins.length;j++) {
+        if (seen[bins[j]] || bins[j]+pieces[i]>barLength) continue;
+        seen[bins[j]]=true; bins[j]+=pieces[i]; pack(i+1); bins[j]-=pieces[i];
+      }
+      bins.push(pieces[i]); pack(i+1); bins.pop();
+    }
+    pack(0); bars=best;
+  } else {
+    bars = Math.ceil((faceFramePerimeter(shape,w,h,h2)*1000-0.000001)/barLength);
+  }
+  return { bars:bars, metres:bars*billedLength };
+}
+
+  /* Уголок продаётся цельными трёхметровыми хлыстами. */
+  var ANGLE_FRAME = { barLength: 3000, pricePerMetre: 80, purchaseTrip: 500 };
+  function angleFrameBars(shape, w, h, h2, perimeter) {
+    if (shape !== 'rect' && shape !== 'rounded' && shape !== 'double') {
+      // Для фигурных зеркал сохраняем прежний расчётный периметр.
+      return Math.ceil(perimeter * 1000 / ANGLE_FRAME.barLength);
+    }
+    var sides = shape === 'double' ? [w,w,w,w,h,h,h2,h2] : [w,w,h,h];
+    var pieces = [];
+    sides.forEach(function (side) {
+      var remaining = Math.max(0, Math.round(side));
+      while (remaining > 0) {
+        var piece = Math.min(ANGLE_FRAME.barLength, remaining);
+        pieces.push(piece);
+        remaining -= piece;
+      }
+    });
+    pieces.sort(function (a,b) { return b-a; });
+    var bins = [], best = pieces.length;
+    function pack(i) {
+      if (i === pieces.length) { best = Math.min(best, bins.length); return; }
+      if (bins.length >= best) return;
+      var seen = {};
+      for (var j = 0; j < bins.length; j++) {
+        if (seen[bins[j]] || bins[j] + pieces[i] > ANGLE_FRAME.barLength) continue;
+        seen[bins[j]] = true;
+        bins[j] += pieces[i]; pack(i+1); bins[j] -= pieces[i];
+      }
+      bins.push(pieces[i]); pack(i+1); bins.pop();
+    }
+    pack(0);
+    return best;
+  }
+
   var SHAPE_NAMES = {
     rect: 'Прямоугольник',
-    arch: 'Арочное',
     rounded: 'Прямоугольник с закруглёнными углами',
-    curved: 'Фигурное — волна',
     circle: 'Круг',
     oval: 'Овал',
+    capsule: 'Овал с прямыми боками',
     semicircle: 'Полукруг',
     double: 'Из двух частей',
     semidouble: 'Полукруг из двух частей'
@@ -248,45 +322,36 @@
   var AVAIL_H = VB_H - PAD * 2;
 
   var PRICE = {
-    mirror: 1568,
-    specialMirror: 2800,
-    plainMarkup: 1.00,
-    markup: 1.50,
-    ledRoll: 600,
+    mirror: 1500,
+    edge: 150,
+    markup: 1.5,
+    ledRoll: 700,
     ledRollLen: 5,
-    block: 650,
+    block: 500,
     switch: 500,
-    purchaseTrip: 350
+    mount: 50,
+    mountStep: 2,
+    delivery: 300,
+    facetDelivery: 1000
   };
 
-  // Установка: как на ставропольском сайте (база × 1,06 × 1,02 и надбавка за форму),
-  // плюс 300 ₽ ко всем и 150 ₽ за каждый м² площади.
-  function installationPrice(area, light, shape) {
-    var base = (area <= 2) ? Math.max(2000, area * 1300) : area * 1500;
-    return (light ? Math.max(2500, base + 500) : base) * (1.06*1.02*(shape==='rounded'?1.15:shape==='double'?1+2000/16469.75:shape==='semidouble'?1.2:1))
-      + 300 + area * 150;
+  var FACET_RATES = { grind: 200, '10': 200, '20': 250, '25': 300 };
+
+  /* Надбавка за фигурную форму к погонному метру обработки кромки */
+  function shapeMeterSurcharge(shape) {
+    return (shape === 'circle' || shape === 'oval' || shape === 'capsule' || shape === 'semicircle' || shape === 'semidouble') ? 95 : 0;
   }
-  function deliveryRegion() {
-    var select = document.getElementById('delivery-region');
-    return select ? select.value : 'murino';
+
+  /* Доплата за большую сторону: до 2000 мм включительно — 0 ₽,
+     свыше 2000 до 2500 мм включительно — 1200 ₽, выше 2500 мм — 3000 ₽.
+     Перестановка высоты и ширины не меняет доплату. */
+  function sizeSurcharge(width, height) {
+    var maxDimension = Math.max(width, height);
+    if (maxDimension <= 2000) return 0;
+    if (maxDimension <= 2500) return 1200;
+    return 3000;
   }
-  function mirrorDeliverySides() {
-    var shape = $('input[name="shape"]:checked');
-    var w = window.MirrorSize.read(document.getElementById('width')) || 0;
-    var h = window.MirrorSize.read(document.getElementById('height')) || 0;
-    if (shape && shape.value === 'circle') h = w;
-    if (shape && /double/.test(shape.value)) h += window.MirrorSize.read(document.getElementById('height2')) || 0;
-    return {longer:Math.max(w, h), shorter:Math.min(w, h)};
-  }
-  function purchaseTripPrice() {
-    var sides = mirrorDeliverySides();
-    return window.MirrorSupplierPricing.purchasingTrip(sides.longer, sides.shorter);
-  }
-  function clientDeliveryPrice() {
-    var r=window.MirrorDelivery&&window.MirrorDelivery.getRoute();
-    return window.MirrorOrderPricing.deliveryPrice(mirrorDeliverySides().longer,r?r.km:null,state.delivery,state.install);
-  }
-  function deliveryDescription() {return window.MirrorDelivery?window.MirrorDelivery.describe():'укажите адрес';}
+  function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
 
   function updateDeliveryAvailability() {
     var cb=$('input[name="option"][value="delivery"]'),install=$('input[name="option"][value="install"]');
@@ -295,37 +360,6 @@
     var field=document.getElementById('deliveryRegionField');if(field)field.hidden=true;
     if(window.MirrorDelivery)window.MirrorDelivery.updateVisibility();
   }
-
-  var EDGE_LABELS = { grind: 'шлифовка', polish: 'полировка', 'curved-grind': 'полировка', 'curved-polish': 'полировка' };
-
-  function euroEdgeRate(sideMm) {
-    if (sideMm < 120 || sideMm >= 2400) return 270;
-    if (sideMm >= 1900) return 216;
-    if (sideMm >= 1400) return 176;
-    return 135;
-  }
-
-  function euroEdgeCost(shape, w, h, h2) {
-    // Сохраняем расчёт криволинейных форм по габаритному прямоугольнику.
-    // У составного прямоугольника обрабатываются все стороны обеих деталей.
-    var sides = shape === 'double' ? [w, w, h, h, w, w, h2, h2]
-      : [w, w, h + (shape === 'semidouble' ? h2 : 0), h + (shape === 'semidouble' ? h2 : 0)];
-    return sides.reduce(function (cost, side) {
-      return cost + side / 1000 * euroEdgeRate(side);
-    }, 0);
-  }
-
-  /* Надбавка за фигурную форму к погонному метру обработки кромки */
-  function shapeMeterSurcharge(shape) {
-    return (shape === 'circle' || shape === 'oval' || shape === 'semicircle' || shape === 'semidouble') ? 95 : 0;
-  }
-
-  /* Доплата за высоту свыше 2000 мм — 1350 ₽ для всех зеркал.
-     Для составных форм учитывается суммарная высота двух частей. */
-  function heightSurcharge(totalH) {
-    return totalH > 2000 ? 1350 : 0;
-  }
-  function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
 
   function updateFaceFrameAvailability() {
     var allowed = state.shape === 'rect' || state.shape === 'double';
@@ -338,91 +372,140 @@
     if (!allowed) state.faceFrame = 'none';
   }
 
-  function updateEdgeAvailability() {
-    var curved = state.shape !== 'rect' && state.shape !== 'double';
-    var treatment = 'polish';
-    state.edge = (curved ? 'curved-' : '') + treatment;
-    $all('input[name="edge"]').forEach(function (radio) {
-      radio.disabled = false;
-      if (radio.parentElement) radio.parentElement.style.opacity = '';
+  function updateFacetAvailability() {
+    var allowed = state.shape === 'rect' || state.shape === 'double';
+    var reset = false;
+    $all('input[name="facet"]').forEach(function (radio) {
+      var isFacet = radio.value !== 'none' && radio.value !== 'grind';
+      if (!isFacet) return;
+      radio.disabled = !allowed;
+      if (radio.parentElement) radio.parentElement.classList.toggle('hidden', !allowed);
+      if (!allowed && radio.checked) { radio.checked = false; reset = true; }
     });
-    var info = document.getElementById('edgeInfo');
-    if (info) info.textContent = 'Выбрана ' + (treatment === 'grind' ? 'шлифовка' : 'полировка');
+    if (reset) {
+      var none = $('input[name="facet"][value="none"]');
+      if (none) none.checked = true;
+      state.facet = 'none';
+      var info = document.getElementById('edgeInfo');
+      if (info) {
+        info.textContent = 'Обработка кромки от пореза включена';
+        info.classList.remove('gold');
+      }
+    }
+  }
+
+  function updateFacetFrameCompatibility() {
+    var hasFacet = state.facet !== 'none' && state.facet !== 'grind';
+    // A restored incompatible selection keeps the bevel and removes the frame.
+    if (hasFacet && state.faceFrame !== 'none') {
+      $all('input[name="face-frame"]').forEach(function (radio) {
+        radio.checked = radio.value === 'none';
+      });
+      state.faceFrame = 'none';
+    }
+    var rectangular = state.shape === 'rect' || state.shape === 'double';
+    var hasFrame = state.faceFrame !== 'none';
+    $all('input[name="face-frame"]').forEach(function (radio) {
+      radio.disabled = !rectangular || (hasFacet && radio.value !== 'none');
+      if (radio.parentElement) {
+        radio.parentElement.style.opacity = radio.disabled ? '0.45' : '';
+        radio.parentElement.style.cursor = radio.disabled ? 'not-allowed' : '';
+      }
+    });
+    $all('input[name="facet"]').forEach(function (radio) {
+      var isFacet = radio.value !== 'none' && radio.value !== 'grind';
+      if (!isFacet) return;
+      radio.disabled = !rectangular || hasFrame;
+      if (radio.parentElement) {
+        radio.parentElement.style.opacity = radio.disabled ? '0.45' : '';
+        radio.parentElement.style.cursor = radio.disabled ? 'not-allowed' : '';
+      }
+    });
+  }
+
+  function scrollToMirrorPreview() {
+    var preview = document.querySelector('.calculator .calc-preview');
+    if (!preview) return;
+    // Wait for hidden controls and the mirror preview to finish updating.
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        preview.scrollIntoView({
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+          block: 'start'
+        });
+      });
+    });
+  }
+
+  /* При высоте свыше 200 см каркас обязателен. Для составных зеркал
+     учитывается общая высота, для круга — диаметр. */
+  function updateRequiredAngleFrame() {
+    var cb = $('input[name="option"][value="alu-frame"]');
+    if (!cb) return;
+    var h = state.shape === 'circle'
+      ? (window.MirrorSize.read(document.getElementById('width')) || 0)
+      : (window.MirrorSize.read(document.getElementById('height')) || 0);
+    if (state.shape === 'double' || state.shape === 'semidouble')
+      h += window.MirrorSize.read(document.getElementById('height2')) || 0;
+    var required = h > 2000;
+    if (required) {
+      if (cb.dataset.autoRequired !== '1')
+        cb.dataset.manualChecked = cb.checked ? '1' : '0';
+      cb.checked = true;
+      cb.disabled = true;
+      cb.dataset.autoRequired = '1';
+    } else {
+      if (cb.dataset.autoRequired === '1') {
+        cb.checked = cb.dataset.manualChecked === '1';
+        delete cb.dataset.autoRequired;
+        delete cb.dataset.manualChecked;
+      }
+      cb.disabled = false;
+    }
+    var label = document.querySelector('#aluFrameOpt span');
+    if (label) label.textContent = required
+      ? 'Каркас из алюминиевого уголка 1,5 мм (обязательно свыше 200 см, включён в цену)'
+      : 'Каркас из алюминиевого уголка 1,5 мм';
   }
 
   function readState() {
     updateDeliveryAvailability();
     var s = $('input[name="shape"]:checked');
     if (s) state.shape = s.value;
-    var curvedNote = document.getElementById('curved-note');
-    if (curvedNote) curvedNote.hidden = state.shape !== 'curved';
-    var supplierField=document.getElementById('supplier-procurement');
-    if(supplierField)supplierField.hidden=state.shape!=='curved';
-    var supplierCategory=document.getElementById('supplier-category');
-    var supplierCost=document.getElementById('supplier-cost');
-    state.supplierCategory=supplierCategory?supplierCategory.value:'rial';
-    state.supplierCost=supplierCost&&supplierCost.value!==''?Number(supplierCost.value):null;
-    var material = $('input[name="material"]:checked');
-    state.material = material ? material.value : 'silver';
     var l = $('input[name="light"]:checked');
     if (l) state.light = l.value === 'on';
     var c = $('input[name="ctrl"]:checked');
     if (c) state.ctrl = c.value;
     var cl = $('input[name="clr"]:checked');
     if (cl) state.clr = cl.value;
-    var f = $('input[name="edge"]:checked');
-    if (f) state.edge = 'polish';
+    updateFacetAvailability();
+    var f = $('input[name="facet"]:checked');
+    if (f) state.facet = f.value;
     function opt(v) {
       var o = $('input[name="option"][value="' + v + '"]');
       return !!(o && o.checked);
     }
     state.film = opt('film');
     state.heat = opt('heat');
-    var reinfSel = document.getElementById('reinf');
-    state.reinf = reinfSel ? reinfSel.value : 'auto';
     state.install = opt('install');
     state.delivery = opt('delivery');
     updateFaceFrameAvailability();
     var frame = $('input[name="face-frame"]:checked');
     state.faceFrame = frame ? frame.value : 'none';
-    updateEdgeAvailability();
-    var angleCheckbox = $('input[name="option"][value="alu-frame"]');
-    var hInput = window.MirrorSize.read(document.getElementById('height')) || 0;
-    var wInput = window.MirrorSize.read(document.getElementById('width')) || 0;
-    var h2Input = (state.shape === 'double' || state.shape === 'semidouble')
-      ? (window.MirrorSize.read(document.getElementById('height2')) || 0) : 0;
-    var angleRequired = (state.shape === 'circle' ? wInput : hInput + h2Input) > 2000;
-    if(angleCheckbox){
-      if(angleRequired){
-        if(angleCheckbox.dataset.autoRequired !== '1')
-          angleCheckbox.dataset.manualChecked = angleCheckbox.checked ? '1' : '0';
-        angleCheckbox.checked = true;
-        angleCheckbox.disabled = true;
-        angleCheckbox.dataset.autoRequired = '1';
-      } else {
-        if(angleCheckbox.dataset.autoRequired === '1'){
-          angleCheckbox.checked = angleCheckbox.dataset.manualChecked === '1';
-          delete angleCheckbox.dataset.autoRequired;
-          delete angleCheckbox.dataset.manualChecked;
-        }
-        angleCheckbox.disabled = false;
-      }
-      var hint = document.getElementById('aluFrameHint');
-      if(hint) hint.textContent = angleRequired
-        ? 'Высота свыше 200 см: каркас обязателен и уже учтён в цене.'
-        : 'По желанию. Уголок 80 ₽/м, покупка от 3 м и поездка 500 ₽.';
-    }
-    state.aluFrame = angleRequired || !!(angleCheckbox && angleCheckbox.checked);
+    updateFacetFrameCompatibility();
+    updateRequiredAngleFrame();
+    state.aluFrame = opt('alu-frame');
     state.ledProfile = state.light && opt('led-profile');
   }
 
   function adj(id, delta) {
-    if ((state.shape === 'curved' || state.shape === 'semicircle' || state.shape === 'semidouble') && id === 'width') return;
+    if ((state.shape === 'semicircle' || state.shape === 'semidouble') && id === 'width') return;
     var el = document.getElementById(id);
     if (!el) return;
     var v = window.MirrorSize.read(el) || 0;
     v = Math.max(state.shape === 'semicircle' && id === 'height' ? 800 : 400, v + delta);
-    v = Math.min(v, state.shape === 'curved' && id === 'height' ? 1800 : state.shape === 'semidouble' && id === 'height' ? 1600 : 3210);
+    if (id === 'width') v = Math.min(v, 32100);
+    if (id === 'height' || id === 'height2') v = Math.min(v, 22500);
     window.MirrorSize.write(el, v);
     if (state.shape === 'circle') {
       var hEl = document.getElementById('height');
@@ -432,19 +515,13 @@
   }
 
   function syncSemicircleSize() {
-    if (state.shape === 'curved') {
-      var figureHeight = document.getElementById('height');
-      var figureWidth = document.getElementById('width');
-      if (figureHeight && figureWidth) window.MirrorSize.write(figureWidth, Math.round((window.MirrorSize.read(figureHeight) || 0) * 8 / 9));
-      return;
-    }
     if (state.shape !== 'semicircle' && state.shape !== 'semidouble') return;
     var hEl = document.getElementById('height');
     var wEl = document.getElementById('width');
     var h2El = document.getElementById('height2');
     if (hEl && wEl) {
       var totalHeight = window.MirrorSize.read(hEl) || 0;
-      if (state.shape === 'semidouble') { if(h2El)window.MirrorSize.write(h2El,totalHeight); totalHeight *= 2; }
+      if (state.shape === 'semidouble') totalHeight += h2El ? (window.MirrorSize.read(h2El) || 0) : 0;
       window.MirrorSize.write(wEl, totalHeight / 2);
     }
   }
@@ -457,11 +534,15 @@
     if (state.shape === 'circle') hEl.value = wEl.value;
     syncSemicircleSize();
     var rowH2 = document.getElementById('rowH2');
-    if (rowH2) rowH2.classList.toggle('hidden', state.shape !== 'double');
-    var semiNote=document.getElementById('semidouble-note');if(semiNote)semiNote.hidden=state.shape!=='semidouble';
+    if (rowH2) rowH2.classList.toggle('hidden', state.shape !== 'double' && state.shape !== 'semidouble');
     updPreview();
-    var result = document.getElementById('calc-result');
-    if (result && result.classList.contains('show')) calc(false);
+    // Обновляем уже показанную цену при вводе размеров и нажатии +/−.
+    var res = document.getElementById('calc-result');
+    var validSize = window.MirrorSize.read(wEl) >= 400 && window.MirrorSize.read(hEl) >= 400;
+    if (state.shape === 'double' || state.shape === 'semidouble') {
+      validSize = validSize && window.MirrorSize.read(document.getElementById('height2')) >= 400;
+    }
+    if (res && res.classList.contains('show') && validSize) calc(false);
   }
 
   function fitBox(aspect) {
@@ -534,18 +615,8 @@
     renderMirrorSvg();
   }
 
-  function materialReflection(material) {
-    material=material||state.material||'silver';
-    var satin=material.indexOf('satin')===0;
-    var tones={silver:['#c8d7cf',.035],crystal:['#ffffff',.08],graphite:['#252c36',.58],bronze:['#9b6235',.43],antique:['#82704a',.27],satinSilver:['#e1e4de',.55],satinBronze:['#ab8058',.58],satinGraphite:['#535963',.64],decorative:['#d5ddd6',.12]};
-    var tone=tones[material]||tones.silver;
-    var defs='<defs><filter id="materialFrost"><feGaussianBlur stdDeviation="3"/></filter><filter id="materialPatina"><feTurbulence type="fractalNoise" baseFrequency=".12" numOctaves="3" seed="7"/><feColorMatrix type="matrix" values="0 0 0 0 .15 0 0 0 0 .12 0 0 0 0 .08 0 0 0 1.8 -.8"/></filter><pattern id="materialDecor" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M16 0L32 16 16 32 0 16Z" fill="none" stroke="#edf0e8" stroke-width="1.4" opacity=".65"/></pattern></defs>';
-    return defs+'<g class="mirror-material-surface" data-material="'+material+'"><rect width="170" height="240" fill="#d7dbd3"/><image class="mirror-reflection" href="assets/mirror-reflection.svg" width="170" height="240" preserveAspectRatio="xMidYMid slice" opacity="'+(satin?'.55':'.94')+'"'+(satin?' filter="url(#materialFrost)"':'')+'/><rect class="mirror-material-tint" width="170" height="240" fill="'+tone[0]+'" opacity="'+tone[1]+'"/>'+(material==='antique'?'<rect width="170" height="240" filter="url(#materialPatina)" opacity=".6"/>':'')+(material==='decorative'?'<rect width="170" height="240" fill="url(#materialDecor)"/>':'')+'</g>';
-  }
-
-  window.MirrorMaterialReflection=materialReflection;
-
   function renderMirrorSvg() {
+    readState();
     var svg = document.getElementById('mirrorSvg');
     if (!svg) return;
     var wEl = document.getElementById('width');
@@ -554,11 +625,18 @@
     var w = window.MirrorSize.read(wEl) || 1500;
     var h = window.MirrorSize.read(hEl) || 700;
     var shape = state.shape;
+    svg.setAttribute('aria-label', SHAPE_NAMES[shape] + (state.light ? ' с подсветкой' : ' без подсветки'));
+    svg.setAttribute('data-shape', shape);
+    $all('input[name="shape"]').forEach(function (r) {
+      r.parentElement.classList.toggle('is-selected', r.checked);
+    });
     var hasLight = state.light;
     var clr = state.clr;
+    var facet = state.facet;
 
     var colors = { warm: '#ffd28a', cold: '#bbddff', neutral: '#ffffff' };
     var glowColor = colors[clr] || colors.neutral;
+    var facetW = { none: 0, grind: 0, 10: 3, 20: 6, 25: 8 }[facet] || 0;
 
     var cx = VB_W / 2;
     var cy = VB_H / 2;
@@ -577,8 +655,8 @@
       var rx = shape === 'rounded' ? Math.min(rw, rh) * 0.12 : 0;
       var x = (VB_W - rw) / 2;
       var y = (VB_H - rh) / 2;
-      content = '<rect class="mirror-glow" x="' + (x - 0) + '" y="' + (y - 0) + '" width="' + (rw + 0 * 2) + '" height="' + (rh + 0 * 2) + '" rx="' + (rx + 0) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
-        '<rect class="mirror-frame" x="' + x + '" y="' + y + '" width="' + rw + '" height="' + rh + '" rx="' + rx + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + 0 + '" />' +
+      content = '<rect class="mirror-glow" x="' + (x - facetW) + '" y="' + (y - facetW) + '" width="' + (rw + facetW * 2) + '" height="' + (rh + facetW * 2) + '" rx="' + (rx + facetW) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
+        '<rect class="mirror-frame" x="' + x + '" y="' + y + '" width="' + rw + '" height="' + rh + '" rx="' + rx + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + facetW + '" />' +
         '<rect class="mirror-body" x="' + x + '" y="' + y + '" width="' + rw + '" height="' + rh + '" rx="' + rx + '" fill="url(#glassGrad)" stroke="#2a3a4e" stroke-width="1" />' +
         '<rect x="' + (x + 10) + '" y="' + (y + 10) + '" width="' + (rw * 0.3) + '" height="' + (rh * 0.3) + '" rx="4" fill="url(#windowGrad)" opacity="0.6" />' +
         '<rect x="' + (x + rw * 0.55) + '" y="' + (y + 15) + '" width="' + (rw * 0.25) + '" height="' + (rh * 0.25) + '" rx="3" fill="url(#windowGrad)" opacity="0.4" />' +
@@ -586,18 +664,11 @@
         '<rect x="' + x + '" y="' + y + '" width="' + rw + '" height="' + rh + '" rx="' + rx + '" fill="url(#cornerGlow)" />' +
         '<rect x="' + x + '" y="' + (y + rh * 0.6) + '" width="' + rw + '" height="' + (rh * 0.4) + '" rx="' + rx + '" fill="url(#floorGrad)" />' +
         logoText(x, y, rw, rh);
-    } else if (shape === 'arch') {
-      var archFit = fitBox(w / h), aw = archFit.w, ah = archFit.h;
-      var ax = (VB_W - aw) / 2, ay = (VB_H - ah) / 2, ar = aw / 2;
-      var archPath = 'M ' + ax + ' ' + (ay + ah) + ' V ' + (ay + ar) +
-        ' A ' + ar + ' ' + ar + ' 0 0 1 ' + (ax + aw) + ' ' + (ay + ar) +
-        ' V ' + (ay + ah) + ' Z';
-      content = '<path class="mirror-body" d="' + archPath + '" fill="url(#glassGrad)" />';
     } else if (shape === 'circle') {
       var fitC = fitBox(1);
       var r = Math.min(fitC.w, fitC.h) / 2;
-      content = '<circle class="mirror-glow" cx="' + cx + '" cy="' + cy + '" r="' + (r + 4 + 0) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
-        '<circle class="mirror-frame" cx="' + cx + '" cy="' + cy + '" r="' + (r + 0) + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + 0 + '" />' +
+      content = '<circle class="mirror-glow" cx="' + cx + '" cy="' + cy + '" r="' + (r + 4 + facetW) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
+        '<circle class="mirror-frame" cx="' + cx + '" cy="' + cy + '" r="' + (r + facetW) + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + facetW + '" />' +
         '<circle class="mirror-body" cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="url(#glassGrad)" stroke="#2a3a4e" stroke-width="1" />' +
         '<circle cx="' + (cx - r * 0.2) + '" cy="' + (cy - r * 0.25) + '" r="' + (r * 0.3) + '" fill="url(#windowGrad)" opacity="0.5" />' +
         '<circle cx="' + (cx + r * 0.3) + '" cy="' + (cy - r * 0.15) + '" r="' + (r * 0.22) + '" fill="url(#windowGrad)" opacity="0.3" />' +
@@ -605,18 +676,16 @@
         '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + r + '" ry="' + r + '" fill="url(#cornerGlow)" />' +
         '<ellipse cx="' + cx + '" cy="' + (cy + r * 0.25) + '" rx="' + (r * 0.7) + '" ry="' + (r * 0.5) + '" fill="url(#floorGrad)" opacity="0.6" />' +
         logoText(cx - r, cy - r, r * 2, r * 2);
-    } else if (shape === 'curved') {
-      var customBox = fitBox(w / h);
-      var customX = cx - customBox.w / 2, customY = cy - customBox.h / 2;
-      var waveCoordinate=0;
-      var wavePath="M 50 0 C 37 0 31 9 25 13 C 14 19 0 22 0 32 C 0 40 17 44 16 50 C 15 56 2 60 3 68 C 4 76 20 79 26 87 C 32 95 35 100 49 100 C 64 100 68 93 78 89 C 88 84 100 80 99 71 C 98 63 85 60 87 53 C 89 46 100 41 100 32 C 100 22 84 16 76 12 C 67 8 64 0 50 0 Z".replace(/\d+(?:\.\d+)?/g,function(n){var isX=waveCoordinate++%2===0;return (isX?customX:customY)+Number(n)*(isX?customBox.w:customBox.h)/100;});
-      content = '<path d="'+wavePath+'" fill="url(#glassGrad)" />';
+    } else if (shape === 'capsule') {
+      var fitCapsule = fitBox(w / h);
+      var capsuleRadius = Math.min(fitCapsule.w, fitCapsule.h) / 2;
+      content = '<rect class="mirror-body" x="' + (cx - fitCapsule.w / 2) + '" y="' + (cy - fitCapsule.h / 2) + '" width="' + fitCapsule.w + '" height="' + fitCapsule.h + '" rx="' + capsuleRadius + '" ry="' + capsuleRadius + '" fill="url(#glassGrad)" stroke="#2a3a4e" stroke-width="1" />';
     } else if (shape === 'oval') {
       var fitO = fitBox(w / h);
       var rxo = fitO.w / 2;
       var ryo = fitO.h / 2;
-      content = '<ellipse class="mirror-glow" cx="' + cx + '" cy="' + cy + '" rx="' + (rxo + 4 + 0) + '" ry="' + (ryo + 4 + 0) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
-        '<ellipse class="mirror-frame" cx="' + cx + '" cy="' + cy + '" rx="' + (rxo + 0) + '" ry="' + (ryo + 0) + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + 0 + '" />' +
+      content = '<ellipse class="mirror-glow" cx="' + cx + '" cy="' + cy + '" rx="' + (rxo + 4 + facetW) + '" ry="' + (ryo + 4 + facetW) + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
+        '<ellipse class="mirror-frame" cx="' + cx + '" cy="' + cy + '" rx="' + (rxo + facetW) + '" ry="' + (ryo + facetW) + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + facetW + '" />' +
         '<ellipse class="mirror-body" cx="' + cx + '" cy="' + cy + '" rx="' + rxo + '" ry="' + ryo + '" fill="url(#glassGrad)" stroke="#2a3a4e" stroke-width="1" />' +
         '<ellipse cx="' + (cx - rxo * 0.2) + '" cy="' + (cy - ryo * 0.3) + '" rx="' + (rxo * 0.35) + '" ry="' + (ryo * 0.3) + '" fill="url(#windowGrad)" opacity="0.5" />' +
         '<ellipse cx="' + (cx + rxo * 0.3) + '" cy="' + (cy - ryo * 0.15) + '" rx="' + (rxo * 0.25) + '" ry="' + (ryo * 0.22) + '" fill="url(#windowGrad)" opacity="0.3" />' +
@@ -639,9 +708,9 @@
         rectW = 0;
       }
       var pathMain = 'M ' + (boxX + rr) + ' ' + boxY + ' A ' + rr + ' ' + rr + ' 0 0 0 ' + boxX + ' ' + (boxY + rr) + ' A ' + rr + ' ' + rr + ' 0 0 0 ' + (boxX + rr) + ' ' + (boxY + boxH) + ' L ' + (boxX + boxW) + ' ' + (boxY + boxH) + ' L ' + (boxX + boxW) + ' ' + boxY + ' Z';
-      var pathGlow = 'M ' + (boxX + rr) + ' ' + (boxY - 0) + ' A ' + (rr + 0) + ' ' + (rr + 0) + ' 0 0 0 ' + (boxX - 0) + ' ' + (boxY + rr) + ' A ' + (rr + 0) + ' ' + (rr + 0) + ' 0 0 0 ' + (boxX + rr) + ' ' + (boxY + boxH + 0) + ' L ' + (boxX + boxW + 0) + ' ' + (boxY + boxH + 0) + ' L ' + (boxX + boxW + 0) + ' ' + (boxY - 0) + ' Z';
+      var pathGlow = 'M ' + (boxX + rr) + ' ' + (boxY - facetW) + ' A ' + (rr + facetW) + ' ' + (rr + facetW) + ' 0 0 0 ' + (boxX - facetW) + ' ' + (boxY + rr) + ' A ' + (rr + facetW) + ' ' + (rr + facetW) + ' 0 0 0 ' + (boxX + rr) + ' ' + (boxY + boxH + facetW) + ' L ' + (boxX + boxW + facetW) + ' ' + (boxY + boxH + facetW) + ' L ' + (boxX + boxW + facetW) + ' ' + (boxY - facetW) + ' Z';
       content = '<path class="mirror-glow" d="' + pathGlow + '" fill="none" stroke="' + glowColor + '" stroke-width="' + (hasLight ? 6 : 0) + '" opacity="' + (hasLight ? 0.7 : 0) + '" filter="url(#ledGlow)" />' +
-        '<path class="mirror-frame" d="' + pathMain + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + 0 + '" />' +
+        '<path class="mirror-frame" d="' + pathMain + '" fill="none" stroke="url(#bevelGrad)" stroke-width="' + facetW + '" />' +
         '<path class="mirror-body" d="' + pathMain + '" fill="url(#glassGrad)" stroke="#2a3a4e" stroke-width="1" />' +
         '<ellipse cx="' + (boxX + boxW - rectW * 0.5) + '" cy="' + (boxY + boxH * 0.3) + '" rx="' + Math.max(1, rectW * 0.3) + '" ry="' + (boxH * 0.22) + '" fill="url(#windowGrad)" opacity="0.5" />' +
         '<ellipse cx="' + (boxX + boxW - rectW * 0.2) + '" cy="' + (boxY + boxH * 0.55) + '" rx="' + Math.max(1, rectW * 0.15) + '" ry="' + (boxH * 0.18) + '" fill="url(#windowGrad)" opacity="0.3" />' +
@@ -724,7 +793,7 @@
       outline.setAttribute('fill', 'none');
       if (hasLight) {
         outline.setAttribute('stroke', glowColor);
-        outline.setAttribute('stroke-width', '5');
+        outline.setAttribute('stroke-width', '8');
         outline.setAttribute('filter', 'url(#realMirrorHalo)');
         halos += outline.outerHTML;
         outline.removeAttribute('filter');
@@ -735,14 +804,31 @@
       outline.setAttribute('stroke', '#edf0e9');
       outline.setAttribute('stroke-width', '0.45');
       edges += outline.outerHTML;
-
+      if (facetW) {
+        // Reflective bevel band over the photographic mirror preview.
+        outline.setAttribute('stroke', 'url(#realMirrorBevel)');
+        outline.setAttribute('stroke-width', String(facetW * 2));
+        outline.setAttribute('opacity', '0.88');
+        outline.setAttribute('clip-path', 'url(#realMirrorClip)');
+        outline.setAttribute('class', 'mirror-facet-band');
+        edges += outline.outerHTML;
+        if (body.tagName.toLowerCase() === 'rect') {
+          var bevelX = parseFloat(body.getAttribute('x')) + facetW;
+          var bevelY = parseFloat(body.getAttribute('y')) + facetW;
+          var bevelW = Math.max(0, parseFloat(body.getAttribute('width')) - 2 * facetW);
+          var bevelH = Math.max(0, parseFloat(body.getAttribute('height')) - 2 * facetW);
+          edges += '<rect class="mirror-facet-inner-edge" x="' + bevelX + '" y="' + bevelY +
+            '" width="' + bevelW + '" height="' + bevelH +
+            '" fill="none" stroke="#ffffff" stroke-width="0.75" opacity="0.9"/>';
+        }
+      }
       if (hasLight) {
         // A crisp LED band remains visible over the reflection; its halo alone
         // is insufficient on a pale wall. Both follow the selected temperature.
         outline.removeAttribute('opacity');
         outline.setAttribute('clip-path', 'url(#realMirrorClip)');
         outline.setAttribute('stroke', glowColor);
-        outline.setAttribute('stroke-width', '1.2');
+        outline.setAttribute('stroke-width', '4');
         outline.setAttribute('class', 'mirror-led-band');
         edges += outline.outerHTML;
       }
@@ -751,8 +837,8 @@
       bodies.forEach(function (body) {
         var frame = body.cloneNode(true);
         frame.setAttribute('fill', 'none');
-        frame.setAttribute('stroke', {white:'#fffefa',black:'#090909',gold:'#e2b65b'}[state.faceFrame]);
-        frame.setAttribute('stroke-width', '8');
+        frame.setAttribute('stroke', {white:'#f7f7f4',black:'#171717',gold:'#c5a34d'}[state.faceFrame]);
+        frame.setAttribute('stroke-width', '5');
         frame.setAttribute('clip-path', 'url(#realMirrorClip)');
         frame.setAttribute('class', 'mirror-face-frame');
         edges += frame.outerHTML;
@@ -760,22 +846,20 @@
     }
     svg.insertAdjacentHTML('beforeend',
       '<defs><clipPath id="realMirrorClip">' + clipShapes + '</clipPath>' +
-      '<filter id="realMirrorHalo" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>' +
+      '<filter id="realMirrorHalo" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>' +
+      '<linearGradient id="realMirrorBevel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".28" stop-color="#c2d4d6"/><stop offset=".46" stop-color="#ffffff"/><stop offset=".64" stop-color="#728b91"/><stop offset=".82" stop-color="#dbe9ec"/><stop offset="1" stop-color="#ffffff"/></linearGradient>' +
       '<linearGradient id="realMirrorSheen" x2="1" y2="1"><stop stop-color="#f5fbff" stop-opacity=".22"/><stop offset=".38" stop-color="#fff" stop-opacity=".03"/><stop offset=".52" stop-color="#fff" stop-opacity=".13"/><stop offset=".68" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#78958a" stop-opacity=".16"/></linearGradient></defs>' +
       halos + '<g clip-path="url(#realMirrorClip)">' +
-      materialReflection() +
+      '<rect width="170" height="240" fill="#d7dbd3"/>' +
+      '<image href="assets/mirror-reflection.png" width="170" height="240" preserveAspectRatio="xMidYMid slice" opacity=".88"/>' +
       '<rect width="170" height="240" fill="url(#realMirrorSheen)"/></g>' + edges + splitOverlay);
   }
 
-  // Keep the entered rectangular dimensions when a dependent shape temporarily
-  // derives its width/height (circle, half-circle, wave).
-  var enteredDimensions = null;
-  function dependentShape(shape) { return ['circle','semicircle','semidouble','curved'].indexOf(shape) !== -1; }
+  var enteredDimensions=null;
+  function dependentShape(shape){return ['circle','semicircle','semidouble'].indexOf(shape)!==-1;}
   function pickShape(shape) {
-    var previousShape = state.shape;
-    var previousWidth = document.getElementById('width').value;
-    var previousHeight = document.getElementById('height').value;
-    if (!dependentShape(previousShape)) enteredDimensions = {width:previousWidth,height:previousHeight};
+    var previousShape=state.shape;
+    if(!dependentShape(previousShape))enteredDimensions={width:document.getElementById('width').value,height:document.getElementById('height').value};
     state.shape = shape;
     var fieldH = document.getElementById('fieldH');
     var labelW = document.getElementById('labelW');
@@ -786,37 +870,42 @@
     inputH.disabled = false;
     inputH.style.opacity = '1';
     inputH.min = shape === 'semicircle' ? '80' : '40';
-    inputH.max = shape === 'curved' ? '180' : shape === 'semidouble' ? '160' : '321';
-    if (shape === 'semidouble' && (window.MirrorSize.read(inputH) || 0) > 1600) window.MirrorSize.write(inputH, 1200);
-    inputW.disabled = shape === 'curved' || shape === 'semicircle' || shape === 'semidouble';
+    inputW.disabled = shape === 'semicircle' || shape === 'semidouble';
     $all('.stepper-btn[data-adj="width"]').forEach(function (button) {
-      button.disabled = shape === 'curved' || shape === 'semicircle' || shape === 'semidouble';
+      button.disabled = shape === 'semicircle' || shape === 'semidouble';
     });
 
     if (shape === 'circle') {
       fieldH.classList.add('hidden');
       labelW.textContent = 'Диаметр, см';
+
+
     } else if (shape === 'semicircle') {
       fieldH.classList.remove('hidden');
       labelH.textContent = 'Высота (диаметр круга), см';
       labelW.textContent = 'Ширина = ½ высоты, см';
+
+
     } else if (shape === 'double') {
       fieldH.classList.remove('hidden');
       labelW.textContent = 'Ширина, см';
       labelH.textContent = 'Высота верхней, см';
+
     } else if (shape === 'semidouble') {
       fieldH.classList.remove('hidden');
       labelW.textContent = 'Ширина = ½ общей высоты, см';
-      labelH.textContent = 'Высота каждой части, см';
+      labelH.textContent = 'Высота верхней части, см';
+
     } else {
       fieldH.classList.remove('hidden');
-      labelW.textContent = shape === 'curved' ? 'Ширина автоматически, см' : 'Ширина, см';
-      labelH.textContent = shape === 'curved' ? 'Высота, см (до 180)' : 'Высота, см';
+      labelW.textContent = 'Ширина, см';
+      labelH.textContent = 'Высота, см';
+
+
     }
 
-    if (!dependentShape(shape) && dependentShape(previousShape) && enteredDimensions) {
-      inputW.value = enteredDimensions.width;
-      inputH.value = enteredDimensions.height;
+    if(!dependentShape(shape)&&dependentShape(previousShape)&&enteredDimensions){
+      inputW.value=enteredDimensions.width;inputH.value=enteredDimensions.height;
     }
     onSizeInput();
     updPreview();
@@ -859,11 +948,22 @@
     if (installInfo) installInfo.classList.toggle('hidden', !(installCb && installCb.checked));
   }
 
-  function onEdgeChange() {
+  function onFacetChange() {
     readState();
+    var info = document.getElementById('edgeInfo');
+    if (info) {
+      if (state.facet === 'none') {
+        info.textContent = 'Обработка кромки от пореза включена';
+        info.classList.remove('gold');
+      } else if (state.facet === 'grind') {
+        info.textContent = 'Шлифовка';
+        info.classList.remove('gold');
+      } else {
+        info.textContent = 'Фацет ' + state.facet + ' мм';
+        info.classList.add('gold');
+      }
+    }
     renderMirrorSvg();
-    var result = document.getElementById('calc-result');
-    if (result && result.classList.contains('show')) calc(false);
   }
 
   function calcGeometry() {
@@ -878,7 +978,7 @@
     var edgePer;
     var ledPer;
 
-    if (shape === 'rect' || shape === 'rounded' || shape === 'arch' || shape === 'curved') {
+    if (shape === 'rect' || shape === 'rounded') {
       area = (w * h) / 1000000;
       per = 2 * (w + h) / 1000;
       maxD = Math.max(w, h);
@@ -888,7 +988,7 @@
       area = (d * d) / 1000000;
       per = (4 * d) / 1000;
       maxD = d;
-    } else if (shape === 'oval') {
+    } else if (shape === 'oval' || shape === 'capsule') {
       /* Овал вырезается из прямоугольника: S = w×h, P = 2(w+h) */
       area = (w * h) / 1000000;
       per = (2 * (w + h)) / 1000;
@@ -905,7 +1005,8 @@
       maxD = Math.max(w, h, h2v);
     } else if (shape === 'semidouble') {
       /* Базовая стоимость совпадает с обычным полукругом тех же общих
-         габаритов. Отдельная процентная надбавка за две части не добавляется. */
+         габаритов. Надбавка 20% за изготовление из двух частей применяется
+         к окончательной цене ниже. */
       var h2SemiCalc = window.MirrorSize.read(document.getElementById('height2')) || 800;
       var totalSemiCalc = h + h2SemiCalc;
       area = (w * totalSemiCalc) / 1000000;
@@ -922,144 +1023,268 @@
     };
   }
 
-  /* Ставропольский расчёт: точные тарифы из общего прайса.
-     Весь интерфейс предпросмотра/анимации остаётся без изменений. */
   function calc(scrollResult) {
     readState();
     syncSemicircleSize();
-    var w = window.MirrorSize.read(document.getElementById('width')) || 0;
-    var h = window.MirrorSize.read(document.getElementById('height')) || 0;
-    var h2 = window.MirrorSize.read(document.getElementById('height2')) || 0;
-    var material = state.material;
-    var options = window.MirrorCalcOptions.read();
-    var sizeText = state.shape === 'circle' ? 'Ø ' + w + ' мм · ' + SHAPE_NAMES[state.shape] :
-      (state.shape === 'double' || state.shape === 'semidouble')
-      ? h + '+' + h2 + ' × ' + w + ' мм · ' + SHAPE_NAMES[state.shape]
-      : h + ' × ' + w + ' мм · ' + SHAPE_NAMES[state.shape];
-    var ALLOWED_FACETS={0:'обработка от порезов',10:'фацет 10 мм',20:'фацет 20 мм',25:'фацет 25 мм'};
+    var wEl = document.getElementById('width');
+    var hEl = document.getElementById('height');
+    var w = window.MirrorSize.read(wEl) || 0;
+    var h = window.MirrorSize.read(hEl) || 0;
 
-    function setActionLinks(text){
-      var first = document.getElementById('r-cta');
-      var second = document.getElementById('r-cta-mikhail');
-      if(first)first.href=MAX_URL+'?text='+encodeURIComponent(text);
-      if(second)second.href=MAX_URL_MIKHAIL+'?text='+encodeURIComponent(text);
+    if (w < 400 || (state.shape !== 'circle' && h < 400)) { alert('Минимальный размер — 40 см'); return; }
+    if ((state.shape === 'double' || state.shape === 'semidouble') && (window.MirrorSize.read(document.getElementById('height2')) || 0) < 400) {
+      alert('Минимальная высота каждой части — 40 см');
+      return;
     }
-    function requestQuote(message){
-      if(window.onPersonalCalculation)window.onPersonalCalculation(null);
-      document.getElementById('r-size').textContent=window.MirrorSize.dimensions(sizeText);
-      document.getElementById('r-sum').textContent='Индивидуальный расчёт';
-      document.getElementById('r-inc').textContent=message;
-      var label=document.querySelector('.calc-result-label');
-      if(label)label.textContent='Уточнение цены по Ставрополю';
-      var safeMaterial=material==='silver'?'серебро':(document.querySelector('input[name="material"]:checked')?.closest('label')?.textContent||material).trim();
-      setActionLinks('Здравствуйте! Уточните стоимость зеркала: '+SHAPE_NAMES[state.shape]+
-       ', размеры '+window.MirrorSize.dimensions(sizeText.split(' · ')[0])+', '+safeMaterial+
-       (state.light?', с LED-подсветкой':', без подсветки')+'. '+message);
-      document.getElementById('calc-result').classList.add('show');
-      if(scrollResult!==false)document.getElementById('calc-result').scrollIntoView({behavior:'smooth',block:'nearest'});
+
+    var geo = calcGeometry();
+    var area = geo.area;
+    var per = geo.per;
+    var edgePer = geo.edgePer;
+    var ledPer = geo.ledPer;
+    // База для двух частей — цельный прямоугольник тех же общих размеров.
+    if (state.shape === 'double') {
+      var combinedHeight = h + (window.MirrorSize.read(document.getElementById('height2')) || 0);
+      area = w * combinedHeight / 1000000;
+      per = 2 * (w + combinedHeight) / 1000;
+      edgePer = per;
+      ledPer = per;
     }
-    if(!window.MirrorStavropolPricing){requestQuote('Не удалось загрузить калькулятор. Обновите страницу.');return;}
-    if(!(w>=400&&h>=400)){requestQuote('Минимальные размеры — 40 см.');return;}
-    if((state.shape==='double'||state.shape==='semidouble')&&h2<400){
-      requestQuote('Минимальная высота каждой части — 40 см.');return;
+
+    var price;
+
+    if (!state.light) {
+      /* Зеркало БЕЗ подсветки:
+         без фацета — (S×1500 + P×150) × 1,8
+         с фацетом — (S×1500 + P×фацет) × 1,8 + 1000 (доставка) */
+      var meterExtra = shapeMeterSurcharge(state.shape);
+      var basePlain = area * PRICE.mirror + edgePer * (PRICE.edge + meterExtra);
+      if (state.facet === 'none' || state.facet === 'grind') {
+        if (state.facet === 'grind') basePlain = area * PRICE.mirror + edgePer * (FACET_RATES.grind + meterExtra);
+        price = basePlain * 1.8;
+      } else {
+        var facetRate = FACET_RATES[state.facet] || 0;
+        price = (area * PRICE.mirror + edgePer * (facetRate + meterExtra)) * 1.8 + PRICE.facetDelivery;
+      }
+      if (state.install) {
+        price += (area <= 2) ? Math.max(2000, area * 1300) : area * 1500;
+      }
+    } else {
+      /* Зеркало С ПОДСВЕТКОЙ — единый расчёт для фацета и без него.
+         При выборе фацета ставка обработки кромки заменяется ставкой
+         фацета (200/250/300 ₽/пог.м), а доставка растёт до 1000 ₽.
+         LED-комплектация (лента, блок, сенсор, крепёж) считается всегда. */
+
+      var meterExtraLight = shapeMeterSurcharge(state.shape);
+      var facetRateLight = (state.facet === 'none')
+        ? PRICE.edge
+        : (FACET_RATES[state.facet] || 0);
+
+      /* Себестоимость зеркала */
+      var costMirrorLight = area * PRICE.mirror;
+
+      /* Обработка кромки: шлифовка или фацет */
+      var costEdgeLight = edgePer * (facetRateLight + meterExtraLight);
+
+      var baseCostLight = costMirrorLight + costEdgeLight;
+
+      /* Наценка 150% на зеркало + обработку */
+      var markupLight = baseCostLight * PRICE.markup;
+
+      /* Дополнительные расходы — без наценки */
+      var ledRollsLight = Math.ceil(ledPer / PRICE.ledRollLen);
+      var costLEDLight = ledRollsLight * PRICE.ledRoll;
+      var mountsLight = Math.ceil(ledPer / PRICE.mountStep);
+      var costMountsLight = mountsLight * PRICE.mount;
+      var costBlockLight = PRICE.block;
+      var costSwitchLight = PRICE.switch;
+      var costDeliveryLight = (state.facet === 'none' || state.facet === 'grind') ? PRICE.delivery : PRICE.facetDelivery;
+
+      var costInstallLight = 0;
+      if (state.install) {
+        var instBaseLight = (area <= 2) ? Math.max(2000, area * 1300) : area * 1500;
+        costInstallLight = Math.max(2500, instBaseLight + 500);
+      }
+
+      var extrasLight = costLEDLight + costBlockLight + costSwitchLight
+        + costMountsLight + costDeliveryLight + costInstallLight;
+
+      price = baseCostLight + markupLight + extrasLight;
     }
-    var totalHeight=state.shape==='circle'?w:h+(/double/.test(state.shape)?h2:0);
-    if(Math.max(w,totalHeight)>3210||Math.min(w,totalHeight)>2250){
-      requestQuote('Габариты превышают стандартный лист, стоимость согласуем индивидуально.');return;
+
+    /* Сравниваем ширину с высотой; у составных форм — с общей высотой. */
+    var totalH = h;
+    if (state.shape === 'double' || state.shape === 'semidouble') {
+      totalH += window.MirrorSize.read(document.getElementById('height2')) || 0;
     }
+    price += sizeSurcharge(w, totalH);
+
+    /* Бронеплёнка: 200 ₽/м² по площади прямоугольника */
+    if (state.film) {
+      price += geo.area * 200;
+    }
+    /* Подогрев: фиксированная доплата */
+    if (state.heat) {
+      price += 2500;
+    }
+
+    /* Алюминиевые опции; уголок оплачивается целыми хлыстами по 3 м. */
+
+    if (state.ledProfile && state.light) price += geo.per * 250;
+
+
+
+    /* Налог +6% — применяется последним, ко всем расчётам */
+    price *= 1.06;
+    // Процент к цене цельного зеркала тех же размеров и комплектации.
+    // Контроль: 270×70 с LED без опций = 16469.75 ₽ до округления;
+    // 200×70 + 70×70 дороже на 2000 ₽. Для других размеров процент тот же.
+    if (state.shape === 'double') {
+      price *= 1 + 2000 / 16469.75;
+    }
+    /* Полукруг из двух частей всегда на 20% дороже цельного полукруга
+       тех же общих размеров и в той же комплектации. */
+    if (state.shape === 'semidouble') {
+      price *= 1.2;
+    }
+
+    /* Дополнительные 2% ко всем итоговым расчётам, до округления. */
+    price *= 1.02;
+
+    /* Доставка по маршруту: базовая стоимость и километры сверх первых пяти. */
     var deliveryRoute=window.MirrorDelivery?window.MirrorDelivery.getRoute():null;
-    var clientDelivery=window.MirrorOrderPricing.deliveryPrice(
-      Math.max(w,totalHeight),deliveryRoute?deliveryRoute.km:null,state.delivery||state.install,state.install);
-    var priced;
-    try{
-      priced=window.MirrorStavropolPricing.calculate({
-        shape:state.shape,width:w,height:h,height2:h2,material:material,
-        light:state.light,facet:options.facet,sand:options.sand,
-        film:state.film,heat:state.heat,ledProfile:state.ledProfile,
-        faceFrame:state.faceFrame,aluFrame:state.aluFrame,install:state.install,
-        deliveryPrice:clientDelivery
-      });
-    }catch(error){requestQuote(error.message||'Требуется индивидуальный расчёт.');return;}
-    var price=priced.total;
-    var facetLabel=ALLOWED_FACETS[priced.facet]||('фацет '+priced.facet+' мм');
-    var name=SHAPE_NAMES[state.shape];
-    var edgeLabel=facetLabel;
-    var orderData={total:price,rows:[
-      {key:'mirror',sale:priced.mirror,cost:null,expense:'mirror'},
-      {key:'purchase-trip',sale:priced.procurement,cost:null,expense:'trip'},
-      {key:'customer-delivery',sale:priced.delivery,cost:null,expense:'delivery'},
-      {key:'installation',sale:priced.installation,cost:null,expense:'install'}
-    ],mirror:{
-      carry:window.MirrorCarry?window.MirrorCarry.read():null,
-      shape:state.shape,name:name,width:w,height:h,height2:h2,size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),
-      material:'silver',materialLabel:'Зеркало, 4 мм',edge:state.edge,edgeLabel:edgeLabel,
-      mirrorOptions:options,ledProfileTariffVersion:1,stavropolTariffVersion:1,
-      light:state.light,ctrl:state.ctrl,clr:state.clr,
-      film:state.film,heat:state.heat,aluFrame:priced.aluFrame,requiredAngleFrame:priced.requiredFrame,
-      faceFrame:state.faceFrame,ledProfile:state.ledProfile,
-      install:state.install,delivery:state.delivery,region:'stavropol',estimate:false
-    }};
-    if(window.onPersonalCalculation)window.onPersonalCalculation(orderData);
-    document.getElementById('r-size').textContent=window.MirrorSize.dimensions(sizeText);
-    document.getElementById('r-sum').textContent=fmt(price)+' ₽';
-    document.getElementById('r-sum').dataset.estimate='false';
-    var supplierStatus=document.getElementById('supplier-status');
-    if(supplierStatus)supplierStatus.textContent='Срок изготовления уточним при оформлении заказа';
-    var priceLabel=document.querySelector('.calc-result-label');
-    if(priceLabel)priceLabel.textContent='Итоговая стоимость';
-    function row(label,value){return '<div class="row"><span>'+label+'</span><i class="dash"></i><span>'+value+'</span></div>';}
-    var lights={warm:'тёплый',cold:'холодный',neutral:'нейтральный'};
-    var controls={wave:'взмах рукой',touch:'сенсор',remote:'пульт',smart:'Wi-Fi / умный дом'};
-    var inc=row('Полотно','Серебро, 4 мм');
-    if(state.light){
-      inc+=row('Подсветка','LED COB, '+lights[state.clr]+' свет');
-      inc+=row('Управление',controls[state.ctrl]);
-    }else inc+=row('Подсветка','нет');
-    inc+=row('Кромка',edgeLabel);
-    if(state.install)inc+=row('Установка','включена');
-    if(state.film)inc+=row('Бронеплёнка','да');
-    if(state.heat)inc+=row('Подогрев','да');
-    if(state.ledProfile)inc+=row('Светодиодная лента в профиле','да');
-    inc+=row('Доставка',window.MirrorDelivery?window.MirrorDelivery.describe():'не выбрана');
-    if(state.faceFrame!=='none')inc+=row('Лицевая алюминиевая рама',FACE_FRAME_LABELS[state.faceFrame]);
-    if(priced.aluFrame)inc+=row('Каркас из алюминиевого уголка 1,5 мм',priced.requiredFrame?'обязателен · включён':'включён');
-    document.getElementById('r-inc').innerHTML=inc;
-    var details=[name,'полотно серебро 4 мм','кромка: '+edgeLabel,
-      state.light?'LED, '+lights[state.clr]+', управление: '+controls[state.ctrl]:'без подсветки'];
-    if(state.install)details.push('с установкой');
-    if(state.film)details.push('с бронеплёнкой');
-    if(state.heat)details.push('с подогревом');
-    if(state.ledProfile)details.push('светодиодная лента в профиле');
-    if(state.faceFrame!=='none')details.push('рама: '+FACE_FRAME_LABELS[state.faceFrame]);
-    if(priced.aluFrame)details.push('каркас из алюминиевого уголка');
-    setActionLinks('Здравствуйте! Хочу заказать зеркало в Ставрополе. '+details.join(', ')+
-      '. Размеры: '+window.MirrorSize.dimensions(sizeText.split(' · ')[0])+
-      '. Итоговая стоимость по калькулятору: '+fmt(Math.round(price))+' ₽.');
+    var clientDelivery=window.MirrorOrderPricing.deliveryPrice(Math.max(w,totalH),deliveryRoute?deliveryRoute.km:null,state.delivery,state.install);
+    // Final frame charges include the agreed work margin and purchasing trip.
+    if (state.faceFrame !== 'none') {
+      var frameBars = faceFrameStock(state.shape, w, h, window.MirrorSize.read(document.getElementById('height2')) || 0).bars;
+      var framePurchase = frameBars * 500;
+      price += framePurchase + Math.max(1500, framePurchase) + 400;
+    }
+    if (state.aluFrame) {
+      var angleBars = angleFrameBars(state.shape, w, h,
+        window.MirrorSize.read(document.getElementById('height2')) || 0, geo.per);
+      price += angleBars * (ANGLE_FRAME.barLength / 1000) * ANGLE_FRAME.pricePerMetre
+        + ANGLE_FRAME.purchaseTrip;
+    }
+
+
+    // Rounded corners: the rectangular calculation plus 15%, before rounding.
+    var roundedSurcharge = state.shape === 'rounded' ? price * 0.15 : 0;
+    price += roundedSurcharge;
+    price += clientDelivery;
+
+    var sizeText = '';
+    if (state.shape === 'circle') {
+      sizeText = 'Ø ' + w + ' мм · ' + SHAPE_NAMES[state.shape];
+    } else if (state.shape === 'double' || state.shape === 'semidouble') {
+      var h2r = window.MirrorSize.read(document.getElementById('height2')) || 0;
+      sizeText = h + '+' + h2r + ' × ' + w + ' мм · ' + SHAPE_NAMES[state.shape];
+    } else {
+      sizeText = h + ' × ' + w + ' мм · ' + SHAPE_NAMES[state.shape];
+    }
+    /* ---------- Клиентский результат ----------
+       Показываем только размер, форму, подсветку и опции.
+       Себестоимость, наценка, комплектующие, доставка,
+       доплаты и прибыль — только во внутреннем расчёте выше. */
+    var CLR_LABELS = { warm: 'тёплый', cold: 'холодный', neutral: 'нейтральный' };
+    var CTRL_LABELS = { wave: 'взмах рукой', touch: 'сенсор на зеркале', remote: 'пульт ДУ', smart: 'Wi-Fi / умный дом' };
+    var FACET_LABELS = { none: 'без фацета', grind: 'шлифовка', '10': 'фацет 10 мм', '20': 'фацет 20 мм', '25': 'фацет 25 мм' };
+
+    // Expose the existing unit calculation as service components. No new tariffs.
+    // Installation and procurement are already included before the existing
+    // percentage adjustments; customer delivery and frame trips are included after.
+    var serviceFactor=1.06*1.02;
+    if(state.shape==='double')serviceFactor*=1+2000/16469.75;
+    if(state.shape==='semidouble')serviceFactor*=1.2;
+    var roundingFactor=state.shape==='rounded'?1.15:1;
+    var procurementBase=state.light?costDeliveryLight:
+      (state.facet!=='none'&&state.facet!=='grind'?PRICE.facetDelivery:0);
+    var procurement=(procurementBase*serviceFactor+(state.faceFrame!=='none'?400:0)+(state.aluFrame?ANGLE_FRAME.purchaseTrip:0))*roundingFactor;
+    var installBase=state.install?(state.light?costInstallLight:((area<=2)?Math.max(2000,area*1300):area*1500)):0;
+    var installCharge=installBase*serviceFactor*roundingFactor;
+    var deliveryCharge=clientDelivery;
+    if(window.onPersonalCalculation)window.onPersonalCalculation({total:price,rows:[
+      {key:'mirror',sale:price-procurement-deliveryCharge-installCharge,cost:null,expense:'mirror'},
+      {key:'purchase-trip',sale:procurement,cost:null,expense:'trip'},
+      {key:'customer-delivery',sale:deliveryCharge,cost:null,expense:'delivery'},
+      {key:'installation',sale:installCharge,cost:null,expense:'install'}
+    ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,ledProfileTariffVersion:1,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,
+      height2:window.MirrorSize.read(document.getElementById('height2'))||0,
+      size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),materialLabel:'Зеркало, 4 мм',
+      edge:state.facet,edgeLabel:state.facet==='none'?'обработка от порезов':FACET_LABELS[state.facet],
+      light:state.light,ctrl:state.ctrl,clr:state.clr,film:state.film,heat:state.heat,
+      ledProfile:state.ledProfile,aluFrame:state.aluFrame,faceFrame:state.faceFrame,
+      install:state.install,delivery:state.delivery,region:'stavropol',estimate:false}});
+
+    document.getElementById('r-size').textContent = window.MirrorSize.dimensions(sizeText);
+
+    document.getElementById('r-sum').textContent = fmt(price) + ' ₽';
+
+    function row(label, value) {
+      return '<div class="row"><span>' + label + '</span><i class="dash"></i><span>' + value + '</span></div>';
+    }
+
+    var inc = '';
+    if (state.light) {
+      inc += row('Подсветка', 'LED COB, ' + CLR_LABELS[state.clr] + ' свет');
+      inc += row('Управление', CTRL_LABELS[state.ctrl]);
+    } else {
+      inc += row('Подсветка', 'нет');
+    }
+    inc += row('Кромка', state.facet === 'none' ? 'обработка от порезов' : FACET_LABELS[state.facet]);
+    if (state.install) {
+      inc += row('Установка', state.film ? 'на крепёж, с бронеплёнкой' : 'на крепёж');
+    }
+    if (state.film) {
+      inc += row('Бронеплёнка', 'да');
+    }
+    if (state.heat) {
+      inc += row('Подогрев 400×600 мм', 'да');
+    }
+
+    inc += row('Доставка', window.MirrorDelivery?window.MirrorDelivery.describe():'не выбрана');
+    if (state.faceFrame !== 'none') inc += row('Алюминиевая рама', FACE_FRAME_LABELS[state.faceFrame]);
+    if (state.aluFrame) inc += row('Каркас из алюминиевого уголка 1,5 мм', 'да');
+    if (state.ledProfile) inc += row('Светодиодная лента в профиле', 'да');
+    document.getElementById('r-inc').innerHTML = inc;
+
+    var details = [];
+    if (state.light) {
+      details.push('с LED-подсветкой (' + CLR_LABELS[state.clr] + ', управление: ' + CTRL_LABELS[state.ctrl] + ')');
+    } else {
+      details.push('без подсветки');
+    }
+    if (state.facet !== 'none') details.push(FACET_LABELS[state.facet]);
+    if (state.install) details.push('с установкой');
+    if (state.film) details.push('с бронеплёнкой');
+    if (state.faceFrame !== 'none') details.push('алюминиевая рама — ' + FACE_FRAME_LABELS[state.faceFrame]);
+    if (state.aluFrame) details.push('с каркасом из алюминиевого уголка 1,5 мм');
+    if (state.ledProfile) details.push('со светодиодной лентой в алюминиевом профиле');
+    if (state.delivery) details.push('доставка по адресу клиента');
+
+    var ctaText = '';
+    if (state.shape === 'double') {
+      var h2c = window.MirrorSize.read(document.getElementById('height2')) || 0;
+      ctaText = 'Здравствуйте! Хочу заказать зеркало из двух частей ' + window.MirrorSize.cm(h) + '+' + window.MirrorSize.cm(h2c) + '×' + window.MirrorSize.cm(w) + ' см' + (details.length ? ' — ' + details.join(', ') : '') + '. Стоимость по калькулятору: ' + fmt(Math.round(price)) + ' ₽.';
+    } else if (state.shape === 'semidouble') {
+      var h2SemiCta = window.MirrorSize.read(document.getElementById('height2')) || 0;
+      ctaText = 'Здравствуйте! Хочу заказать полукруг из двух частей ' + window.MirrorSize.cm(h) + '+' + window.MirrorSize.cm(h2SemiCta) + '×' + window.MirrorSize.cm(w) + ' см' + (details.length ? ' — ' + details.join(', ') : '') + '. Стоимость по калькулятору: ' + fmt(Math.round(price)) + ' ₽.';
+    } else {
+      ctaText = 'Здравствуйте! Хочу заказать ' + SHAPE_NAMES[state.shape].toLowerCase() + ' зеркало ' + (state.shape === 'circle' ? 'Ø' + window.MirrorSize.cm(w) : window.MirrorSize.cm(h) + '×' + window.MirrorSize.cm(w)) + ' см' + (details.length ? ' — ' + details.join(', ') : '') + '. Стоимость по калькулятору: ' + fmt(Math.round(price)) + ' ₽.';
+    }
+    document.getElementById('r-cta').href = MAX_URL + '?text=' + encodeURIComponent(ctaText);
+    document.getElementById('r-cta-mikhail').href = MAX_URL_MIKHAIL + '?text=' + encodeURIComponent(ctaText);
     if(window.updateSelectedMirrorTotal)window.updateSelectedMirrorTotal();
-    var result=document.getElementById('calc-result');result.classList.add('show');
-    if(scrollResult!==false)result.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+    var res = document.getElementById('calc-result');
+    res.classList.add('show');
+    if (scrollResult !== false) res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   /* ---------- События калькулятора ---------- */
   $all('input[name="face-frame"]').forEach(function (r) {
     r.addEventListener('change', function () {
       readState(); renderMirrorSvg();
-      var res = document.getElementById('calc-result');
-      if (res && res.classList.contains('show')) calc(false);
-    });
-    r.addEventListener('click', function () {
-      if (r.disabled) return;
-      // The embedded calculator updates its mirror in place; opening the
-      // separate frame gallery would unexpectedly scroll the parent page.
-      if (window.parent !== window) return;
-      window.hideFrameExample();
-    });
-  });
-
-  $all('input[name="material"]').forEach(function (r) {
-    r.addEventListener('change', function () {
-      readState();
-      renderMirrorSvg();
       var res = document.getElementById('calc-result');
       if (res && res.classList.contains('show')) calc(false);
     });
@@ -1073,8 +1298,8 @@
   $all('input[name="clr"]').forEach(function (r) {
     r.addEventListener('change', function () { readState(); renderMirrorSvg(); });
   });
-  $all('input[name="edge"]').forEach(function (r) {
-    r.addEventListener('change', onEdgeChange);
+  $all('input[name="facet"]').forEach(function (r) {
+    r.addEventListener('change', onFacetChange);
   });
   $all('input[name="option"][value="install"]').forEach(function (r) {
     r.addEventListener('change', function () {
@@ -1082,16 +1307,10 @@
       updateFilmAvailability();
       /* Мгновенный пересчёт итоговой цены, если результат уже показан */
       var res = document.getElementById('calc-result');
-      if (res && res.classList.contains('show')) calc();
+      if (res && res.classList.contains('show')) calc(false);
     });
   });
-  var reinfEl = document.getElementById('reinf');
-  if (reinfEl) reinfEl.addEventListener('change', function () {
-    readState();
-    var res = document.getElementById('calc-result');
-    if (res && res.classList.contains('show')) calc(false);
-  });
-  $all('input[name="option"][value="film"], input[name="option"][value="heat"], input[name="option"][value="delivery"], input[name="option"][value="led-profile"]').forEach(function (r) {
+  $all('input[name="option"][value="film"], input[name="option"][value="heat"], input[name="option"][value="delivery"], input[name="option"][value="alu-frame"], input[name="option"][value="led-profile"]').forEach(function (r) {
     r.addEventListener('change', function () {
       readState();
       var res = document.getElementById('calc-result');
@@ -1111,12 +1330,35 @@
 
   var quoteForm = $('#quote-form');
   if (quoteForm) {
+    quoteForm.addEventListener('change', function (event) {
+      if (!event.target.matches('input')) return;
+      readState();
+      renderMirrorSvg();
+      var res = document.getElementById('calc-result');
+      if (res && res.classList.contains('show')) calc(false);
+    });
+    quoteForm.addEventListener('click', function (event) {
+      if (event.target.name === 'face-frame') {
+        if (event.target.value === 'none') window.hideFrameExample();
+        else window.showFrameExample(event.target.value, event.target);
+        return;
+      }
+      if (event.target.name === 'clr' ||
+          (event.target.name === 'facet' && ['10', '20', '25'].includes(event.target.value))) {
+        // Keep option changes in place; the preview remains available above.
+      }
+    });
     quoteForm.addEventListener('submit', function (e) {
       e.preventDefault();
       calc();
     });
   }
 
+  window.calculateMirrorInPlace=function(){calc(false);};
+
+  window.addEventListener('pageshow', function () {
+    readState(); updateFilmAvailability(); updateProfileAvailability(); onSizeInput();
+  });
   /* ---------- Инициализация превью ---------- */
   if (document.getElementById('mirrorSvg')) {
     setTimeout(renderMirrorSvg, 100);
@@ -1125,6 +1367,4 @@
     updateProfileAvailability();
   }
 })();
-
-
 
