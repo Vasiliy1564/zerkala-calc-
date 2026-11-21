@@ -3,8 +3,8 @@
   'use strict';
   var script = document.currentScript || document.querySelector('script[src*="js/client-tools.js"]');
   var bundle = new URL('../assets/client-tools/export.js', script.src).href;
-  var isSpb = document.querySelector('link[rel="canonical"]').href.indexOf('spb') !== -1;
-  var meta = { city: isSpb ? 'Санкт-Петербург' : 'Ставрополь', site: isSpb ? 'zerkalo-pro-spb.ru' : 'www.zerkalo-pro.ru' };
+  // The original hosting domain contains '-spb', but this site now serves Stavropol.
+  var meta = {city:'Ставрополь',site:'zerkalo-pro-spb.ru'};
   var form = document.getElementById('contact-form');
   var files = [], objectUrls = [], draft = '', modulePromise;
   function byId(id) { return document.getElementById(id); }
