@@ -37,8 +37,8 @@
    test(d,80,180,'rect',11028,false,'80×180, LED, rect');
    test(d,80,210,'rect',14522,true,'80×210, LED, mandatory aluminum');
    test(d,80,200,'rect',11839,false,'80×200, LED, no mandatory frame');
-   test(d,90,180,'oval',12364,false,'90×180, LED, oval'); // price may need adjustment
-   test(d,90,180,'capsule',12364,false,'90×180, LED, capsule'); // price may need adjustment
+   test(d,80,180,'oval',12364,false,'80×180, LED, oval'); // price may need adjustment
+   test(d,80,180,'capsule',12364,false,'80×180, LED, capsule'); // price may need adjustment
    const cb=d.querySelector('input[name="option"][value="alu-frame"]');
    out.features.frameIsSwitchableUnder200=!cb.disabled;
    assert(out.features.frameIsSwitchableUnder200,'Frame remains locked under 200');
