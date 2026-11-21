@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>Диагностика совпадения ставропольского калькулятора</title><style>body{font:14px/1.5 system-ui;background:#111;color:#ddd;padding:20px}pre{white-space:pre-wrap;background:#222;padding:16px;border:1px solid #777}iframe{width:390px;height:470px;border:1px solid #444}</style></head>
+<body><h1>Проверка калькулятора Ставрополь / премиальная версия</h1><p id="status">Выполняется...</p><pre id="report">Инициализация</pre><iframe id="site" src="/?parity=20261121-2" title="Проверяемый сайт" loading="eager"></iframe>
+<script>
+(async function(){
+ const status=document.getElementById('status'),report=document.getElementById('report'),iframe=document.getElementById('site');
+ const out={result:"running",cases:[],features:{},error:null,version:"native-stav-20261121"};
+ const render=()=>{report.textContent=JSON.stringify(out,null,2);};
+ function assert(ok,message){if(!ok)throw Error(message);}
+ function radio(d,name,value){const el=d.querySelector('input[name="'+name+'"][value="'+value+'"]');assert(!!el,'Missing '+name+'='+value);el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));}
+ function cm(d,id,value){const el=d.getElementById(id);assert(!!el,'Missing dimension '+id);el.value=String(value);el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}
+ function selected(d,name){return [...d.querySelectorAll('input[name="'+name+'"]:checked')].map(el=>el.value);}
+ function test(d,w,hw,shape,expected,shouldFrame,tag){
+   const win=iframe.contentWindow;radio(d,'shape',shape);
+   cm(d,'width',w);cm(d,'height',hw);
+   win.calculateMirrorInPlace();
+   const t=d.getElementById('r-sum').textContent;
+   const normalized=Number(t.replace(/[^\d]/g,''));
+   const cb=d.querySelector('input[name="option"][value="alu-frame"]');
+   const frame=cb?.checked===true;
+   const valid=Number.isFinite(normalized) && normalized===expected && frame===shouldFrame;
+   out.cases.push({tag,price:normalized,expected,frame,frameDisabled:cb?.disabled,pass:valid});
+   assert(valid,tag+' unexpected price/frame: '+t+' frame='+frame+' expected '+expected);
+ }
+ try{
+   await new Promise((resolve,reject)=>{iframe.addEventListener('load',resolve,{once:true});iframe.addEventListener('error',()=>reject(Error('Frame failed')),{once:true});setTimeout(()=>reject(Error('Frame load timeout')),30000);});
+   const win=iframe.contentWindow,d=iframe.contentDocument;
+   assert(!!d && !!win,'Frame not same origin');
+   assert(typeof win.calculateMirrorInPlace==='function','Native calculator did not initialize');
+   out.features.shapes=[...d.querySelectorAll('#quote-form input[name="shape"]')].map(el=>el.value);
+   out.features.facets=[...d.querySelectorAll('#quote-form input[name="facet"]')].map(el=>el.value);
+   out.features.options=[...d.querySelectorAll('#quote-form input[name="option"]')].map(el=>el.value);
+   out.features.city=d.title;
+   assert(JSON.stringify(out.features.shapes)===JSON.stringify(['rect','rounded','circle','oval','capsule','semicircle','double','semidouble']),'Shape options mismatch');
+   radio(d,'light','on');radio(d,'facet','none');radio(d,'face-frame','none');
+   for(const el of d.querySelectorAll('#quote-form input[name="option"]')){el.checked=false;el.disabled=false;el.dispatchEvent(new Event('change',{bubbles:true}));}
+   test(d,80,180,'rect',11028,false,'80×180, LED, rect');
+   test(d,80,210,'rect',14522,true,'80×210, LED, mandatory aluminum');
+   test(d,80,200,'rect',11839,false,'80×200, LED, no mandatory frame');
+   test(d,80,180,'oval',12364,false,'80×180, LED, oval'); // price may need adjustment
+   test(d,80,180,'capsule',12364,false,'80×180, LED, capsule'); // price may need adjustment
+   const cb=d.querySelector('input[name="option"][value="alu-frame"]');
+   out.features.frameIsSwitchableUnder200=!cb.disabled;
+   assert(out.features.frameIsSwitchableUnder200,'Frame remains locked under 200');
+   out.result="PASS";status.textContent="PASS: ставки, варианты и каркас совпадают";
+ }catch(err){out.result="FAIL";out.error=String(err.stack||err);status.textContent="FAIL: "+err.message;}
+ render();
+})();
+</script></body></html>
