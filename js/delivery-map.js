@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var PHOTON = 'https://photon.komoot.io';
-  var BIAS = { lat: 60.0565448, lon: 30.4290869 }; // Мурино, ул. Шувалова — the delivery origin
+  var BIAS = { lat: 45.0011119, lon: 41.9110926 }; // Ставрополь, 45-я Параллель, 44
   var LEAFLET_JS = '/assets/vendor/leaflet/leaflet.js', LEAFLET_CSS = '/assets/vendor/leaflet/leaflet.css';
 
   function locality(p) { return p.city || p.town || p.village || p.hamlet || p.locality || p.district || ''; }
@@ -130,7 +130,7 @@
         var L = window.L;
         map = L.map('delivery-map', { scrollWheelZoom: false, tap: true }).setView([BIAS.lat, BIAS.lon], 10);
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' }).addTo(map);
-        L.marker([BIAS.lat, BIAS.lon], { icon: icon('delivery-pin--origin'), title: 'Мастерская, Мурино', keyboard: false }).addTo(map).bindTooltip('Отсюда везём');
+        L.marker([BIAS.lat, BIAS.lon], { icon: icon('delivery-pin--origin'), title: 'Отправление, Ставрополь', keyboard: false }).addTo(map).bindTooltip('Отсюда везём');
         map.on('click', function (e) { setPoint(e.latlng); });
         draw();
       }).catch(function () { box.hidden = true; });
