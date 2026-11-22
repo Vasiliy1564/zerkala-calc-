@@ -4,6 +4,50 @@ const $=s=>document.querySelector(s),form=$('#quote-form'),stage=$('#stage'),mir
 if(!form||!stage||!mirror||!source)return;
 const names={rect:'Прямоугольник',rounded:'Скруглённые углы',arch:'Арка',circle:'Круг',oval:'Овал',capsule:'Овал с прямыми боками',curved:'Волна',semicircle:'Полукруг',double:'Из двух частей',semidouble:'Полукруг из двух частей'};
 const pending=new Map();let scrolling=false,frame=0,changeTimer=0,replaying=false,latest='';
+/* Restore the exact location from which the customer jumped to the mirror preview. */
+let returnPosition=null,previewBackButton=null;
+function getPreviewBackButton(){
+ if(previewBackButton)return previewBackButton;
+ previewBackButton=document.createElement('button');
+ previewBackButton.id='return-to-calculator';previewBackButton.type='button';
+ previewBackButton.textContent='← Назад к выбору';
+ previewBackButton.setAttribute('aria-label','Вернуться к выбранной настройке зеркала');
+ previewBackButton.hidden=true;
+ previewBackButton.addEventListener('click',function(){
+   const position=returnPosition;
+   returnPosition=null;previewBackButton.hidden=true;
+   if(!position)return;
+   window.scrollTo({top:position.top,left:0,behavior:reduced.matches?'instant':'smooth'});
+ });
+ document.body.appendChild(previewBackButton);
+ return previewBackButton;
+}
+function placePreviewBackButton(){
+ if(!previewBackButton||previewBackButton.hidden)return;
+ const bars=[document.querySelector('.quickbar'),document.querySelector('.action-bar')];
+ let obstruction=0;
+ bars.forEach(function(bar){
+   if(!bar)return;
+   const css=getComputedStyle(bar);
+   if(css.display==='none'||css.position!=='fixed')return;
+   const rect=bar.getBoundingClientRect();
+   obstruction=Math.max(obstruction,Math.max(0,window.innerHeight-rect.top));
+ });
+ previewBackButton.style.bottom=(obstruction+12)+'px';
+}
+function showPreviewBack(origin){
+ if(window.MIRROR_APP_MODE||window.parent!==window)return;
+ const travel=Math.abs(stage.getBoundingClientRect().top-18);
+ if(travel<75)return;
+ returnPosition={top:window.scrollY,origin:origin||null};
+ const button=getPreviewBackButton();
+ button.hidden=false;
+ placePreviewBackButton();
+}
+function hidePreviewBack(){if(previewBackButton)previewBackButton.hidden=true;returnPosition=null;}
+window.addEventListener('resize',placePreviewBackButton);
+document.addEventListener('focusin',function(e){if(e.target.matches('#width,#height,#height2'))hidePreviewBack();});
+
 function checked(name){return form.querySelector('[name="'+name+'"]:checked');}
 function mm(id){return window.MirrorSize?window.MirrorSize.read(document.getElementById(id)):Number(document.getElementById(id).value)*10;}
 function ignite(container,on){window.dispatchEvent(new CustomEvent('mirror-light-scene',{detail:{id:container.id,on}}));}
@@ -58,15 +102,17 @@ function render(){
  if(changed&&!reduced.matches&&model.animate)model.animate([{opacity:.35,filter:'blur(1.5px)'},{opacity:1,filter:'blur(0px)'}],{duration:650,easing:'cubic-bezier(.16,1,.3,1)'});
 }
 const observer=new MutationObserver(()=>{cancelAnimationFrame(changeTimer);changeTimer=requestAnimationFrame(render);});observer.observe(source,{childList:true,subtree:false});
-function focusPreview(key,action){
- pending.set(key,action);if(scrolling)return;window.dispatchEvent(new Event('mirror-preview-start'));scrolling=true;
+function focusPreview(key,action,origin){
+ pending.set(key,action);if(scrolling)return;
+ showPreviewBack(origin);
+ window.dispatchEvent(new Event('mirror-preview-start'));scrolling=true;
  if(window.MIRROR_APP_MODE){scrolling=false;const updates=[...pending.values()];pending.clear();replaying=true;try{updates.forEach(fn=>fn());}finally{replaying=false;}render();return;}
  // In the embedded calculator, the parent page owns the actual scroll position.
  if(window.parent!==window){window.parent.postMessage({type:'mirror-focus-preview',top:stage.getBoundingClientRect().top},location.origin);setTimeout(()=>{scrolling=false;const updates=[...pending.values()],keys=[...pending.keys()];pending.clear();replaying=true;try{updates.forEach(fn=>fn());}finally{replaying=false;}render();window.dispatchEvent(new CustomEvent('mirror-preview-applied',{detail:{id:'stage',changes:keys}}));},reduced.matches?0:560);return;}
  const start=scrollY,top=Math.max(0,Math.min(document.documentElement.scrollHeight-innerHeight,stage.getBoundingClientRect().top+start-18)),delta=top-start,duration=Math.min(680,Math.max(420,Math.abs(delta)*.32));let began=null;
  const old=document.documentElement.style.scrollBehavior;document.documentElement.style.scrollBehavior='auto';
  function clean(){cancelAnimationFrame(frame);scrolling=false;document.documentElement.style.scrollBehavior=old;['wheel','touchstart','keydown'].forEach(type=>removeEventListener(type,cancel,true));}
- function cancel(e){if(e.type==='keydown'&&!['ArrowDown','ArrowUp','PageDown','PageUp','Escape',' '].includes(e.key))return;pending.clear();clean();}
+ function cancel(e){if(e.type==='keydown'&&!['ArrowDown','ArrowUp','PageDown','PageUp','Escape',' '].includes(e.key))return;pending.clear();hidePreviewBack();clean();}
  function apply(){clean();const updates=[...pending.values()],keys=[...pending.keys()];pending.clear();replaying=true;try{updates.forEach(fn=>fn());}finally{replaying=false;}render();window.dispatchEvent(new CustomEvent('mirror-preview-applied',{detail:{id:'stage',changes:keys}}));}
  if(reduced.matches||Math.abs(delta)<10){scrollTo({top,behavior:'instant'});frame=requestAnimationFrame(apply);return;}
  ['wheel','touchstart','keydown'].forEach(type=>addEventListener(type,cancel,{capture:true,passive:true}));
@@ -78,16 +124,16 @@ document.addEventListener('click',event=>{
  const label=event.target.closest('#quote-form label'),input=event.target.matches('#quote-form input')?event.target:label?.querySelector('input');
  if(!input||input.type!=='radio'||!previewNames.has(input.name)||input.disabled)return;
  event.preventDefault();event.stopImmediatePropagation();
- focusPreview(input.name,()=>{input.checked=true;input.dispatchEvent(new Event('change',{bubbles:true}));if(window.calculateMirrorInPlace)window.calculateMirrorInPlace();});
+ focusPreview(input.name,()=>{input.checked=true;input.dispatchEvent(new Event('change',{bubbles:true}));if(window.calculateMirrorInPlace)window.calculateMirrorInPlace();},input);
 },true);
 form.addEventListener('input',event=>{if(['width','height','height2'].includes(event.target.id))requestAnimationFrame(render);});
-form.addEventListener('change',event=>{requestAnimationFrame(render);if(event.target.id==='atelier-stripe-layout')focusPreview('stripe-layout',()=>render());});
+form.addEventListener('change',event=>{requestAnimationFrame(render);if(event.target.id==='atelier-stripe-layout')focusPreview('stripe-layout',()=>render(),event.target);});
 form.addEventListener('input',event=>{if(event.target.id==='atelier-stripe-width')requestAnimationFrame(render);});
 form.addEventListener('change',event=>{if(event.target.id?.startsWith('owner-side-')||event.target.id==='owner-side-preset')requestAnimationFrame(render);});
 form.addEventListener('input',event=>{if(event.target.id==='owner-stripe-w')requestAnimationFrame(render);});
 $('#brightness').addEventListener('input',event=>{$('#brightnessValue').textContent=event.target.value+'%';});
-$('#brightness').addEventListener('change',()=>focusPreview('brightness',()=>{document.documentElement.style.setProperty('--led-power',Number($('#brightness').value)/100);ignite(stage,stage.classList.contains('lit'));}));
-$('#replayLight').onclick=()=>focusPreview('light',()=>{const input=form.querySelector('[name=light][value=on]');input.checked=true;input.dispatchEvent(new Event('change',{bubbles:true}));render();ignite(stage,true);});
+$('#brightness').addEventListener('change',()=>focusPreview('brightness',()=>{document.documentElement.style.setProperty('--led-power',Number($('#brightness').value)/100);ignite(stage,stage.classList.contains('lit'));},$('#brightness')));
+$('#replayLight').onclick=()=>focusPreview('light',()=>{const input=form.querySelector('[name=light][value=on]');input.checked=true;input.dispatchEvent(new Event('change',{bubbles:true}));render();ignite(stage,true);},$('#replayLight'));
 $('#heroLight').onclick=function(){const on=this.getAttribute('aria-pressed')!=='true';this.setAttribute('aria-pressed',on);$('#heroRoom').classList.toggle('lit',on);ignite($('#heroRoom'),on);};
 window.addEventListener('mirror-preview-applied',event=>{if(event.detail.id==='stage')setTimeout(()=>ignite(stage,stage.classList.contains('lit')),650);});
 window.addEventListener('resize',render);

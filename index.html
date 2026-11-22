@@ -158,7 +158,17 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 #curved-note[hidden],#deliveryRegionField[hidden]{display:none!important}
 </style>
-<style>html.size-input-editing,html.size-input-editing body{scroll-behavior:auto!important;overflow-anchor:none!important}html.size-input-editing .action-bar,html.size-input-editing #return-to-calculator,html.size-input-editing #example-return{display:none!important}#width,#height,#height2{scroll-margin-top:40px;scroll-margin-bottom:40px}</style><style>html.size-input-editing,html.size-input-editing body{scroll-behavior:auto!important;overflow-anchor:none!important}html.size-input-editing .action-bar,html.size-input-editing #return-to-calculator,html.size-input-editing #example-return{display:none!important}#width,#height,#height2{scroll-margin-top:24px;scroll-margin-bottom:12px}</style><style id="mirror-options-style">#mirror-decor-field[hidden]{display:none!important}.mirror-option-select{display:block;width:100%;min-height:46px;box-sizing:border-box;padding:11px 12px;border:1px solid #bdb4a7;border-radius:10px;background:#fff;color:#3b3121;font:inherit}.mirror-edge-method{margin-top:12px}#mirror-facet-field{margin-top:16px}.mirror-choice-field{border:0;padding:0;min-width:0}.mirror-choice-field legend{font-size:13px!important;font-weight:550!important;color:#d8d4ce!important;letter-spacing:normal!important;line-height:1.3;margin-bottom:6px;padding:0}.mirror-choice-field [hidden]{display:none!important}.mirror-choice-field .form-hint{margin:0 0 10px}.mirror-choice-field #mirror-sand-details{margin-top:12px}.mirror-choice-field #mirror-sand-complexity-field{margin-top:12px}</style>
+<style>html.size-input-editing,html.size-input-editing body{scroll-behavior:auto!important;overflow-anchor:none!important}html.size-input-editing .action-bar,html.size-input-editing #return-to-calculator,html.size-input-editing #example-return{display:none!important}#width,#height,#height2{scroll-margin-top:40px;scroll-margin-bottom:40px}</style><style>html.size-input-editing,html.size-input-editing body{scroll-behavior:auto!important;overflow-anchor:none!important}html.size-input-editing .action-bar,html.size-input-editing #return-to-calculator,html.size-input-editing #example-return{display:none!important}#width,#height,#height2{scroll-margin-top:24px;scroll-margin-bottom:12px}</style><style id="mobile-size-keyboard-return-20261122">
+/* Keep the dimension field clear of Android's keyboard and hide sticky action bars while typing. */
+html.size-input-editing .quickbar,
+html.size-input-editing .action-bar,
+html.size-input-editing #return-to-calculator {display:none!important}
+#width,#height,#height2 {scroll-margin-top:76px;scroll-margin-bottom:72px}
+#return-to-calculator[hidden]{display:none!important}
+#return-to-calculator{position:fixed;z-index:9200;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:calc(100vw - 24px);min-height:44px;border:1px solid #e8cfa4;border-radius:12px;padding:11px 18px;white-space:normal;text-align:center;background:#d7b78b;color:#211c16;font:700 14px/1.3 system-ui,sans-serif;box-shadow:0 7px 25px rgba(0,0,0,.3);cursor:pointer}
+#return-to-calculator:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@media(min-width:821px){#return-to-calculator{bottom:28px}}
+</style><style id="mirror-options-style">#mirror-decor-field[hidden]{display:none!important}.mirror-option-select{display:block;width:100%;min-height:46px;box-sizing:border-box;padding:11px 12px;border:1px solid #bdb4a7;border-radius:10px;background:#fff;color:#3b3121;font:inherit}.mirror-edge-method{margin-top:12px}#mirror-facet-field{margin-top:16px}.mirror-choice-field{border:0;padding:0;min-width:0}.mirror-choice-field legend{font-size:13px!important;font-weight:550!important;color:#d8d4ce!important;letter-spacing:normal!important;line-height:1.3;margin-bottom:6px;padding:0}.mirror-choice-field [hidden]{display:none!important}.mirror-choice-field .form-hint{margin:0 0 10px}.mirror-choice-field #mirror-sand-details{margin-top:12px}.mirror-choice-field #mirror-sand-complexity-field{margin-top:12px}</style>
 <style>#r-price-breakdown[hidden]{display:none}</style>
  
 
@@ -432,17 +442,17 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
               <div class="field" id="fieldH">
                 <label for="height" id="labelH">Высота, см</label>
                 <div class="stepper">
-                  <button type="button" class="stepper-btn" data-adj="height" data-delta="-100" aria-label="Уменьшить">−</button>
+                  <button type="button" class="stepper-btn" data-adj="height" data-delta="-10" aria-label="Уменьшить">−</button>
                   <input id="height" type="text" inputmode="decimal" pattern="[0-9]+([.,][0-9])?" name="height" min="40" step="0.1" value="180">
-                  <button type="button" class="stepper-btn" data-adj="height" data-delta="100" aria-label="Увеличить">+</button>
+                  <button type="button" class="stepper-btn" data-adj="height" data-delta="10" aria-label="Увеличить">+</button>
                 </div>
               </div>
               <div class="field" id="fieldW">
                 <label for="width" id="labelW">Ширина, см</label>
                 <div class="stepper">
-                  <button type="button" class="stepper-btn" data-adj="width" data-delta="-100" aria-label="Уменьшить">−</button>
+                  <button type="button" class="stepper-btn" data-adj="width" data-delta="-10" aria-label="Уменьшить">−</button>
                   <input id="width" type="text" inputmode="decimal" pattern="[0-9]+([.,][0-9])?" name="width" min="40" step="0.1" value="80">
-                  <button type="button" class="stepper-btn" data-adj="width" data-delta="100" aria-label="Увеличить">+</button>
+                  <button type="button" class="stepper-btn" data-adj="width" data-delta="10" aria-label="Увеличить">+</button>
                 </div>
               </div>
             </div>
@@ -450,9 +460,9 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
             <div class="field hidden" id="rowH2">
               <label for="height2">Высота нижней части, см</label>
               <div class="stepper">
-                <button type="button" class="stepper-btn" data-adj="height2" data-delta="-100" aria-label="Уменьшить">−</button>
+                <button type="button" class="stepper-btn" data-adj="height2" data-delta="-10" aria-label="Уменьшить">−</button>
                 <input id="height2" type="text" inputmode="decimal" pattern="[0-9]+([.,][0-9])?" name="height2" min="40" step="0.1" value="60">
-                <button type="button" class="stepper-btn" data-adj="height2" data-delta="100" aria-label="Увеличить">+</button>
+                <button type="button" class="stepper-btn" data-adj="height2" data-delta="10" aria-label="Увеличить">+</button>
               </div>
               <p class="form-hint" id="w2hint">Ширина нижней части = ширине верхней</p>
             </div>
@@ -923,8 +933,8 @@ html{scroll-padding-top:16px}#quote-form{scroll-margin-top:0}body{background:#ff
 </div>
 <script defer="" src="js/size-units.js?v=delivery-4.30"></script><script defer="" src="js/order-pricing.js?identical-stav-20261121"></script><script defer="" src="js/delivery-route.js?v=stav-20261121"></script><script defer="" src="js/delivery-map.js?v=stav-20261121"></script><script defer="" src="js/carry.js?v=installed-delivery-20261103"></script><script defer="" src="js/main.js?contacts-vasiliy-20261122"></script>
 <script defer="" src="js/quote-details.js?v=payment70-20261122"></script><script defer="" src="js/order.js?v=payment70-20261122"></script><script defer src="js/calculator-interface.js?v=identical-stav-20261121"></script>
-<script defer="" src="js/comfort.js?v=installed-delivery-20261103-motion2"></script><script defer="" src="js/copy-calculation.js?identical-stav-20261121"></script><script defer="" src="js/keyboard.js?v=keyboard-resize-20261029"></script> <script defer="" src="js/client-tools.js?v=stav-20261121"></script>
-<script defer="True" src="js/motion-site.js?v=20261119-clarity1"></script><script defer="True" src="js/motion-scene.js?v=20261105-1"></script><script defer src="js/max-bot-contact.js?v=20261119-clarity1"></script>
+<script defer="" src="js/comfort.js?v=installed-delivery-20261103-motion2"></script><script defer="" src="js/copy-calculation.js?identical-stav-20261121"></script><script defer="" src="js/keyboard.js?v=keyboard-viewport-20261122"></script> <script defer="" src="js/client-tools.js?v=stav-20261121"></script>
+<script defer="True" src="js/motion-site.js?v=preview-return-20261122"></script><script defer="True" src="js/motion-scene.js?v=20261105-1"></script><script defer src="js/max-bot-contact.js?v=20261119-clarity1"></script>
 <script defer src="js/showroom.js?v=20261106-2"></script>
 <style>.quickbar{display:none}
 @media(max-width:820px){.quickbar{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:8px;position:fixed;left:0;right:0;bottom:0;z-index:9000;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(26,24,20,.94);backdrop-filter:blur(10px);box-shadow:0 -6px 24px rgba(0,0,0,.25)}
