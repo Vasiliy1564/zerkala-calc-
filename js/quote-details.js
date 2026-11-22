@@ -49,6 +49,17 @@ function params(item){
  return lines;
 }
 function itemText(entry,index){var lines=params(entry.item);if(index!==undefined)lines[0]=(index+1)+'. '+lines[0];lines.push('Стоимость '+(entry.item.qty===1?'зеркала':'зеркал')+': '+money(entry.mirrorPrice)+'.','Установка'+(entry.discount?' (со скидкой '+entry.discountRate+'%)':'')+': '+(entry.item.data.mirror.install?money(entry.installationPrice):'не выбрана')+'.');if(entry.item.data.mirror.carry&&entry.item.data.mirror.carry.enabled)lines.push('Подъём: '+(window.MirrorOrderPricing.carryPrice(window.MirrorOrderPricing.maxSide(entry.item.data.mirror),entry.item.data.mirror.carry).pending?'по согласованию, не включён':money(entry.carryPrice))+'.');if(entry.deliveryPrice)lines.push('Доставка: '+money(entry.deliveryPrice)+'.');lines.push('Итого по позиции: '+money(entry.display)+'.');return lines.join('\n');}
+/* Payment split is presentation-only; pricing comes from MirrorOrderPricing. */
+function payment(t){
+ if(!t||t.needsQuote||t.mixedRegions||!Number.isFinite(Number(t.total))||Number(t.total)<0)return null;
+ var total=Math.round(Number(t.total)),deposit=Math.round(total*0.7);
+ return {deposit:deposit,balance:total-deposit,preliminary:!!(t.deliveryPending||t.carryPending)};
+}
+function paymentRows(t){
+ var p=payment(t);if(!p)return '';
+ return '<div class="payment-summary" role="group" aria-label="Условия оплаты"><div class="payment-summary-title">Оплата заказа</div><div class="payment-summary-line"><span>Предоплата 70%</span><strong>'+money(p.deposit)+'</strong></div><div class="payment-summary-line"><span>Остаток 30%</span><strong>'+money(p.balance)+'</strong></div><p class="payment-summary-note">'+(p.preliminary?'Суммы предварительные: стоимость доставки или подъёма требует уточнения.':'Предоплата при оформлении заказа. Остаток — после изготовления.')+'</p></div>';
+}
+
 function quote(items,t,title){
  if(!items.length||t.mixedRegions||t.needsQuote)return '';
  var list=entries(items,t),lines=[title||'Расчёт заказа зеркал','Количество: '+t.count+' шт.',''];
@@ -61,11 +72,14 @@ function quote(items,t,title){
  if(items.length>1&&t.carryRequested)lines.push('Подъём до квартиры: '+money(p.carry)+'.');
  if(t.carryPending)lines.push('Подъём требует согласования; его несогласованная стоимость не включена.');
  lines.push('',(t.carryPending?'Итого без несогласованного подъёма: ':t.deliveryPending?'Предварительная стоимость: ':'Итоговая стоимость: ')+money(p.total)+'.');
+ var split=payment(t);
+ if(split)lines.push('Предоплата 70%: '+money(split.deposit)+'.','Остаток 30%: '+money(split.balance)+'.');
+ if(split&&split.preliminary)lines.push('Суммы предварительные; после уточнения доставки или подъёма они могут измениться.');
  if(items.some(function(item){return item.data.mirror.estimate;}))lines.push('Стоимость фигурного контура уточняется после согласования.');
 
  return lines.join('\n');
 }
-window.MirrorOrderView={entries:entries,quote:quote,itemText:itemText,money:money,deliveryText:deliveryText,breakdown:breakdown,priceRows:priceRows};
+window.MirrorOrderView={entries:entries,quote:quote,itemText:itemText,money:money,deliveryText:deliveryText,breakdown:breakdown,priceRows:priceRows,payment:payment,paymentRows:paymentRows};
 })();
 
 
