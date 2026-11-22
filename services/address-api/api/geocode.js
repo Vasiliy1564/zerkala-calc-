@@ -20,21 +20,21 @@ export async function OPTIONS(request) {
 }
 export async function GET(request) {
   const url = new URL(request.url);
-  return search(request, url.searchParams.get('q') || '', url.searchParams.get('market'));
+  return search(request, url.searchParams.get('q') || '', url.searchParams.get('market'), url.searchParams.get('kind'));
 }
 export async function POST(request) {
   let body;
   try { body=await request.json(); } catch { return reply({error:'invalid_request'},400,request.headers.get('origin')); }
-  return search(request, typeof body?.query === 'string' ? body.query.trim() : '', body?.market);
+  return search(request, typeof body?.query === 'string' ? body.query.trim() : '', body?.market, body?.kind);
 }
-async function search(request, query, market) {
+async function search(request, query, market, kind) {
   const origin=request.headers.get('origin');
   if (origin && !originAllowed(origin)) return reply({error:'origin_not_allowed'},403,origin);
   query=query.trim();
-  if(query.length<4 || query.length>300 || !Object.hasOwn(centres,market)) return reply({error:'invalid_query'},400,origin);
+  if(query.length<4 || query.length>300 || !Object.hasOwn(centres,market) || (kind!=null&&kind!=='street'&&kind!=='building')) return reply({error:'invalid_query'},400,origin);
   if(!process.env.TWOGIS_API_KEY) return reply({error:'not_configured'},503,origin);
   const url=new URL('https://catalog.api.2gis.com/3.0/items/geocode');
-  url.search=new URLSearchParams({q:query,type:'building',location:centres[market],fields:'items.point,items.address',key:process.env.TWOGIS_API_KEY}).toString();
+  url.search=new URLSearchParams({q:query,type:kind==='street'?'street':'building',location:centres[market],fields:'items.point,items.address',key:process.env.TWOGIS_API_KEY}).toString();
   try {
     const upstream=await fetch(url,{signal:AbortSignal.timeout(18000)});
     const data=await upstream.json();
@@ -49,7 +49,9 @@ async function search(request, query, market) {
       if(!Number.isFinite(lon)||!Number.isFinite(lat)||lon < -180||lon > 180||lat < -90||lat > 90||typeof label!=='string'||!label.trim())continue;
       const id=String(item.id||''),identity=id||`${lon},${lat}`;
       if(seen.has(identity))continue;seen.add(identity);
-      features.push({properties:{label},geometry:{coordinates:[lon,lat]},source:'2gis'});
+      // Bounding coordinates prevent unrelated regions when 2GIS returns a distant homonym.
+      if(market==='stav'&&(lon<40.3||lon>46.3||lat<43.4||lat>46.5))continue;
+      features.push({properties:{label},geometry:{coordinates:[lon,lat]},source:'2gis',approx:kind==='street'});
       if(features.length===6)break;
     }
     return reply({features,source:'2gis'},200,origin);
