@@ -48,7 +48,7 @@ function params(item){
  if(m.faceFrame&&m.faceFrame!=='none')lines.push('Лицевая рама: '+({black:'чёрная',white:'белая',gold:'золотая'}[m.faceFrame]||m.faceFrame)+'.');
  return lines;
 }
-function itemText(entry,index){var lines=params(entry.item);if(index!==undefined)lines[0]=(index+1)+'. '+lines[0];lines.push('Стоимость '+(entry.item.qty===1?'зеркала':'зеркал')+': '+money(entry.mirrorPrice)+'.','Установка'+(entry.discount?' (со скидкой '+entry.discountRate+'%)':'')+': '+(entry.item.data.mirror.install?money(entry.installationPrice):'не выбрана')+'.');if(entry.item.data.mirror.carry&&entry.item.data.mirror.carry.enabled)lines.push('Подъём: '+(window.MirrorOrderPricing.carryPrice(window.MirrorOrderPricing.maxSide(entry.item.data.mirror),entry.item.data.mirror.carry).pending?'по согласованию, не включён':money(entry.carryPrice))+'.');if(entry.deliveryPrice)lines.push('Доставка: '+money(entry.deliveryPrice)+'.');lines.push('Итого по позиции: '+money(entry.display)+'.');return lines.join('\n');}
+function itemText(entry,index){var lines=params(entry.item);if(index!==undefined)lines[0]=(index+1)+'. '+lines[0];lines.push('Стоимость '+(entry.item.qty===1?'зеркала':'зеркал')+': '+money(entry.mirrorPrice)+'.','Установка'+(entry.discount?' (со скидкой '+entry.discountRate+'%)':'')+': '+(entry.item.data.mirror.install?money(entry.installationPrice):'не выбрана')+'.');if(entry.item.data.mirror.carry&&entry.item.data.mirror.carry.enabled)lines.push('Подъём: '+(window.MirrorOrderPricing.carryPrice(window.MirrorOrderPricing.maxSide(entry.item.data.mirror),entry.item.data.mirror.carry).pending?'по согласованию, не включён':money(entry.carryPrice))+'.');lines.push('Итого по позиции: '+money(entry.display-entry.deliveryPrice)+'.');return lines.join('\n');}
 /* Payment split is presentation-only; pricing comes from MirrorOrderPricing. */
 function payment(t){
  if(!t||t.needsQuote||t.mixedRegions||!Number.isFinite(Number(t.total))||Number(t.total)<0)return null;
@@ -68,7 +68,7 @@ function quote(items,t,title){
  
  var p=breakdown(t);
  if(items.length>1)lines.push('','Стоимость зеркал: '+money(p.mirror)+'.','Установка'+(t.discount?' (со скидкой '+t.discountRate+'%)':'')+': '+(t.installedCount?money(p.installation):'не выбрана')+'.');
- if(items.length>1&&p.delivery)lines.push('Доставка: '+money(p.delivery)+'.');
+ 
  if(items.length>1&&t.carryRequested)lines.push('Подъём до квартиры: '+money(p.carry)+'.');
  if(t.carryPending)lines.push('Подъём требует согласования; его несогласованная стоимость не включена.');
  lines.push('',(t.carryPending?'Итого без несогласованного подъёма: ':t.deliveryPending?'Предварительная стоимость: ':'Итоговая стоимость: ')+money(p.total)+'.');
