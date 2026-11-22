@@ -99,7 +99,7 @@ function calc(input){
   var framePurchase=frontBars*500;
   price+=framePurchase+Math.max(1500,framePurchase)+400;
  }
- var required=totalH>2000,aluFrame=required||!!o.aluFrame,aluminumBars=0;
+ var required=totalH>=2000||w>1000,aluFrame=required||!!o.aluFrame,aluminumBars=0;
  if(aluFrame){aluminumBars=angleBars(shape,w,h,h2,per);price+=aluminumBars*3*ANGLE.rate+ANGLE.trip;}
  price*=roundFactor;
  var delivery=Number(o.deliveryPrice)||0;
