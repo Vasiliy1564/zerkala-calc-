@@ -1317,7 +1317,7 @@
   });
   $all('.stepper-btn').forEach(function (b) {
     b.addEventListener('click', function () {
-      adj(b.dataset.adj, parseInt(b.dataset.delta, 10));
+      adj(b.dataset.adj, (Number(b.dataset.delta) < 0 ? -1 : 1) * 10); // MirrorSize uses millimetres: 10 mm = 1 cm
     });
   });
   var sizeInputs = ['width', 'height', 'height2'];
