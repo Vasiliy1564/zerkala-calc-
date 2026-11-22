@@ -61,8 +61,8 @@ html#ql.ql .topline a{color:var(--ql-champagne)!important;text-decoration:none!i
 html#ql.ql .header-contacts{border-bottom:0!important;padding-top:12px!important;padding-bottom:0!important}
 html#ql.ql .header-owner-phone span{font-size:11px!important;letter-spacing:.14em!important;text-transform:uppercase!important;color:var(--ql-silver-dim)!important;opacity:1!important}
 html#ql.ql .header-owner-phone strong{font-family:var(--ql-serif)!important;font-size:clamp(20px,2vw,24px)!important;font-weight:600!important;letter-spacing:.01em!important;color:var(--ql-white)!important}
-html#ql.ql .header-max-link{background:transparent!important;border:1px solid rgba(201,176,138,.55)!important;color:var(--ql-champagne)!important;border-radius:2px!important;font-size:12px!important;letter-spacing:.12em!important;text-transform:uppercase!important;font-weight:600!important;padding:11px 20px!important;transition:background .3s var(--ql-ease),color .3s var(--ql-ease)!important}
-html#ql.ql .header-max-link:hover{background:var(--ql-champagne)!important;color:var(--ql-graphite)!important;filter:none!important}
+html#ql.ql .header-max-link{background:var(--ql-champagne)!important;border:1px solid var(--ql-champagne)!important;color:var(--ql-graphite)!important;border-radius:3px!important;font-size:12px!important;letter-spacing:.09em!important;text-transform:uppercase!important;font-weight:800!important;line-height:1.35!important;padding:12px 18px!important;min-height:52px!important;box-shadow:0 6px 24px rgba(201,176,138,.18)!important;transition:background .3s var(--ql-ease),box-shadow .3s var(--ql-ease)!important}
+html#ql.ql .header-max-link:hover{background:#f2dcba!important;color:var(--ql-graphite)!important;box-shadow:0 8px 28px rgba(201,176,138,.28)!important;filter:none!important}
 html#ql.ql header.container{background:var(--ql-graphite)!important;border-bottom:0!important}
 html#ql.ql .nav{border-bottom:1px solid var(--ql-line)!important;min-height:72px!important}
 html#ql.ql .logo{font-family:var(--ql-serif)!important;font-size:24px!important;font-weight:600!important;letter-spacing:.22em!important;color:var(--ql-white)!important}
@@ -312,7 +312,7 @@ html#ql.ql.js-reveal .reveal{transform:translateY(18px)!important;transition:opa
   html#ql.ql .contact-meta a{font-size:19px!important}
 }
 @media(max-width:560px){
-  html#ql.ql .header-max-link{font-size:10px!important;letter-spacing:.08em!important;padding:10px 12px!important;max-width:none!important}
+  html#ql.ql .header-max-link{font-size:11px!important;letter-spacing:.045em!important;padding:10px 11px!important;min-height:52px!important;max-width:150px!important}
   html#ql.ql .hero-copy>div{flex-direction:column!important;align-items:stretch!important;gap:20px!important}
   html#ql.ql .hero-copy>div .cta{justify-content:center!important}
   html#ql.ql .hero-copy>div .secondary-link{align-self:flex-start!important}
