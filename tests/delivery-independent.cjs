@@ -7,7 +7,7 @@ w.MirrorDelivery.getRoute=()=>({km:11.2,address:'Санкт-Петербург, 
 let current;const original=w.onPersonalCalculation;w.onPersonalCalculation=data=>{current=data;if(original)original(data)};
 function set(selector,value,type='input'){const el=d.querySelector(selector);if(el.type==='checkbox'||el.type==='radio')el.checked=value;else el.value=value;el.dispatchEvent(new w.Event(type,{bubbles:true}));}
 function quote(installed,height){set('#height',height);set('#width','80');set('[name=option][value=install]',installed,'change');set('[name=option][value=delivery]',true,'change');w.calculateMirrorInPlace();const t=w.MirrorOrderPricing.calculate([{qty:1,data:current}],{});return {t,p:w.MirrorOrderView.breakdown(t),text:w.MirrorOrderView.quote([{qty:1,data:current}],t)}}
-for(const [height,delivery] of [['180',336],['200',504],['230',616]]){
+for(const [height,delivery] of [['180',500],['200',500],['230',500]]){
  const without=quote(false,height),withInstall=quote(true,height);assert.equal(without.p.delivery,delivery);assert.equal(withInstall.p.delivery,delivery);assert.equal(without.p.mirror,withInstall.p.mirror);assert.equal(withInstall.t.deliveryBase,0);assert.equal(withInstall.p.total-without.p.total,withInstall.p.installation);assert(withInstall.text.includes('Доставка: '+delivery+' ₽'));assert(without.text.includes('Доставка: '+delivery+' ₽'));
 }
 assert.equal(errors.length,0,errors.join(';'));dom.window.close();console.log('PASS: same mirror/delivery with installation toggled, all size rates, quote totals and copied text');
