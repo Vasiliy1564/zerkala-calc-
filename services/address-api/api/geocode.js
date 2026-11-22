@@ -1,4 +1,4 @@
-const websiteHosts = new Set(['zerkalo-pro-spb.ru','www.zerkalo-pro-spb.ru','zerkalo-pro.ru','www.zerkalo-pro.ru']);
+const websiteHosts = new Set(['zerkalo-pro-spb.ru','www.zerkalo-pro-spb.ru','zerkalo-pro-stavropol.ru','www.zerkalo-pro-stavropol.ru','zerkalo-pro.ru','www.zerkalo-pro.ru']);
 function originAllowed(origin){
  if(origin==='null'||origin==='https://appassets.androidplatform.net')return true;
  try{const url=new URL(origin);return url.origin===origin && ['http:','https:'].includes(url.protocol) && !url.port && websiteHosts.has(url.hostname.replace(/\.$/,''));}catch{return false;}

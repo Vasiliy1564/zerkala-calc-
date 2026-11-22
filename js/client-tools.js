@@ -4,7 +4,7 @@
   var script = document.currentScript || document.querySelector('script[src*="js/client-tools.js"]');
   var bundle = new URL('../assets/client-tools/export.js', script.src).href;
   // The original hosting domain contains '-spb', but this site now serves Stavropol.
-  var meta = {city:'Ставрополь',site:'zerkalo-pro-spb.ru'};
+  var meta = {city:'Ставрополь',site:'zerkalo-pro-stavropol.ru'};
   var form = document.getElementById('contact-form');
   var files = [], objectUrls = [], draft = '', modulePromise;
   function byId(id) { return document.getElementById(id); }
