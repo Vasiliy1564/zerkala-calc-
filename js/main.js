@@ -91,7 +91,6 @@
   function $all(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
 
   var MAX_URL = 'https://max.ru/u/f9LHodD0cOLbb_I_NfS4ans5ICo43Baa1UqtWuFJuR82JHYzk0Y3OhzIpvI';
-  var MAX_URL_MIKHAIL = 'https://max.ru/u/f9LHodD0cOJfR3SWfCr0PAAJnlcPjnyOzhZYPpAWjhF-csqm7yrpZdJDnBQ';
 
   /* ---------- Fallback для битых картинок ---------- */
   document.addEventListener('error', function (e) {
@@ -1273,7 +1272,6 @@
       ctaText = 'Здравствуйте! Хочу заказать ' + SHAPE_NAMES[state.shape].toLowerCase() + ' зеркало ' + (state.shape === 'circle' ? 'Ø' + window.MirrorSize.cm(w) : window.MirrorSize.cm(h) + '×' + window.MirrorSize.cm(w)) + ' см' + (details.length ? ' — ' + details.join(', ') : '') + '. Стоимость по калькулятору: ' + fmt(Math.round(price)) + ' ₽.';
     }
     document.getElementById('r-cta').href = MAX_URL + '?text=' + encodeURIComponent(ctaText);
-    document.getElementById('r-cta-mikhail').href = MAX_URL_MIKHAIL + '?text=' + encodeURIComponent(ctaText);
     if(window.updateSelectedMirrorTotal)window.updateSelectedMirrorTotal();
 
     var res = document.getElementById('calc-result');
