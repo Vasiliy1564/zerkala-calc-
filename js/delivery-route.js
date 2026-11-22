@@ -95,9 +95,9 @@ async function choose(f,token){
   if(token!==revision)return;
   if(data.code!=='Ok'||!data.routes||!data.routes.length||!Number.isFinite(data.routes[0].distance))throw Error('No route');
   var metres=data.routes[0].distance;
-  if(metres<0||metres>500000)throw Error('Out of area');
+  if(metres<0||metres>900000)throw Error('Out of area');
   try{localStorage.setItem(routeKey,JSON.stringify({at:Date.now(),data:data}));}catch(e){}
-  route={origin:origin,address:address(f),km:Math.round(metres/100)/10,point:destination,approx:Boolean(f.approx),geometry:data.routes[0].geometry||null};input.value=route.address;
+  route={origin:origin,address:f.requestedAddress||address(f),km:Math.round(metres/100)/10,point:destination,approx:Boolean(f.approx),geometry:data.routes[0].geometry||null};input.value=route.address;
   updatePrice();
   emit();
  }catch(e){if(token===revision){route=null;status.textContent='Не удалось построить маршрут. Проверьте адрес и повторите. Укажите адрес для уточнения стоимости.';emit();}}
@@ -107,7 +107,8 @@ button.addEventListener('click',async function(){
  if(busy)return;var query=normalizedAddress(input.value.trim());if(query.length<5){status.textContent='Укажите город, улицу и номер дома.';return;}
  if(Date.now()-lastSearch<1100)return;lastSearch=Date.now();busy=true;button.disabled=true;var token=++revision;route=null;results.replaceChildren();status.textContent='Ищем адрес…';emit();
  try{
-  var data=await searchAddress(query,'stav',token);
+  var data;
+  try{data=await searchAddress(query,'stav',token);}catch(primaryError){data={features:[]};}
   if(token!==revision)return;
   var wanted=houseOf(query),seen={};
   var matches=(data.features||[]).filter(function(f){
@@ -120,6 +121,7 @@ button.addEventListener('click',async function(){
    var approx=await searchStreet(query,token);
    if(token!==revision)return;
    matches=approx.features||[];
+   matches.forEach(function(f){f.requestedAddress=query;});
   }
   if(!matches.length){status.textContent='Адрес не определён. Проверьте написание или укажите точку на карте для расчёта маршрута.';return;}
   showMatches(matches,token);
