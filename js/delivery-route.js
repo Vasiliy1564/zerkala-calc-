@@ -66,7 +66,7 @@ function streetWords(q){
 function inRegion(f){var c=f.geometry&&f.geometry.coordinates;return c&&Number.isFinite(c[0])&&Number.isFinite(c[1])&&c[0]>=40.3&&c[0]<=46.3&&c[1]>=43.4&&c[1]<=46.5;}
 function matchesPlace(f,q){
  if(!inRegion(f))return false;
- var label=lower(address(f)),city=q.match(/(?:\bгород|\bг\.|\bпос[её]лок|\bсело|\bстаница)\s+([а-яё-]+)/iu);
+ var label=lower(address(f)),city=q.match(/(?:^|[,\s])(?:город|г\.?|пос[её]лок|село|станица)\s+([а-яё-]+)/iu);
  if(city&&!label.includes(lower(city[1])))return false;
  var words=streetWords(q);
  return words.length>0&&words.every(function(w){return label.split(' ').includes(w);});
