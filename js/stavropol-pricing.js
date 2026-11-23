@@ -68,9 +68,14 @@ function calc(input){
  var totalH=h+(/double/.test(shape)?h2:0),area=w*totalH/1000000,per=2*(w+totalH)/1000;
  if(shape==='circle'){area=w*w/1000000;per=4*w/1000;}
  if(shape==='double'){area=w*totalH/1000000;per=2*(w+totalH)/1000;}
- var quick=o.leadTime==='express',supplierRate=quick?1650:BASE.mirror;
- if(quick){var fitsSheet=function(a,b){return Math.min(a,b)<=1650&&Math.max(a,b)<=2500;};
-   if(!(fitsSheet(w,h)&&(!/double/.test(shape)||fitsSheet(w,h2))))throw Error('Для изготовления до 5 дней максимальный размер каждого полотна — 165 × 250 см.');}
+ var fitsSheet=function(a,b,longSide,shortSide){return Math.min(a,b)<=shortSide&&Math.max(a,b)<=longSide;};
+ var pieces=[{w:w,h:h}];if(shape==='double'||shape==='semidouble')pieces.push({w:w,h:h2});
+ var eligibleExpress=pieces.every(function(p){return fitsSheet(p.w,p.h,2500,1600);});
+ var eligibleStandard=pieces.every(function(p){return fitsSheet(p.w,p.h,3000,2000);});
+ if(!eligibleStandard)throw Error('Максимальный формат одного полотна — 300 × 200 см. Для большего размера нужна индивидуальная смета.');
+ if(o.leadTime==='express'&&!eligibleExpress)throw Error('До 7 дней доступно только для полотна до 250 × 160 см. Выберите до 10 дней.');
+ var quick=o.leadTime==='standard'?false:eligibleExpress,supplierRate=quick?1650:BASE.mirror;
+ var leadTime=quick?'express':'standard',productionDays=quick?7:10;
  var light=!!o.light,install=!!o.install,rounded=shape==='rounded',multiplier=1.06*1.02;
  if(shape==='double')multiplier*=1+2000/16469.75;
  if(shape==='semidouble')multiplier*=1.2;
@@ -109,7 +114,7 @@ function calc(input){
  price+=delivery;
  var procurement=(deliveryFromSupplier*multiplier+(frontFrame?400:0)+(aluFrame?ANGLE.trip:0))*roundFactor;
  var installation=installationBase*multiplier*roundFactor;
- return {total:price,area:area,perimeter:per,totalHeight:totalH,requiredFrame:required,
+ return {total:price,area:area,perimeter:per,totalHeight:totalH,requiredFrame:required,leadTime:leadTime,productionDays:productionDays,supplierRate:supplierRate,eligibleExpress:eligibleExpress,
   aluFrame:aluFrame,angleBars:aluminumBars,angleCharge:aluFrame?aluminumBars*3*ANGLE.rate+ANGLE.trip:0,
   faceFrameBars:frontBars,facet:facet,delivery:delivery,procurement:procurement,installation:installation,
   mirror:price-delivery-procurement-installation,serviceFactor:multiplier,roundingFactor:roundFactor};
