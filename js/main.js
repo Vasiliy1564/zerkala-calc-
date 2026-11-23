@@ -1051,6 +1051,8 @@
       ledPer = per;
     }
 
+    // Only the raw glass purchase tariff depends on production time.
+    var unitMirrorPrice = window.MirrorLeadTime ? window.MirrorLeadTime.purchaseRate() : PRICE.mirror;
     var price;
 
     if (!state.light) {
@@ -1058,13 +1060,13 @@
          без фацета — (S×1500 + P×150) × 1,8
          с фацетом — (S×1500 + P×фацет) × 1,8 + 1000 (доставка) */
       var meterExtra = shapeMeterSurcharge(state.shape);
-      var basePlain = area * PRICE.mirror + edgePer * (PRICE.edge + meterExtra);
+      var basePlain = area * unitMirrorPrice + edgePer * (PRICE.edge + meterExtra);
       if (state.facet === 'none' || state.facet === 'grind') {
-        if (state.facet === 'grind') basePlain = area * PRICE.mirror + edgePer * (FACET_RATES.grind + meterExtra);
+        if (state.facet === 'grind') basePlain = area * unitMirrorPrice + edgePer * (FACET_RATES.grind + meterExtra);
         price = basePlain * 1.8;
       } else {
         var facetRate = FACET_RATES[state.facet] || 0;
-        price = (area * PRICE.mirror + edgePer * (facetRate + meterExtra)) * 1.8 + PRICE.facetDelivery;
+        price = (area * unitMirrorPrice + edgePer * (facetRate + meterExtra)) * 1.8 + PRICE.facetDelivery;
       }
       if (state.install) {
         price += (area <= 2) ? Math.max(2000, area * 1300) : area * 1500;
@@ -1081,7 +1083,7 @@
         : (FACET_RATES[state.facet] || 0);
 
       /* Себестоимость зеркала */
-      var costMirrorLight = area * PRICE.mirror;
+      var costMirrorLight = area * unitMirrorPrice;
 
       /* Обработка кромки: шлифовка или фацет */
       var costEdgeLight = edgePer * (facetRateLight + meterExtraLight);
@@ -1210,7 +1212,7 @@
       {key:'installation',sale:installCharge,cost:null,expense:'install'}
     ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,ledProfileTariffVersion:1,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,
       height2:window.MirrorSize.read(document.getElementById('height2'))||0,
-      size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),materialLabel:'Зеркало, 4 мм',
+      size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),materialLabel:'Зеркало, 4 мм',leadTimeLabel:window.MirrorLeadTime?window.MirrorLeadTime.currentLabel():'до 10 дней',
       edge:state.facet,edgeLabel:state.facet==='none'?'обработка от порезов':FACET_LABELS[state.facet],
       light:state.light,ctrl:state.ctrl,clr:state.clr,film:state.film,heat:state.heat,
       ledProfile:state.ledProfile,aluFrame:state.aluFrame,faceFrame:state.faceFrame,
@@ -1246,9 +1248,11 @@
     if (state.faceFrame !== 'none') inc += row('Алюминиевая рама', FACE_FRAME_LABELS[state.faceFrame]);
     if (state.aluFrame) inc += row('Каркас из алюминиевого уголка 1,5 мм', 'да');
     if (state.ledProfile) inc += row('Светодиодная лента в профиле', 'да');
+    if (window.MirrorLeadTime) inc += row('Срок изготовления', window.MirrorLeadTime.currentLabel());
     document.getElementById('r-inc').innerHTML = inc;
 
     var details = [];
+    if (window.MirrorLeadTime) details.push('изготовление ' + window.MirrorLeadTime.currentLabel());
     if (state.light) {
       details.push('с LED-подсветкой (' + CLR_LABELS[state.clr] + ', управление: ' + CTRL_LABELS[state.ctrl] + ')');
     } else {
