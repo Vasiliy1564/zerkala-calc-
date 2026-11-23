@@ -26,14 +26,14 @@ function refresh(){
   var can=eligibility(),rush=el('lead-time-express'),normal=el('lead-time-standard'),note=el('lead-time-note');
   if(!rush||!normal)return;
   rush.disabled=can===false;
-  if(can===false&&rush.checked)normal.checked=true;
+  if(can===false&&rush.checked){rush.checked=false;normal.checked=true;}
   if(note)note.textContent=can===false
     ?'Для выбранных размеров доступно изготовление до 10 дней. Ускоренный вариант — до 165 × 250 см.'
     :'Срок и итоговая стоимость зависят от выбранного варианта. Цена будет показана после расчёта.';
   var field=el('lead-time-field');
   if(field)field.classList.toggle('lead-time-restricted',can===false);
 }
-function purchaseRate(){refresh();return selected()==='express'?EXPRESS:STANDARD;}
+function purchaseRate(){refresh();return eligibility()===false?STANDARD:(selected()==='express'?EXPRESS:STANDARD);}
 function currentLabel(){refresh();return selected()==='express'?'до 5 дней':'до 10 дней';}
 function recalcVisible(){
   var result=el('calc-result');
