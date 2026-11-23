@@ -68,11 +68,14 @@ function calc(input){
  var totalH=h+(/double/.test(shape)?h2:0),area=w*totalH/1000000,per=2*(w+totalH)/1000;
  if(shape==='circle'){area=w*w/1000000;per=4*w/1000;}
  if(shape==='double'){area=w*totalH/1000000;per=2*(w+totalH)/1000;}
+ var quick=o.leadTime==='express',supplierRate=quick?1650:BASE.mirror;
+ if(quick){var fitsSheet=function(a,b){return Math.min(a,b)<=1650&&Math.max(a,b)<=2500;};
+   if(!(fitsSheet(w,h)&&(!/double/.test(shape)||fitsSheet(w,h2))))throw Error('Для изготовления до 5 дней максимальный размер каждого полотна — 165 × 250 см.');}
  var light=!!o.light,install=!!o.install,rounded=shape==='rounded',multiplier=1.06*1.02;
  if(shape==='double')multiplier*=1+2000/16469.75;
  if(shape==='semidouble')multiplier*=1.2;
  var roundFactor=rounded?1.15:1;
- var edgeCost=per*(FACETS[facet]+shapeExtra(shape)),baseCost=area*BASE.mirror+edgeCost;
+ var edgeCost=per*(FACETS[facet]+shapeExtra(shape)),baseCost=area*supplierRate+edgeCost;
  var deliveryFromSupplier=0,installationBase=0,price=0;
  var normalInstall=(area<=2)?Math.max(2000,area*1300):area*1500;
  if(!light){
