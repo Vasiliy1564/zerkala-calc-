@@ -1037,6 +1037,15 @@
       return;
     }
 
+    // Do not quote a sheet that cannot be supplied by either Stavropol tariff.
+    if (window.MirrorLeadTime && window.MirrorLeadTime.isStandardEligible() === false) {
+      var result=document.getElementById('calc-result');
+      document.getElementById('r-size').textContent='Размер превышает максимальный формат';
+      document.getElementById('r-sum').textContent='Индивидуальный расчёт';
+      document.getElementById('r-inc').textContent='Максимальный размер одного полотна — 300 × 200 см. Уточните изготовление из частей у мастера.';
+      if(result)result.classList.add('show');
+      return;
+    }
     var geo = calcGeometry();
     var area = geo.area;
     var per = geo.per;
