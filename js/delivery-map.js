@@ -34,6 +34,7 @@
     finally { clearTimeout(t); }
   }
   async function search(query, limit) {
+    if (window.MirrorDelivery && window.MirrorDelivery.searchNearby) return window.MirrorDelivery.searchNearby(query);
     var url = PHOTON + '/api/?q=' + encodeURIComponent(query) + '&limit=' + (limit || 7) + '&lat=' + BIAS.lat + '&lon=' + BIAS.lon;
     var data = await getJSON(url);
     return { features: unique((data.features || []).map(toFeature)).slice(0, 6), source: 'photon' };
@@ -58,10 +59,12 @@
     /* ---------- Suggestions while typing ---------- */
     var timer = null, asked = 0;
     function pick(f) {
+      clearTimeout(timer); ++asked;
       list.replaceChildren();
       window.MirrorDelivery.choose(f);
     }
     function suggest(features, token) {
+      features = features.filter(function(f){return window.MirrorDelivery.withinArea(f);});
       if (token !== asked || !features.length) return;
       list.replaceChildren();
       features.forEach(function (f) {
@@ -74,6 +77,7 @@
       });
       status.textContent = 'Выберите адрес из подсказок или нажмите на карте.';
     }
+    document.getElementById('delivery-search').addEventListener('click', function(){clearTimeout(timer); ++asked;});
     input.setAttribute('placeholder', 'Начните вводить: посёлок, город, улица, дом');
     input.setAttribute('autocomplete', 'off');
     input.addEventListener('input', function () {
