@@ -23,16 +23,20 @@ function eligibilityFor(longSide,shortSide){
 }
 function eligibility(){return eligibilityFor(MAX_LONG,MAX_SHORT);}
 function standardEligibility(){return eligibilityFor(STANDARD_LONG,STANDARD_SHORT);}
+var manualStandard=false;
 function selected(){var x=document.querySelector('input[name="leadTime"]:checked');return x?x.value:'standard';}
 function refresh(){
   var can=eligibility(),rush=el('lead-time-express'),normal=el('lead-time-standard'),note=el('lead-time-note');
   if(!rush||!normal)return;
   rush.disabled=can===false;
   normal.disabled=standardEligibility()===false;
-  if(normal.disabled&&normal.checked){normal.checked=false;if(!rush.disabled)rush.checked=true;}
-  if(can===false&&rush.checked){rush.checked=false;normal.checked=true;}
+  if(normal.disabled){normal.checked=false;rush.checked=false;}
+  else if(can===false){rush.checked=false;normal.checked=true;}
+  else if(!manualStandard){normal.checked=false;rush.checked=true;}
+  else{rush.checked=false;normal.checked=true;}
+  [rush,normal].forEach(function(input){var card=input.closest('.lead-time-card');if(card)card.classList.toggle('lead-time-selected',input.checked);});
   if(note)note.textContent=can===false
-    ?(normal.disabled?'Размер более 300 × 200 см — нужна индивидуальная смета.':'Для выбранных размеров доступно до 10 дней (1 500 ₽/м²). До 7 дней — максимум 250 × 160 см.')
+    ?(normal.disabled?'Размер более 300 × 200 см — нужна индивидуальная смета.':'Для выбранных размеров доступно до 10 дней. До 7 дней — максимум 250 × 160 см.')
     :'Срок и итоговая стоимость зависят от выбранного варианта. Цена будет показана после расчёта.';
   var field=el('lead-time-field');
   if(field)field.classList.toggle('lead-time-restricted',can===false);
@@ -58,9 +62,9 @@ function mount(){
   row.insertAdjacentElement('afterend',target);
   var css=document.createElement('style');
   css.id='lead-time-style';
-  css.textContent='.lead-time-field{margin:16px 0 20px}.lead-time-heading{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap}.lead-time-heading span{font-weight:650;font-size:15px}.lead-time-heading small,.lead-time-card small{opacity:.73;font-size:12px}.lead-time-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.lead-time-card{display:block;position:relative;cursor:pointer;min-width:0}.lead-time-card input{position:absolute;opacity:0;width:1px;height:1px}.lead-time-card>span{display:flex;flex-direction:column;gap:5px;min-height:76px;padding:14px 13px;border:1px solid rgba(156,145,127,.48);border-radius:13px;transition:border-color .18s,background-color .18s;box-sizing:border-box}.lead-time-card strong{font-size:16px;line-height:1.25}.lead-time-card input:checked+span{border:2px solid #af8a55;padding:13px 12px;background:rgba(181,141,74,.14)}.lead-time-card input:focus-visible+span{outline:2px solid #af8a55;outline-offset:3px}.lead-time-card input:disabled+span{opacity:.42;cursor:not-allowed}.lead-time-restricted .lead-time-note{color:#b87842}.lead-time-note{min-height:1.5em;margin-top:9px!important;line-height:1.4;font-size:12px}@media(max-width:360px){.lead-time-card>span{padding:11px 9px;min-height:80px}.lead-time-card input:checked+span{padding:10px 8px}.lead-time-card strong{font-size:15px}}';
+  css.textContent='.lead-time-field{margin:16px 0 20px}.lead-time-heading{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap}.lead-time-heading span{font-weight:650;font-size:15px}.lead-time-heading small,.lead-time-card small{opacity:.73;font-size:12px}.lead-time-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.lead-time-card{display:block;position:relative;cursor:pointer;min-width:0}.lead-time-card input{position:absolute;opacity:0;width:1px;height:1px}.lead-time-card>span{height:100%;display:flex;flex-direction:column;gap:5px;min-height:76px;padding:14px 13px;border:1px solid rgba(156,145,127,.48);border-radius:13px;transition:border-color .18s,background-color .18s;box-sizing:border-box}.lead-time-card strong{font-size:16px;line-height:1.25}.lead-time-field .lead-time-card.lead-time-selected>span,.lead-time-field .lead-time-card input:checked+span{border:2px solid #af8a55!important;padding:13px 12px;background:rgba(181,141,74,.14)!important;box-shadow:0 0 0 1px rgba(175,138,85,.22)}.lead-time-card input:focus-visible+span{outline:2px solid #af8a55;outline-offset:3px}.lead-time-card input:disabled+span{opacity:.42;cursor:not-allowed}.lead-time-restricted .lead-time-note{color:#b87842}.lead-time-note{min-height:1.5em;margin-top:9px!important;line-height:1.4;font-size:12px}@media(max-width:360px){.lead-time-card>span{padding:11px 9px;min-height:80px}.lead-time-card input:checked+span{padding:10px 8px}.lead-time-card strong{font-size:15px}}';
   document.head.appendChild(css);
-  target.addEventListener('change',function(){refresh();recalcVisible();});
+  target.addEventListener('change',function(event){if(event.target.name==='leadTime')manualStandard=event.target.value==='standard';refresh();recalcVisible();});
   form.addEventListener('input',function(event){if(['width','height','height2'].indexOf(event.target.id)>=0){refresh();recalcVisible();}});
   form.addEventListener('change',function(event){if(event.target.name==='shape'||['width','height','height2'].indexOf(event.target.id)>=0){refresh();recalcVisible();}});
   form.addEventListener('click',function(event){if(event.target.closest('.stepper-btn'))queueMicrotask(refresh);});
