@@ -24,8 +24,10 @@
  function revealService(panel){
   if(!panel||panel.hidden)return;
   var viewport=window.visualViewport,top=(viewport?viewport.offsetTop:0)+96;
-  var delta=Math.max(0,panel.getBoundingClientRect().top-top);
-  if(delta>2)window.scrollTo({top:window.scrollY+delta,left:window.scrollX,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+  // The address may be above the quick installation button after calculation.
+  var delta=panel.getBoundingClientRect().top-top;
+  if(panel.id!=='delivery-address-panel')delta=Math.max(0,delta);
+  if(Math.abs(delta)>2)window.scrollTo({top:window.scrollY+delta,left:window.scrollX,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
  }
  function settlePosition(hold){
   restorePosition(hold);
@@ -54,6 +56,7 @@
  window.addEventListener('touchmove',releasePosition,{passive:true});
  document.addEventListener('pointerdown',function(e){if(!form.contains(e.target))releasePosition();},true);
  form.addEventListener('change',function(e){
+  if(activePosition&&activePosition.anchor.id==='quick-install'&&e.target.matches('input[name="option"][value="install"]'))return;
   if(e.target.matches('input[type="radio"],input[type="checkbox"],select'))beginPosition(e.target.closest('label')||e.target);
  },true);
  form.addEventListener('change',function(e){
@@ -79,6 +82,7 @@
   var position=beginPosition(this);
   installation.checked=!installation.checked;installation.dispatchEvent(new Event('change',{bubbles:true}));
   syncInstall();window.calculateMirrorInPlace();
+  if(installation.checked)position.reveal=document.getElementById('delivery-address-panel');
   settlePosition(position);
  });installButton.id='quick-install';choices.appendChild(installButton);
  function syncInstall(){installButton.setAttribute('aria-pressed',String(installation.checked));}
