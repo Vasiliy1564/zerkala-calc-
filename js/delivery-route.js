@@ -63,10 +63,20 @@ function photonFeature(f){
  return {properties:{label:label,housenumber:p.housenumber},geometry:{coordinates:c},approx:!p.housenumber,source:'photon',settlement:isPlace&&!p.housenumber};
 }
 async function searchNearby(query){
- var url='https://photon.komoot.io/api/?q='+encodeURIComponent(query)+'&lang=ru&limit=20&lat='+point[1]+'&lon='+point[0]+'&bbox=41.24,44.54,42.59,45.46';
- var data=await json(url,{credentials:'omit'},8000),seen={};
- var features=(data.features||[]).map(photonFeature).filter(function(f){if(!inRegion(f)||seen[address(f)])return false;seen[address(f)]=true;return true;});
- return {features:features,source:'photon'};
+ var regional='Ставропольский край, '+query;
+ var variants=[query,regional];
+ if(/ставропольский\s+край/i.test(query))variants=[query];
+ var seen={},lastError;
+ for(var i=0;i<variants.length;i++){
+  try{
+   var url='https://photon.komoot.io/api/?q='+encodeURIComponent(variants[i])+'&limit=10&lat='+point[1]+'&lon='+point[0]+'&bbox=41.24,44.54,42.59,45.46';
+   var data=await json(url,{credentials:'omit'},8000);
+   var features=(data.features||[]).map(photonFeature).filter(function(f){if(!inRegion(f)||seen[address(f)])return false;seen[address(f)]=true;return true;});
+   if(features.length&&selectMatches({features:features},query).features.length)return {features:features,source:'photon'};
+  }catch(e){lastError=e;}
+ }
+ if(lastError)throw lastError;
+ return {features:[],source:'photon'};
 }
 function selectMatches(data,query,kind){
  var wanted=kind==='street'?'':houseOf(query),seen={};
@@ -81,7 +91,7 @@ function selectMatches(data,query,kind){
  return {features:features.slice(0,8)};
 }
 async function searchAddress(query,market,token,kind){
- var key='mirror.stav.area50.v1.'+(kind||'auto')+'.'+query.toLowerCase().replace(/ё/g,'е').trim(),saved;
+ var key='mirror.stav.area50.v2.'+(kind||'auto')+'.'+query.toLowerCase().replace(/ё/g,'е').trim(),saved;
  try{saved=JSON.parse(localStorage.getItem(key));if(saved&&Date.now()-saved.at<86400000&&saved.data.features.length)return saved.data;}catch(e){}
  var wanted=kind==='street'?'':houseOf(query);
  var url='https://zerkalo-address-api.vercel.app/api/geocode?q='+encodeURIComponent(query)+'&market=stav'+(!wanted?'&kind=street':'');
