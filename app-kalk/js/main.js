@@ -392,7 +392,7 @@
     var el = document.getElementById(id);
     if (!el) return;
     var v = window.MirrorSize.read(el) || 0;
-    v = Math.max(state.shape === 'semicircle' && id === 'height' ? 800 : 400, v + delta);
+    v = Math.max(state.shape === 'semicircle' && id === 'height' ? 800 : (state.shape === 'double' || state.shape === 'semidouble') && id !== 'width' ? 10 : 300, v + delta);
     v = Math.min(v, state.shape === 'curved' && id === 'height' ? 1800 : 3210);
     window.MirrorSize.write(el, v);
     if (state.shape === 'circle') {
@@ -777,7 +777,8 @@
 
     inputH.disabled = false;
     inputH.style.opacity = '1';
-    inputH.min = shape === 'semicircle' ? '80' : '40';
+    inputH.min = shape === 'semicircle' ? '80' : shape === 'double' || shape === 'semidouble' ? '1' : '30';
+    document.getElementById('height2').min = '1';
     inputH.max = shape === 'curved' ? '180' : '321';
     inputW.disabled = shape === 'curved' || shape === 'semicircle' || shape === 'semidouble';
     $all('.stepper-btn[data-adj="width"]').forEach(function (button) {
@@ -934,14 +935,14 @@
   function sizeValidationMessage(w, h) {
     var split = state.shape === 'double' || state.shape === 'semidouble';
     var h2 = split ? window.MirrorSize.read(document.getElementById('height2')) : 0;
-    if (split && (!Number.isFinite(h) || h < 400 || !Number.isFinite(h2) || h2 < 400)) {
-      return 'Недопустимый размер. Минимальная высота каждой части — 40 см.';
+    if (split && (!Number.isFinite(h) || h < 10 || !Number.isFinite(h2) || h2 < 10)) {
+      return 'Укажите высоту каждой части от 1 см.';
     }
     if (state.shape === 'semicircle' && (!Number.isFinite(h) || h < 800)) {
       return 'Недопустимый размер. Минимальная высота полукруга — 80 см (ширина 40 см).';
     }
-    if (!Number.isFinite(w) || w < 400 || (state.shape !== 'circle' && (!Number.isFinite(h) || h < 400))) {
-      return 'Недопустимый размер. Минимальный размер — 40 см.';
+    if (!Number.isFinite(w) || w < 300 || (!split && state.shape !== 'circle' && (!Number.isFinite(h) || h < 300))) {
+      return 'Недопустимый размер. Минимальный размер цельного полотна — 30 см.';
     }
     return '';
   }
