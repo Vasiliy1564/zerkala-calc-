@@ -13,10 +13,11 @@ function eligibilityFor(longSide,shortSide){
   var w=mm('width'),h=mm('height'),choice=document.querySelector('input[name="shape"]:checked');
   var shape=choice?choice.value:'rect';
   if(shape==='circle')h=w;
-  if(!Number.isFinite(w)||!Number.isFinite(h)||w<400||h<400)return null;
+  if(!Number.isFinite(w)||!Number.isFinite(h)||w<300)return null;
+  if((shape==='double'||shape==='semidouble')?h<10:h<300)return null;
   if(shape==='double'||shape==='semidouble'){
     var h2=mm('height2');
-    if(!Number.isFinite(h2)||h2<400)return null;
+    if(!Number.isFinite(h2)||h2<10)return null;
     return fits(w,h,longSide,shortSide)&&fits(w,h2,longSide,shortSide);
   }
   return fits(w,h,longSide,shortSide);
