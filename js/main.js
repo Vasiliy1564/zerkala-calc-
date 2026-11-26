@@ -1194,8 +1194,6 @@
     /* Алюминиевые опции; уголок оплачивается целыми хлыстами по 3 м. */
 
     if (state.ledProfile && state.light) price += geo.per * 250;
-    price += window.MirrorEvoProfile.charge(state.shape,w,h,
-      window.MirrorSize.read(document.getElementById('height2'))||0,state.light);
 
 
 
@@ -1236,6 +1234,9 @@
     // Rounded corners: the rectangular calculation plus 15%, before rounding.
     var roundedSurcharge = state.shape === 'rounded' ? price * 0.15 : 0;
     price += roundedSurcharge;
+    // Fixed EVO rate is a final charge: 100 RUB per physical metre.
+    price += window.MirrorEvoProfile.charge(state.shape,w,h,
+      window.MirrorSize.read(document.getElementById('height2'))||0,state.light);
     price += clientDelivery;
 
     var sizeText = '';
