@@ -924,6 +924,7 @@
     if(!dependentShape(shape)&&dependentShape(previousShape)&&enteredDimensions){
       inputW.value=enteredDimensions.width;inputH.value=enteredDimensions.height;
     }
+    updateProfileAvailability();
     onSizeInput();
     updPreview();
   }
@@ -947,12 +948,13 @@
   function updateProfileAvailability() {
     var profileOpt = document.getElementById('ledProfileOpt');
     var profileCb = $('input[name="option"][value="led-profile"]');
-    if (profileOpt) profileOpt.classList.toggle('hidden', !state.light);
+    var available = state.light && !window.MirrorEvoProfile.needed(state.shape, true);
+    if (profileOpt) profileOpt.classList.toggle('hidden', !available);
     if (profileCb) {
-      profileCb.disabled = !state.light;
-      if (!state.light) profileCb.checked = false;
+      profileCb.disabled = !available;
+      if (!available) profileCb.checked = false;
     }
-    if (!state.light) state.ledProfile = false;
+    if (!available) state.ledProfile = false;
   }
 
   function updateFilmAvailability() {
@@ -1192,6 +1194,8 @@
     /* Алюминиевые опции; уголок оплачивается целыми хлыстами по 3 м. */
 
     if (state.ledProfile && state.light) price += geo.per * 250;
+    price += window.MirrorEvoProfile.charge(state.shape,w,h,
+      window.MirrorSize.read(document.getElementById('height2'))||0,state.light);
 
 
 
@@ -1269,7 +1273,7 @@
       {key:'purchase-trip',sale:procurement,cost:null,expense:'trip'},
       {key:'customer-delivery',sale:deliveryCharge,cost:null,expense:'delivery'},
       {key:'installation',sale:installCharge,cost:null,expense:'install'}
-    ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,ledProfileTariffVersion:1,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,
+    ],mirror:{carry:window.MirrorCarry?window.MirrorCarry.read():null,ledProfileTariffVersion:1,evoProfileTariffVersion:1,shape:state.shape,name:SHAPE_NAMES[state.shape],width:w,height:h,
       height2:window.MirrorSize.read(document.getElementById('height2'))||0,
       size:window.MirrorSize.dimensions(sizeText.split(' · ')[0]),materialLabel:'Зеркало, 4 мм',leadTimeLabel:window.MirrorLeadTime?window.MirrorLeadTime.currentLabel():'до 10 дней',
       edge:state.facet,edgeLabel:state.facet==='none'?'обработка от порезов':FACET_LABELS[state.facet],
