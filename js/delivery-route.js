@@ -33,9 +33,17 @@ input.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefaul
 async function json(url,options,timeout){var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},timeout||22000);try{var response=await fetch(url,Object.assign({},options,{signal:controller.signal}));if(!response.ok){var error=Error('HTTP '+response.status);error.code='HTTP_'+response.status;throw error;}return await response.json();}finally{clearTimeout(timer);}}
 function address(f){var p=f.properties;if(p.label)return p.label;return [p.city||p.town||p.locality,p.street,p.housenumber].filter(Boolean).join(', ');}
 // Search for exact buildings first; only offer a labelled street estimate when the building is missing.
-function normalizedAddress(q){return q.replace(/стругатского|стругадского/gi,'Стругацкого').trim();}
-function houseOf(q){var m=q.match(/(?:^|[,\s])(?:д(?:ом)?\.?\s*)?(\d+[а-яa-z]?(?:\s*[\/-]\s*\d+[а-яa-z]?)*)\s*$/iu);return m?m[1].toLowerCase().replace(/\s+/g,''):'';}
-function withoutHouse(q){return q.replace(/[,\s]+(?:д(?:ом)?\.?\s*)?\d+[а-яa-z]?(?:\s*[\/-]\s*\d+[а-яa-z]?)*\s*$/iu,'').trim();}
+function normalizedAddress(q){return q.replace(/стругатского|стругадского/gi,'Стругацкого').replace(/\s+/g,' ').trim();}
+var HOUSE_END=/(?:^|[,\s])(?:д(?:ом)?\.?\s*)?(\d+[а-яa-z]?(?:\s*\/\s*\d+[а-яa-z]?)?)(?:\s*,?\s*(корпус|корп\.?|к\.?|строение|стр\.?)\s*(\d+[а-яa-z]?))?\s*$/iu;
+function houseOf(q){var m=String(q||'').match(HOUSE_END);return m?(m[1].toLowerCase().replace(/\s+/g,'')+(m[3]?(m[2].toLowerCase().startsWith('с')?'стр':'/')+m[3].toLowerCase():'')):'';}
+function withoutHouse(q){return String(q||'').replace(HOUSE_END,'').replace(/[\s,]+$/,'').trim();}
+function queryVariants(q){
+ var base=withoutHouse(q),house=houseOf(q),variants=[q];
+ if(house&&base){var parts=house.split('/');variants.push(base+' '+house);if(parts.length===2){variants.push(base+' '+parts[0]+' к'+parts[1],base+' '+parts[0]+' корпус '+parts[1]);}}
+ var local=variants.map(function(v){return /ставрополь/i.test(v)?v:'Ставропольский край, '+v;});
+ if(!/ставрополь/i.test(q))variants.push('Ставрополь, '+q);
+ return Array.from(new Set(variants.concat(local)));
+}
 function lower(q){return q.toLowerCase().replace(/ё/g,'е').replace(/[^а-яa-z0-9]+/g,' ').trim();}
 var DELIVERY_LIMIT_KM=50;
 function inRegion(f){
@@ -63,14 +71,12 @@ function photonFeature(f){
  return {properties:{label:label,housenumber:p.housenumber},geometry:{coordinates:c},approx:!p.housenumber,source:'photon',settlement:isPlace&&!p.housenumber};
 }
 async function searchNearby(query){
- var regional='Ставропольский край, '+query;
- var variants=[query,regional];
- if(/ставропольский\s+край/i.test(query))variants=[query];
+ var variants=queryVariants(query).slice(0,6);
  var seen={},lastError;
  for(var i=0;i<variants.length;i++){
   try{
-   var url='https://photon.komoot.io/api/?q='+encodeURIComponent(variants[i])+'&limit=10&lat='+point[1]+'&lon='+point[0]+'&bbox=41.24,44.54,42.59,45.46';
-   var data=await json(url,{credentials:'omit'},8000);
+   var url='https://photon.komoot.io/api/?q='+encodeURIComponent(variants[i])+'&limit=20&lat='+point[1]+'&lon='+point[0]+'&bbox=41.24,44.54,42.59,45.46';
+   var data=await json(url,{credentials:'omit'},3500);
    var features=(data.features||[]).map(photonFeature).filter(function(f){if(!inRegion(f)||seen[address(f)])return false;seen[address(f)]=true;return true;});
    if(features.length&&selectMatches({features:features},query).features.length)return {features:features,source:'photon'};
   }catch(e){lastError=e;}
@@ -78,10 +84,11 @@ async function searchNearby(query){
  if(lastError)throw lastError;
  return {features:[],source:'photon'};
 }
+
 function selectMatches(data,query,kind){
  var wanted=kind==='street'?'':houseOf(query),seen={};
  var features=(data.features||[]).filter(function(f){
-  var label=address(f),number=houseOf(label);
+  var label=address(f),number=houseOf(' '+String((f.properties||{}).housenumber||''))||houseOf(label);
   if(!label||!matchesPlace(f,query)||seen[label])return false;
   if(wanted&&(f.approx||number!==wanted))return false;
   if(!wanted&&number&&!f.approx)return false;
@@ -91,13 +98,14 @@ function selectMatches(data,query,kind){
  return {features:features.slice(0,8)};
 }
 async function searchAddress(query,market,token,kind){
- var key='mirror.stav.area50.v2.'+(kind||'auto')+'.'+query.toLowerCase().replace(/ё/g,'е').trim(),saved;
+ var key='mirror.stav.area50.v3.'+(kind||'auto')+'.'+query.toLowerCase().replace(/ё/g,'е').trim(),saved;
  try{saved=JSON.parse(localStorage.getItem(key));if(saved&&Date.now()-saved.at<86400000&&saved.data.features.length)return saved.data;}catch(e){}
  var wanted=kind==='street'?'':houseOf(query);
  var url='https://zerkalo-address-api.vercel.app/api/geocode?q='+encodeURIComponent(query)+'&market=stav'+(!wanted?'&kind=street':'');
  function valid(data){var result=selectMatches(data,query,kind);if(!result.features.length)throw Error('No matching address');return result;}
  var photon=searchNearby(query).then(valid);
- var remote=json(url,{credentials:'omit'},6000).then(valid);
+ var alternatives=queryVariants(query).slice(0,4);
+ var remote=Promise.any(alternatives.map(function(q){return json('https://zerkalo-address-api.vercel.app/api/geocode?q='+encodeURIComponent(q)+'&market=stav'+(!wanted?'&kind=street':''),{credentials:'omit'},8000).then(valid);}));
  // A settlement or street is preferred over a random building; for houses, either verified source can win.
  var result;
  if(!wanted){remote.catch(function(){});try{result=await photon;}catch(e){try{result=await remote;}catch(e){result={features:[]};}}}
@@ -148,7 +156,7 @@ button.addEventListener('click',async function(){
    matches=approx.features||[];
    matches.forEach(function(f){f.requestedAddress=query;});
   }
-  if(!matches.length){status.textContent='Адрес не найден в зоне 50 км. Укажите населённый пункт, улицу и дом или согласуйте доставку с мастером.';return;}
+  if(!matches.length){status.textContent='Точный адрес не найден в доступных базах. Проверьте населённый пункт, улицу, дом и корпус или согласуйте доставку с мастером.';return;}
   showMatches(matches,token);
  }catch(e){if(token===revision)status.textContent='Не удалось связаться с поиском адресов. Повторите поиск. Код: '+(e.code||(e.name==='AbortError'?'TIMEOUT':'NETWORK'))+'.';}
  finally{if(token===revision){busy=false;button.disabled=false;}}

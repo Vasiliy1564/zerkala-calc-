@@ -526,6 +526,27 @@
     }
   }
 
+  function arrangeSizeFields() {
+    var top = document.getElementById('fieldH');
+    var width = document.getElementById('fieldW');
+    var lower = document.getElementById('rowH2');
+    var row = top && top.parentElement;
+    var split = state.shape === 'double' || state.shape === 'semidouble';
+    if (!row || !width || !lower) return;
+    // Keep all dimensions together; lead time is mounted after this row.
+    if (lower.parentElement !== row || lower.nextElementSibling !== width) row.insertBefore(lower, width);
+    lower.classList.toggle('hidden', !split);
+    row.style.gridTemplateColumns = split ? 'minmax(0, 1fr)' : '';
+    row.style.flexDirection = split ? 'column' : '';
+    var label = document.getElementById('labelW');
+    if (state.shape === 'semidouble' && label) label.textContent = 'Ширина автоматически (½ общей высоты), см';
+    var hint = document.getElementById('w2hint');
+    if (hint) hint.hidden = state.shape === 'semidouble';
+    $all('.stepper-btn[data-adj="width"]').forEach(function (button) {
+      button.style.visibility = state.shape === 'semidouble' ? 'hidden' : '';
+    });
+  }
+
   function onSizeInput() {
     readState();
     var hEl = document.getElementById('height');
@@ -533,8 +554,7 @@
     if (!hEl || !wEl) return;
     if (state.shape === 'circle') hEl.value = wEl.value;
     syncSemicircleSize();
-    var rowH2 = document.getElementById('rowH2');
-    if (rowH2) rowH2.classList.toggle('hidden', state.shape !== 'double' && state.shape !== 'semidouble');
+    arrangeSizeFields();
     updPreview();
     // Обновляем уже показанную цену при вводе размеров и нажатии +/−.
     var res = document.getElementById('calc-result');
