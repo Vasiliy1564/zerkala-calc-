@@ -63,7 +63,8 @@ function calc(input){
  var facet=String(o.facet===undefined?'none':o.facet);
  if(facet==='0')facet='none';
  if(!Object.prototype.hasOwnProperty.call(FACETS,facet))throw Error('Для выбранного фацета пока нет ставропольского тарифа.');
- if(!(w>=400&&h>=400)||(/double/.test(shape)&&h2<400))throw Error('Размеры каждой части должны быть от 40 см.');
+ var split=shape==='double'||shape==='semidouble';
+ if(!(w>=300 && (split?h>=10&&h2>=10:h>=300)))throw Error(split?'Укажите ширину от 30 см и высоту каждой части от 1 см.':'Размер цельного полотна должен быть от 30 см по каждой стороне.');
  if(shape==='circle')h=w;
  var totalH=h+(/double/.test(shape)?h2:0),area=w*totalH/1000000,per=2*(w+totalH)/1000;
  if(shape==='circle'){area=w*w/1000000;per=4*w/1000;}
