@@ -393,7 +393,7 @@
     if (!el) return;
     var v = window.MirrorSize.read(el) || 0;
     v = Math.max(state.shape === 'semicircle' && id === 'height' ? 800 : 400, v + delta);
-    v = Math.min(v, state.shape === 'curved' && id === 'height' ? 1800 : state.shape === 'semidouble' && id === 'height' ? 1600 : 3210);
+    v = Math.min(v, state.shape === 'curved' && id === 'height' ? 1800 : 3210);
     window.MirrorSize.write(el, v);
     if (state.shape === 'circle') {
       var hEl = document.getElementById('height');
@@ -415,9 +415,30 @@
     var h2El = document.getElementById('height2');
     if (hEl && wEl) {
       var totalHeight = window.MirrorSize.read(hEl) || 0;
-      if (state.shape === 'semidouble') { if(h2El)window.MirrorSize.write(h2El,totalHeight); totalHeight *= 2; }
+      if (state.shape === 'semidouble') totalHeight += h2El ? (window.MirrorSize.read(h2El) || 0) : 0;
       window.MirrorSize.write(wEl, totalHeight / 2);
     }
+  }
+
+  function arrangeSizeFields() {
+    var top = document.getElementById('fieldH');
+    var width = document.getElementById('fieldW');
+    var lower = document.getElementById('rowH2');
+    var row = top && top.parentElement;
+    var split = state.shape === 'double' || state.shape === 'semidouble';
+    if (!row || !width || !lower) return;
+    // Keep all dimensions together; lead time is mounted after this row.
+    if (lower.parentElement !== row || lower.nextElementSibling !== width) row.insertBefore(lower, width);
+    lower.classList.toggle('hidden', !split);
+    row.style.gridTemplateColumns = split ? 'minmax(0, 1fr)' : '';
+    row.style.flexDirection = split ? 'column' : '';
+    var label = document.getElementById('labelW');
+    if (state.shape === 'semidouble' && label) label.textContent = 'Ширина автоматически (½ общей высоты), см';
+    var hint = document.getElementById('w2hint');
+    if (hint) hint.hidden = state.shape === 'semidouble';
+    $all('.stepper-btn[data-adj="width"]').forEach(function (button) {
+      button.style.visibility = state.shape === 'semidouble' ? 'hidden' : '';
+    });
   }
 
   function onSizeInput() {
@@ -427,10 +448,10 @@
     if (!hEl || !wEl) return;
     if (state.shape === 'circle') hEl.value = wEl.value;
     syncSemicircleSize();
-    var rowH2 = document.getElementById('rowH2');
-    if (rowH2) rowH2.classList.toggle('hidden', state.shape !== 'double');
+    arrangeSizeFields();
     var semiNote=document.getElementById('semidouble-note');if(semiNote)semiNote.hidden=state.shape!=='semidouble';
     updPreview();
+    setSizeError('');
     var result = document.getElementById('calc-result');
     if (result && result.classList.contains('show')) calc(false);
   }
@@ -757,8 +778,7 @@
     inputH.disabled = false;
     inputH.style.opacity = '1';
     inputH.min = shape === 'semicircle' ? '80' : '40';
-    inputH.max = shape === 'curved' ? '180' : shape === 'semidouble' ? '160' : '321';
-    if (shape === 'semidouble' && (window.MirrorSize.read(inputH) || 0) > 1600) window.MirrorSize.write(inputH, 1200);
+    inputH.max = shape === 'curved' ? '180' : '321';
     inputW.disabled = shape === 'curved' || shape === 'semicircle' || shape === 'semidouble';
     $all('.stepper-btn[data-adj="width"]').forEach(function (button) {
       button.disabled = shape === 'curved' || shape === 'semicircle' || shape === 'semidouble';
@@ -774,11 +794,11 @@
     } else if (shape === 'double') {
       fieldH.classList.remove('hidden');
       labelW.textContent = 'Ширина, см';
-      labelH.textContent = 'Высота верхней, см';
+      labelH.textContent = 'Высота верхней части, см';
     } else if (shape === 'semidouble') {
       fieldH.classList.remove('hidden');
       labelW.textContent = 'Ширина = ½ общей высоты, см';
-      labelH.textContent = 'Высота каждой части, см';
+      labelH.textContent = 'Высота верхней части, см';
     } else {
       fieldH.classList.remove('hidden');
       labelW.textContent = shape === 'curved' ? 'Ширина автоматически, см' : 'Ширина, см';
@@ -893,6 +913,46 @@
     };
   }
 
+  function setSizeError(message) {
+    var error = document.getElementById('mirror-size-error');
+    if (!error && message) {
+      var form = document.getElementById('quote-form');
+      var submit = form && form.querySelector('button[type="submit"]');
+      if (!submit) return;
+      error = document.createElement('p');
+      error.id = 'mirror-size-error';
+      error.setAttribute('role', 'alert');
+      error.style.cssText = 'margin:12px 0;color:#b94d36;font-weight:600;line-height:1.45;';
+      submit.insertAdjacentElement('afterend', error);
+    }
+    if (error) {
+      error.textContent = message || '';
+      error.hidden = !message;
+    }
+  }
+
+  function sizeValidationMessage(w, h) {
+    var split = state.shape === 'double' || state.shape === 'semidouble';
+    var h2 = split ? window.MirrorSize.read(document.getElementById('height2')) : 0;
+    if (split && (!Number.isFinite(h) || h < 400 || !Number.isFinite(h2) || h2 < 400)) {
+      return 'Недопустимый размер. Минимальная высота каждой части — 40 см.';
+    }
+    if (state.shape === 'semicircle' && (!Number.isFinite(h) || h < 800)) {
+      return 'Недопустимый размер. Минимальная высота полукруга — 80 см (ширина 40 см).';
+    }
+    if (!Number.isFinite(w) || w < 400 || (state.shape !== 'circle' && (!Number.isFinite(h) || h < 400))) {
+      return 'Недопустимый размер. Минимальный размер — 40 см.';
+    }
+    return '';
+  }
+
+  function rejectSize(message, explicit) {
+    var result = document.getElementById('calc-result');
+    if (result) result.classList.remove('show');
+    if (window.onPersonalCalculation) window.onPersonalCalculation(null);
+    if (explicit) setSizeError(message);
+  }
+
   function calc(scrollResult) {
     readState();
     syncSemicircleSize();
@@ -913,9 +973,9 @@
       result.classList.add('show');
       if (scrollResult !== false) result.scrollIntoView({behavior:'smooth',block:'nearest'});
     }
-    if (!Number.isFinite(w) || !Number.isFinite(h) || (state.shape !== 'curved' && w < 400) || (state.shape !== 'circle' && h < 400)) {
-      requestQuote('Укажите корректные размеры от 40 см.'); return;
-    }
+    var sizeError = state.shape === 'curved' ? (h < 400 || !Number.isFinite(h) ? 'Недопустимый размер. Минимальная высота — 40 см.' : '') : sizeValidationMessage(w,h);
+    if (sizeError) { rejectSize(sizeError, scrollResult !== false); return; }
+    setSizeError('');
     if (state.shape === 'curved' && (h < 400 || h > 1800)) {
       requestQuote('Для фигурного зеркала выберите высоту от 40 до 180 см. Ширина определяется автоматически.'); return;
     }
@@ -924,10 +984,6 @@
     }
     if (Math.max(w, h) > 3210 || Math.min(w, h) > 2250) {
       requestQuote('Размер превышает формат одного листа 3210 × 2250 мм. Согласуем изготовление из частей.'); return;
-    }
-    if ((state.shape === 'double' || state.shape === 'semidouble') && (window.MirrorSize.read(document.getElementById('height2')) || 0) < 400) {
-      alert('Минимальная высота каждой части — 40 см');
-      return;
     }
 
     if (state.shape === 'arch' && h < w / 2) {
@@ -1189,13 +1245,13 @@
   });
   $all('.stepper-btn').forEach(function (b) {
     b.addEventListener('click', function () {
-      adj(b.dataset.adj, parseInt(b.dataset.delta, 10));
+      adj(b.dataset.adj, (Number(b.dataset.delta) < 0 ? -1 : 1) * 10);
     });
   });
   var sizeInputs = ['width', 'height', 'height2'];
   sizeInputs.forEach(function (id) {
     var el = document.getElementById(id);
-    if (el) el.addEventListener('input', onSizeInput);
+    if (el) { el.removeAttribute('pattern'); el.addEventListener('input', onSizeInput); }
   });
 
   var quoteForm = $('#quote-form');
