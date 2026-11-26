@@ -538,11 +538,8 @@
     updPreview();
     // Обновляем уже показанную цену при вводе размеров и нажатии +/−.
     var res = document.getElementById('calc-result');
-    var validSize = window.MirrorSize.read(wEl) >= 400 && window.MirrorSize.read(hEl) >= 400;
-    if (state.shape === 'double' || state.shape === 'semidouble') {
-      validSize = validSize && window.MirrorSize.read(document.getElementById('height2')) >= 400;
-    }
-    if (res && res.classList.contains('show') && validSize) calc(false);
+    setSizeError('');
+    if (res && res.classList.contains('show')) calc(false);
   }
 
   function fitBox(aspect) {
@@ -1023,6 +1020,46 @@
     };
   }
 
+  function setSizeError(message) {
+    var error = document.getElementById('mirror-size-error');
+    if (!error && message) {
+      var form = document.getElementById('quote-form');
+      var submit = form && form.querySelector('button[type="submit"]');
+      if (!submit) return;
+      error = document.createElement('p');
+      error.id = 'mirror-size-error';
+      error.setAttribute('role', 'alert');
+      error.style.cssText = 'margin:12px 0;color:#b94d36;font-weight:600;line-height:1.45;';
+      submit.insertAdjacentElement('afterend', error);
+    }
+    if (error) {
+      error.textContent = message || '';
+      error.hidden = !message;
+    }
+  }
+
+  function sizeValidationMessage(w, h) {
+    var split = state.shape === 'double' || state.shape === 'semidouble';
+    var h2 = split ? window.MirrorSize.read(document.getElementById('height2')) : 0;
+    if (split && (!Number.isFinite(h) || h < 400 || !Number.isFinite(h2) || h2 < 400)) {
+      return 'Недопустимый размер. Минимальная высота каждой части — 40 см.';
+    }
+    if (state.shape === 'semicircle' && (!Number.isFinite(h) || h < 800)) {
+      return 'Недопустимый размер. Минимальная высота полукруга — 80 см (ширина 40 см).';
+    }
+    if (!Number.isFinite(w) || w < 400 || (state.shape !== 'circle' && (!Number.isFinite(h) || h < 400))) {
+      return 'Недопустимый размер. Минимальный размер — 40 см.';
+    }
+    return '';
+  }
+
+  function rejectSize(message, explicit) {
+    var result = document.getElementById('calc-result');
+    if (result) result.classList.remove('show');
+    if (window.onPersonalCalculation) window.onPersonalCalculation(null);
+    if (explicit) setSizeError(message);
+  }
+
   function calc(scrollResult) {
     readState();
     syncSemicircleSize();
@@ -1031,21 +1068,14 @@
     var w = window.MirrorSize.read(wEl) || 0;
     var h = window.MirrorSize.read(hEl) || 0;
 
-    if (w < 400 || (state.shape !== 'circle' && h < 400)) { alert('Минимальный размер — 40 см'); return; }
-    if ((state.shape === 'double' || state.shape === 'semidouble') && (window.MirrorSize.read(document.getElementById('height2')) || 0) < 400) {
-      alert('Минимальная высота каждой части — 40 см');
-      return;
-    }
-
+    var sizeError = sizeValidationMessage(w, h);
+    if (sizeError) { rejectSize(sizeError, scrollResult !== false); return; }
     // Do not quote a sheet that cannot be supplied by either Stavropol tariff.
     if (window.MirrorLeadTime && window.MirrorLeadTime.isStandardEligible() === false) {
-      var result=document.getElementById('calc-result');
-      document.getElementById('r-size').textContent='Размер превышает максимальный формат';
-      document.getElementById('r-sum').textContent='Индивидуальный расчёт';
-      document.getElementById('r-inc').textContent='Максимальный размер одного полотна — 300 × 200 см. Уточните изготовление из частей у мастера.';
-      if(result)result.classList.add('show');
+      rejectSize('Недопустимый размер. Максимальный размер одного полотна — 300 × 200 см. Необходим индивидуальный расчёт.', scrollResult !== false);
       return;
     }
+    setSizeError('');
     var geo = calcGeometry();
     var area = geo.area;
     var per = geo.per;
@@ -1337,7 +1367,10 @@
   var sizeInputs = ['width', 'height', 'height2'];
   sizeInputs.forEach(function (id) {
     var el = document.getElementById(id);
-    if (el) el.addEventListener('input', onSizeInput);
+    if (el) {
+      el.removeAttribute('pattern'); // Validate dimensions only when calculating, not through native form popups.
+      el.addEventListener('input', onSizeInput);
+    }
   });
 
   var quoteForm = $('#quote-form');
